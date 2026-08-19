@@ -19,9 +19,42 @@ const legalContent = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PASSWORD_NUMBER_PATTERN = /\d/;
+const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^\p{L}\p{N}\s]/u;
+const VERIFICATION_CODE_LENGTH = 6;
+// Controle temporário de UX. O backend deverá aplicar o limite real de reenvio.
+const CODE_RESEND_WAIT_SECONDS = 120;
+
+function createEmptyCode() {
+  return Array.from({ length: VERIFICATION_CODE_LENGTH }, () => "");
+}
 
 function isValidEmail(value) {
   return EMAIL_PATTERN.test(value.trim());
+}
+
+function getPasswordValidationError(password) {
+  if (!password) {
+    return "Crie uma senha.";
+  }
+  if (password.length < 8) {
+    return "A senha precisa ter pelo menos 8 caracteres.";
+  }
+
+  const hasNumber = PASSWORD_NUMBER_PATTERN.test(password);
+  const hasSpecialCharacter = PASSWORD_SPECIAL_CHARACTER_PATTERN.test(password);
+
+  if (!hasNumber && !hasSpecialCharacter) {
+    return "Inclua pelo menos um número e um caractere especial.";
+  }
+  if (!hasNumber) {
+    return "Inclua pelo menos um número.";
+  }
+  if (!hasSpecialCharacter) {
+    return "Inclua pelo menos um caractere especial.";
+  }
+
+  return "";
 }
 
 function Icon({ name, size = 20 }) {
@@ -151,6 +184,35 @@ function Field({
   );
 }
 
+function VerificationCodeFields({ code, error, inputRefs, onChange }) {
+  return (
+    <fieldset className={styles.codeFieldset}>
+      <legend>Código de verificação</legend>
+      <div className={styles.codeInputs}>
+        {code.map((digit, index) => (
+          <input
+            aria-invalid={Boolean(error)}
+            aria-label={`Dígito ${index + 1}`}
+            autoComplete={index === 0 ? "one-time-code" : "off"}
+            autoFocus={index === 0}
+            inputMode="numeric"
+            key={index}
+            maxLength={VERIFICATION_CODE_LENGTH}
+            onChange={(event) => onChange(index, event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Backspace" && !digit && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+              }
+            }}
+            ref={(element) => { inputRefs.current[index] = element; }}
+            value={digit}
+          />
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 function Dialog({ children, label, onClose, wide = false }) {
   useEffect(() => {
     const handleKey = (event) => {
@@ -221,14 +283,14 @@ function LegalDialog({ type, onClose }) {
 function RecoveryDialog({ onClose }) {
   const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [code, setCode] = useState(createEmptyCode);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120);
+  const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
   const codeRefs = useRef([]);
 
   useEffect(() => {
@@ -251,11 +313,11 @@ function RecoveryDialog({ onClose }) {
     }
 
     const next = [...code];
-    digits.slice(0, 6 - index).split("").forEach((digit, offset) => {
+    digits.slice(0, VERIFICATION_CODE_LENGTH - index).split("").forEach((digit, offset) => {
       next[index + offset] = digit;
     });
     setCode(next);
-    const focusIndex = Math.min(index + digits.length, 5);
+    const focusIndex = Math.min(index + digits.length, VERIFICATION_CODE_LENGTH - 1);
     codeRefs.current[focusIndex]?.focus();
   };
 
@@ -281,7 +343,7 @@ function RecoveryDialog({ onClose }) {
       });
       setEmail(normalizedEmail);
       setStep("code");
-      setTimeLeft(120);
+      setTimeLeft(CODE_RESEND_WAIT_SECONDS);
     } catch {
       setMessage("Não foi possível solicitar o código. Tente novamente.");
     } finally {
@@ -291,7 +353,7 @@ function RecoveryDialog({ onClose }) {
 
   const submitCode = async (event) => {
     event.preventDefault();
-    if (code.join("").length !== 6) {
+    if (code.join("").length !== VERIFICATION_CODE_LENGTH) {
       setMessage("Digite os seis números enviados para o seu e-mail.");
       return;
     }
@@ -313,9 +375,8 @@ function RecoveryDialog({ onClose }) {
   const submitPassword = async (event) => {
     event.preventDefault();
     const nextErrors = {};
-    if (password.length < 8) {
-      nextErrors.password = "A senha precisa ter pelo menos 8 caracteres.";
-    }
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) nextErrors.password = passwordError;
     if (!confirmPassword) {
       nextErrors.confirmPassword = "Repita a nova senha.";
     } else if (password !== confirmPassword) {
@@ -350,8 +411,8 @@ function RecoveryDialog({ onClose }) {
     setPending(true);
     try {
       await submitAuthRequest("requestPasswordReset", { email });
-      setCode(["", "", "", "", "", ""]);
-      setTimeLeft(120);
+      setCode(createEmptyCode());
+      setTimeLeft(CODE_RESEND_WAIT_SECONDS);
       codeRefs.current[0]?.focus();
     } catch {
       setMessage("Não foi possível reenviar o código. Tente novamente.");
@@ -411,29 +472,12 @@ function RecoveryDialog({ onClose }) {
             <h2>Digite o código</h2>
             <p>Enviamos um código de 6 dígitos para <strong>{email}</strong>.</p>
           </div>
-          <fieldset className={styles.codeFieldset}>
-            <legend>Código de verificação</legend>
-            <div className={styles.codeInputs}>
-              {code.map((digit, index) => (
-                <input
-                  aria-invalid={Boolean(message)}
-                  aria-label={`Dígito ${index + 1}`}
-                  autoFocus={index === 0}
-                  inputMode="numeric"
-                  key={index}
-                  maxLength={6}
-                  onChange={(event) => updateCode(index, event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Backspace" && !digit && index > 0) {
-                      codeRefs.current[index - 1]?.focus();
-                    }
-                  }}
-                  ref={(element) => { codeRefs.current[index] = element; }}
-                  value={digit}
-                />
-              ))}
-            </div>
-          </fieldset>
+          <VerificationCodeFields
+            code={code}
+            error={message}
+            inputRefs={codeRefs}
+            onChange={updateCode}
+          />
           {message && <p className={styles.formMessageError}>{message}</p>}
           <div className={styles.resendRow}>
             <span>Seu e-mail não chegou?</span>
@@ -462,7 +506,7 @@ function RecoveryDialog({ onClose }) {
             <span className={styles.dialogIcon}><Icon name="shield" size={24} /></span>
             <p className={styles.eyebrow}>Última etapa</p>
             <h2>Crie uma nova senha</h2>
-            <p>Use pelo menos 8 caracteres e não repita uma senha antiga.</p>
+            <p>Use pelo menos 8 caracteres, incluindo um número e um caractere especial.</p>
             {/* TODO: Junto com o backend, conferir se a senha inserida não é idêntica à antiga. */}
           </div>
           <Field
@@ -478,7 +522,7 @@ function RecoveryDialog({ onClose }) {
               setErrors((current) => ({ ...current, password: "" }));
             }}
             onToggle={() => setShowPassword((current) => !current)}
-            placeholder="Mínimo de 8 caracteres"
+            placeholder="8+ caracteres, número e símbolo"
             toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
             type={showPassword ? "text" : "password"}
             value={password}
@@ -513,6 +557,139 @@ function RecoveryDialog({ onClose }) {
           <h2>Senha redefinida!</h2>
           <p>Sua nova senha foi salva. Você já pode acessar o Legado Car.</p>
           <button className={styles.primaryButton} onClick={onClose} type="button">Voltar para o login</button>
+        </div>
+      )}
+    </Dialog>
+  );
+}
+
+function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
+  const [step, setStep] = useState("code");
+  const [code, setCode] = useState(createEmptyCode);
+  const [feedback, setFeedback] = useState(null);
+  const [pending, setPending] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
+  const codeRefs = useRef([]);
+
+  useEffect(() => {
+    if (step !== "code" || timeLeft <= 0) return;
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => Math.max(current - 1, 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [step, timeLeft]);
+
+  const seconds = String(timeLeft % 60).padStart(2, "0");
+  const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+
+  const updateCode = (index, rawValue) => {
+    const digits = rawValue.replace(/\D/g, "");
+    setFeedback(null);
+
+    if (!digits) {
+      setCode((current) => current.map((digit, position) => position === index ? "" : digit));
+      return;
+    }
+
+    const next = [...code];
+    digits.slice(0, VERIFICATION_CODE_LENGTH - index).split("").forEach((digit, offset) => {
+      next[index + offset] = digit;
+    });
+    setCode(next);
+    const focusIndex = Math.min(index + digits.length, VERIFICATION_CODE_LENGTH - 1);
+    codeRefs.current[focusIndex]?.focus();
+  };
+
+  const submitCode = async (event) => {
+    event.preventDefault();
+    const verificationCode = code.join("");
+
+    if (verificationCode.length !== VERIFICATION_CODE_LENGTH) {
+      setFeedback({ type: "error", text: "Digite os seis números enviados para o seu e-mail." });
+      return;
+    }
+
+    setFeedback(null);
+    setPending(true);
+    try {
+      await submitAuthRequest("verifyEmail", {
+        email,
+        code: verificationCode,
+      });
+      setStep("success");
+    } catch {
+      setFeedback({ type: "error", text: "O código não pôde ser validado. Confira e tente novamente." });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (timeLeft > 0) return;
+
+    setFeedback(null);
+    setPending(true);
+    try {
+      await submitAuthRequest("requestEmailVerification", { email });
+      setCode(createEmptyCode());
+      setTimeLeft(CODE_RESEND_WAIT_SECONDS);
+      setFeedback({ type: "success", text: "Um novo código foi enviado para o seu e-mail." });
+      codeRefs.current[0]?.focus();
+    } catch {
+      setFeedback({ type: "error", text: "Não foi possível reenviar o código. Tente novamente." });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Dialog label="Confirmação de e-mail" onClose={onClose}>
+      {step === "code" && (
+        <form className={styles.dialogForm} noValidate onSubmit={submitCode}>
+          <div className={styles.dialogIntro}>
+            <span className={styles.dialogIcon}><Icon name="envelope" size={24} /></span>
+            <p className={styles.eyebrow}>Confirme seu cadastro</p>
+            <h2>Verifique seu e-mail</h2>
+            <p>Enviamos um código de 6 dígitos para <strong>{email}</strong>.</p>
+          </div>
+          <VerificationCodeFields
+            code={code}
+            error={feedback?.type === "error"}
+            inputRefs={codeRefs}
+            onChange={updateCode}
+          />
+          {feedback && (
+            <p
+              aria-live="polite"
+              className={feedback.type === "success" ? styles.formMessageSuccess : styles.formMessageError}
+            >
+              {feedback.text}
+            </p>
+          )}
+          <div className={styles.resendRow}>
+            <span>Seu código não chegou?</span>
+            {timeLeft > 0 ? (
+              <span>Reenvie em {minutes}:{seconds}</span>
+            ) : (
+              <button disabled={pending} onClick={resendCode} type="button">
+                {pending ? "Reenviando..." : "Reenviar código"}
+              </button>
+            )}
+          </div>
+          <button className={styles.primaryButton} disabled={pending} type="submit">
+            {pending ? "Validando..." : "Confirmar e-mail"}
+          </button>
+          <button className={styles.secondaryButton} onClick={onClose} type="button">Voltar ao cadastro</button>
+        </form>
+      )}
+
+      {step === "success" && (
+        <div className={styles.successState}>
+          <span className={styles.successIcon}><Icon name="check" size={34} /></span>
+          <p className={styles.eyebrow}>Cadastro confirmado</p>
+          <h2>E-mail confirmado!</h2>
+          <p>Sua conta está pronta. Você já pode acessar o Legado Car.</p>
+          <button className={styles.primaryButton} onClick={onConfirmed} type="button">Ir para o login</button>
         </div>
       )}
     </Dialog>
@@ -632,7 +809,7 @@ function RegisterScreen({ onLogin, onLegal }) {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
 
   const update = (key) => (event) => {
     setForm((current) => ({ ...current, [key]: event.target.value }));
@@ -655,11 +832,8 @@ function RegisterScreen({ onLogin, onLegal }) {
     } else if (!isValidEmail(normalizedEmail)) {
       nextErrors.email = "Digite um endereço de e-mail válido.";
     }
-    if (!form.password) {
-      nextErrors.password = "Crie uma senha.";
-    } else if (form.password.length < 8) {
-      nextErrors.password = "A senha precisa ter pelo menos 8 caracteres.";
-    }
+    const passwordError = getPasswordValidationError(form.password);
+    if (passwordError) nextErrors.password = passwordError;
     if (!form.confirm) {
       nextErrors.confirm = "Repita sua senha.";
     } else if (form.password !== form.confirm) {
@@ -686,8 +860,9 @@ function RegisterScreen({ onLogin, onLegal }) {
         acceptedTerms: true,
         acceptedPrivacyPolicy: true,
       });
+      setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
       setMessage("");
-      setSuccess(true);
+      setConfirmationEmail(normalizedEmail);
     } catch {
       setMessage("Não foi possível criar a conta. Tente novamente.");
     } finally {
@@ -742,7 +917,7 @@ function RegisterScreen({ onLogin, onLegal }) {
             name="register-password"
             onChange={update("password")}
             onToggle={() => setShowPassword((current) => !current)}
-            placeholder="Mínimo de 8 caracteres"
+            placeholder="8+ caracteres, número e símbolo"
             toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
             type={showPassword ? "text" : "password"}
             value={form.password}
@@ -792,15 +967,15 @@ function RegisterScreen({ onLogin, onLegal }) {
         <p className={styles.authSwitch}>Já tem uma conta? <button onClick={onLogin} type="button">Fazer login</button></p>
       </div>
 
-      {success && (
-        <Dialog label="Conta criada" onClose={() => setSuccess(false)}>
-          <div className={styles.successState}>
-            <span className={styles.successIcon}><Icon name="check" size={34} /></span>
-            <p className={styles.eyebrow}>Cadastro concluído</p>
-            <h2>Conta criada!</h2>
-            <button className={styles.primaryButton} onClick={onLogin} type="button">Ir para o login</button>
-          </div>
-        </Dialog>
+      {confirmationEmail && (
+        <EmailConfirmationDialog
+          email={confirmationEmail}
+          onClose={() => setConfirmationEmail("")}
+          onConfirmed={() => {
+            setConfirmationEmail("");
+            onLogin();
+          }}
+        />
       )}
     </main>
   );

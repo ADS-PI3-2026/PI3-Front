@@ -272,7 +272,8 @@
   text-align: center;
 }
 
-.formMessageError {
+.formMessageError,
+.formMessageSuccess {
   border-radius: 10px;
   font-size: 0.78rem;
   line-height: 1.45;
@@ -282,6 +283,11 @@
 .formMessageError {
   background: #fff0ee;
   color: var(--danger);
+}
+
+.formMessageSuccess {
+  background: #e9f7ef;
+  color: #12663b;
 }
 
 .registerScreen {

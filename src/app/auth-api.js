@@ -1,6 +1,8 @@
 const AUTH_ENDPOINTS = {
   login: "/auth/login",
   register: "/auth/register",
+  requestEmailVerification: "/auth/email/request-verification",
+  verifyEmail: "/auth/email/verify",
   requestPasswordReset: "/auth/password/request-reset",
   verifyPasswordCode: "/auth/password/verify-code",
   resetPassword: "/auth/password/reset",
