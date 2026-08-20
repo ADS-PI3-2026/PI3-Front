@@ -19,6 +19,7 @@ const legalContent = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PERSON_NAME_PATTERN = /^[\p{L}\s'-]+$/u;
 const PASSWORD_NUMBER_PATTERN = /\d/;
 const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^\p{L}\p{N}\s]/u;
 const VERIFICATION_CODE_LENGTH = 6;
@@ -31,6 +32,104 @@ function createEmptyCode() {
 
 function isValidEmail(value) {
   return EMAIL_PATTERN.test(value.trim());
+}
+
+function onlyDigits(value) {
+  return value.replace(/\D/g, "");
+}
+
+function formatCpf(value) {
+  return onlyDigits(value)
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function formatCnpj(value) {
+  return onlyDigits(value)
+    .slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function hasRepeatedDigits(value) {
+  return /^(\d)\1+$/.test(value);
+}
+
+function isValidCpf(value) {
+  const cpf = onlyDigits(value);
+  if (cpf.length !== 11 || hasRepeatedDigits(cpf)) return false;
+
+  for (let digitIndex = 9; digitIndex <= 10; digitIndex += 1) {
+    const sum = cpf
+      .slice(0, digitIndex)
+      .split("")
+      .reduce((total, digit, index) => total + Number(digit) * (digitIndex + 1 - index), 0);
+    const remainder = (sum * 10) % 11;
+    const expectedDigit = remainder === 10 ? 0 : remainder;
+    if (expectedDigit !== Number(cpf[digitIndex])) return false;
+  }
+
+  return true;
+}
+
+function calculateCnpjDigit(base, weights) {
+  const sum = base
+    .split("")
+    .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
+}
+
+function isValidCnpj(value) {
+  const cnpj = onlyDigits(value);
+  if (cnpj.length !== 14 || hasRepeatedDigits(cnpj)) return false;
+
+  const firstDigit = calculateCnpjDigit(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const secondDigit = calculateCnpjDigit(`${cnpj.slice(0, 12)}${firstDigit}`, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+
+  return cnpj.endsWith(`${firstDigit}${secondDigit}`);
+}
+
+function getNameValidationError(name, accountType) {
+  const normalizedName = name.trim().replace(/\s+/g, " ");
+
+  if (accountType === "business") {
+    if (!normalizedName) return "Informe o nome fantasia.";
+    if (normalizedName.length < 2) return "O nome fantasia precisa ter pelo menos 2 caracteres.";
+    if (!/\p{L}/u.test(normalizedName)) return "O nome fantasia precisa conter pelo menos uma letra.";
+    return "";
+  }
+
+  if (!normalizedName) return "Informe seu nome completo.";
+  if (!PERSON_NAME_PATTERN.test(normalizedName)) {
+    return "Use somente letras, espaços, apóstrofos e hífens no nome.";
+  }
+  const nameParts = normalizedName.split(" ");
+  if (nameParts.length < 2) return "Informe seu nome e sobrenome.";
+  if (nameParts.some((part) => !/\p{L}/u.test(part))) {
+    return "Cada parte do nome precisa conter pelo menos uma letra.";
+  }
+  return "";
+}
+
+function getDocumentValidationError(document, accountType) {
+  const digits = onlyDigits(document);
+
+  if (accountType === "business") {
+    if (!digits) return "Informe o CNPJ.";
+    if (digits.length !== 14) return "Digite os 14 dígitos do CNPJ.";
+    if (!isValidCnpj(digits)) return "Digite um CNPJ válido.";
+    return "";
+  }
+
+  if (!digits) return "Informe o CPF.";
+  if (digits.length !== 11) return "Digite os 11 dígitos do CPF.";
+  if (!isValidCpf(digits)) return "Digite um CPF válido.";
+  return "";
 }
 
 function getPasswordValidationError(password) {
@@ -66,6 +165,13 @@ function Icon({ name, size = 20 }) {
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />
         <path d="m3 7 9 6 9-6" />
+      </>
+    ),
+    idCard: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="8" cy="10" r="2" />
+        <path d="M5.5 15a2.5 2.5 0 0 1 5 0M13 9h5M13 13h5" />
       </>
     ),
     eye: (
@@ -139,6 +245,7 @@ function Field({
   autoComplete,
   error,
   icon,
+  inputMode,
   label,
   maxLength,
   minLength,
@@ -159,6 +266,7 @@ function Field({
         <input
           aria-invalid={Boolean(error)}
           autoComplete={autoComplete}
+          inputMode={inputMode}
           maxLength={maxLength}
           minLength={minLength}
           name={name}
@@ -803,7 +911,8 @@ function LoginScreen({ onRegister, onRecovery }) {
 }
 
 function RegisterScreen({ onLogin, onLegal }) {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [accountType, setAccountType] = useState("person");
+  const [form, setForm] = useState({ name: "", document: "", email: "", password: "", confirm: "" });
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -816,17 +925,33 @@ function RegisterScreen({ onLogin, onLegal }) {
     setErrors((current) => ({ ...current, [key]: "" }));
   };
 
+  const changeAccountType = (nextAccountType) => {
+    if (nextAccountType === accountType) return;
+    setAccountType(nextAccountType);
+    setForm((current) => ({ ...current, name: "", document: "" }));
+    setErrors((current) => ({ ...current, name: "", document: "" }));
+    setMessage("");
+  };
+
+  const updateDocument = (event) => {
+    const formattedDocument = accountType === "business"
+      ? formatCnpj(event.target.value)
+      : formatCpf(event.target.value);
+    setForm((current) => ({ ...current, document: formattedDocument }));
+    setErrors((current) => ({ ...current, document: "" }));
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     const normalizedName = form.name.trim().replace(/\s+/g, " ");
+    const documentDigits = onlyDigits(form.document);
     const normalizedEmail = form.email.trim().toLowerCase();
     const nextErrors = {};
 
-    if (!normalizedName) {
-      nextErrors.name = "Informe seu nome completo.";
-    } else if (normalizedName.length < 3) {
-      nextErrors.name = "O nome precisa ter pelo menos 3 caracteres.";
-    }
+    const nameError = getNameValidationError(normalizedName, accountType);
+    if (nameError) nextErrors.name = nameError;
+    const documentError = getDocumentValidationError(form.document, accountType);
+    if (documentError) nextErrors.document = documentError;
     if (!normalizedEmail) {
       nextErrors.email = "Informe seu e-mail.";
     } else if (!isValidEmail(normalizedEmail)) {
@@ -852,8 +977,11 @@ function RegisterScreen({ onLogin, onLegal }) {
     setMessage("");
     setPending(true);
     try {
+      const identityPayload = accountType === "business"
+        ? { personType: "PJ", tradeName: normalizedName, cnpj: documentDigits }
+        : { personType: "PF", fullName: normalizedName, cpf: documentDigits };
       await submitAuthRequest("register", {
-        fullName: normalizedName,
+        ...identityPayload,
         email: normalizedEmail,
         password: form.password,
         passwordConfirmation: form.confirm,
@@ -884,16 +1012,49 @@ function RegisterScreen({ onLogin, onLegal }) {
           <p>Preencha seus dados para começar a preservar a história dos seus veículos.</p>
         </div>
         <form className={styles.authForm} noValidate onSubmit={submit}>
+          <div className={styles.accountTypeField}>
+            <span className={styles.fieldLabel}>Tipo de cadastro</span>
+            <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
+              <button
+                aria-pressed={accountType === "person"}
+                className={accountType === "person" ? styles.accountTypeActive : ""}
+                onClick={() => changeAccountType("person")}
+                type="button"
+              >
+                Pessoa física
+              </button>
+              <button
+                aria-pressed={accountType === "business"}
+                className={accountType === "business" ? styles.accountTypeActive : ""}
+                onClick={() => changeAccountType("business")}
+                type="button"
+              >
+                Pessoa jurídica
+              </button>
+            </div>
+          </div>
           <Field
-            autoComplete="name"
+            autoComplete={accountType === "business" ? "organization" : "name"}
             error={errors.name}
             icon="user"
-            label="Nome completo"
+            label={accountType === "business" ? "Nome fantasia" : "Nome completo"}
             maxLength={100}
             name="name"
             onChange={update("name")}
-            placeholder="Seu nome completo"
+            placeholder={accountType === "business" ? "Nome da sua empresa" : "Seu nome completo"}
             value={form.name}
+          />
+          <Field
+            autoComplete="off"
+            error={errors.document}
+            icon="idCard"
+            inputMode="numeric"
+            label={accountType === "business" ? "CNPJ" : "CPF"}
+            maxLength={accountType === "business" ? 18 : 14}
+            name={accountType === "business" ? "cnpj" : "cpf"}
+            onChange={updateDocument}
+            placeholder={accountType === "business" ? "00.000.000/0000-00" : "000.000.000-00"}
+            value={form.document}
           />
           <Field
             autoComplete="email"

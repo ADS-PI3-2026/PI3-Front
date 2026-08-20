@@ -116,6 +116,48 @@
   gap: 18px;
 }
 
+.accountTypeField {
+  display: grid;
+  gap: 7px;
+}
+
+.accountTypeToggle {
+  background: #e9ebf4;
+  border: 1px solid #e4e7f0;
+  border-radius: 9px;
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 3px;
+}
+
+.accountTypeToggle button {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #252b40;
+  font-size: 0.88rem;
+  min-height: 38px;
+  padding: 8px 12px;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+}
+
+.accountTypeToggle button:hover {
+  color: var(--navy);
+}
+
+.accountTypeToggle button.accountTypeActive {
+  background: #fff;
+  border-color: #d6dae5;
+  box-shadow: 0 1px 3px rgba(27, 36, 67, 0.14);
+  color: #171b2f;
+  font-weight: 720;
+}
+
+.accountTypeToggle button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.16);
+  outline: none;
+}
+
 .field {
   display: grid;
   gap: 7px;
