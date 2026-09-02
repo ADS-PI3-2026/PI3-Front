@@ -1,0 +1,391 @@
+.pageHeader {
+  align-items: center;
+  border-bottom: 1px solid #e4e6ed;
+  color: #074793;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 -14px 20px;
+  min-height: 68px;
+  padding: 12px 15px;
+}
+
+.pageHeader p {
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.pageHeader h1 {
+  color: #074793;
+  font-size: 1.32rem;
+  letter-spacing: -0.035em;
+}
+
+.profileLayout {
+  display: grid;
+  gap: 16px;
+}
+
+.profileSummary,
+.card {
+  background: #fff;
+  border: 1px solid #e1e4ec;
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+}
+
+.profileSummary {
+  align-items: center;
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+}
+
+.avatar {
+  background: #e4edfb;
+  border-radius: 18px;
+  color: #074793;
+  display: grid;
+  flex: 0 0 72px;
+  height: 72px;
+  place-items: center;
+}
+
+.profileSummary h2 {
+  color: #252832;
+  font-size: 1.16rem;
+  letter-spacing: -0.025em;
+}
+
+.profileSummary p {
+  color: #687081;
+  font-size: 0.8rem;
+  margin: 3px 0 7px;
+}
+
+.profileSummary span {
+  background: #eef3fa;
+  border-radius: 999px;
+  color: #074793;
+  font-size: 0.68rem;
+  font-weight: 720;
+  padding: 5px 8px;
+}
+
+.tabList {
+  background: #fff;
+  border: 1px solid #e1e4ec;
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.045);
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 5px;
+}
+
+.tabButton,
+.activeTab {
+  align-items: center;
+  border-radius: 10px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 7px;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 0;
+  padding: 10px 13px;
+  white-space: normal;
+}
+
+.tabButton {
+  color: #5e6675;
+}
+
+.activeTab {
+  background: #e5eefb;
+  color: #074793;
+}
+
+.tabButton:hover {
+  background: #f2f5fa;
+  color: #074793;
+}
+
+.tabButton:focus-visible,
+.activeTab:focus-visible,
+.tabPanel:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
+}
+
+.tabPanel {
+  min-width: 0;
+}
+
+.card {
+  padding: 20px;
+}
+
+.cardHeading {
+  align-items: center;
+  color: #074793;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 19px;
+}
+
+.cardHeading p,
+.dangerToggle small {
+  color: #737b8c;
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.cardHeading h2 {
+  color: #292c35;
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
+.form,
+.deletionForm {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field > span:first-child {
+  color: #3f4859;
+  font-size: 0.76rem;
+  font-weight: 690;
+}
+
+.inputShell {
+  align-items: center;
+  background: #fafbfe;
+  border: 1px solid #d9deea;
+  border-radius: 11px;
+  color: #7d8697;
+  display: flex;
+  gap: 10px;
+  min-height: 49px;
+  padding: 0 13px;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.inputShell:focus-within {
+  background: #fff;
+  border-color: #5b83b5;
+  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
+}
+
+.inputError {
+  border-color: #d52b2b;
+}
+
+.inputShell input {
+  background: transparent;
+  border: 0;
+  color: #252b36;
+  flex: 1;
+  font-size: 0.88rem;
+  min-width: 0;
+  outline: 0;
+}
+
+.inputShell input[readonly] {
+  color: #737b89;
+  cursor: not-allowed;
+}
+
+.fieldError {
+  color: #b42318;
+  font-size: 0.72rem;
+}
+
+.primaryButton,
+.secondaryButton,
+.deleteButton {
+  align-items: center;
+  border-radius: 12px;
+  display: flex;
+  font-size: 0.88rem;
+  font-weight: 730;
+  gap: 8px;
+  justify-content: center;
+  min-height: 49px;
+  padding: 11px 14px;
+  width: 100%;
+}
+
+.primaryButton {
+  background: #074793;
+  color: #fff;
+}
+
+.primaryButton:hover {
+  background: #053a79;
+}
+
+.primaryButton:disabled,
+.deleteButton:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.secondaryButton {
+  background: #eef2f8;
+  color: #074793;
+}
+
+.successMessage,
+.errorMessage {
+  align-items: flex-start;
+  border-radius: 10px;
+  display: flex;
+  font-size: 0.76rem;
+  gap: 8px;
+  line-height: 1.45;
+  padding: 10px 11px;
+}
+
+.successMessage {
+  background: #e9f7ef;
+  color: #12663b;
+}
+
+.errorMessage {
+  background: #fff0ee;
+  color: #b42318;
+}
+
+.linkList {
+  display: grid;
+  gap: 1px;
+}
+
+.linkList a {
+  border-bottom: 1px solid #e8eaf0;
+  color: #074793;
+  font-size: 0.84rem;
+  font-weight: 690;
+  padding: 12px 0;
+}
+
+.linkList a:last-child {
+  border-bottom: 0;
+}
+
+.dangerCard {
+  border-color: #f0cccc;
+}
+
+.dangerHeading {
+  color: #b42318;
+}
+
+.dangerHeading h2,
+.dangerHeading p {
+  color: #b42318;
+}
+
+.panelDescription {
+  color: #697181;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: -5px 0 14px;
+}
+
+.deletionForm {
+  margin-top: -4px;
+}
+
+.deletionForm > p,
+.deletionMessage {
+  color: #697181;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.deletionMessage {
+  color: #b42318;
+}
+
+.deleteButton {
+  background: #b42318;
+  color: #fff;
+}
+
+.jsonPreview {
+  background: #172033;
+  border-radius: 14px;
+  color: #e8edf7;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.jsonPreview summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 13px 15px;
+}
+
+.jsonPreview pre {
+  border-top: 1px solid #344056;
+  color: #c8dcff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  max-height: 280px;
+  overflow: auto;
+  padding: 14px;
+  white-space: pre-wrap;
+}
+
+@media (min-width: 760px) {
+  .pageHeader {
+    margin: 0 -28px 28px;
+    padding: 15px 28px;
+  }
+
+  .profileLayout {
+    align-items: start;
+    grid-template-areas:
+      "summary tabs"
+      "summary panel";
+    grid-template-columns: minmax(230px, 0.7fr) minmax(0, 2fr);
+  }
+
+  .profileSummary {
+    align-items: flex-start;
+    flex-direction: column;
+    grid-area: summary;
+  }
+
+  .tabList {
+    display: grid;
+    grid-area: tabs;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .tabButton,
+  .activeTab {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .tabPanel {
+    grid-area: panel;
+  }
+}

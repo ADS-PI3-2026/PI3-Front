@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { submitAuthRequest } from "./auth-api";
+import { getAuthSession, saveAuthSession } from "./auth-session";
 import styles from "./page.module.css";
 
 const legalContent = {
@@ -805,6 +807,7 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
 }
 
 function LoginScreen({ onRegister, onRecovery }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -836,11 +839,13 @@ function LoginScreen({ onRegister, onRecovery }) {
     setMessage("");
     setPending(true);
     try {
-      await submitAuthRequest("login", {
+      const authResult = await submitAuthRequest("login", {
         email: normalizedEmail,
         password,
       });
+      saveAuthSession({ authResult, email: normalizedEmail });
       setEmail(normalizedEmail);
+      router.push("/garagem");
     } catch {
       setMessage("Não foi possível entrar. Confira os dados e tente novamente.");
     } finally {
@@ -977,16 +982,14 @@ function RegisterScreen({ onLogin, onLegal }) {
     setMessage("");
     setPending(true);
     try {
-      const identityPayload = accountType === "business"
-        ? { personType: "PJ", tradeName: normalizedName, cnpj: documentDigits }
-        : { personType: "PF", fullName: normalizedName, cpf: documentDigits };
       await submitAuthRequest("register", {
-        ...identityPayload,
+        name: normalizedName,
         email: normalizedEmail,
         password: form.password,
-        passwordConfirmation: form.confirm,
-        acceptedTerms: true,
-        acceptedPrivacyPolicy: true,
+        password_confirmation: form.confirm,
+        document_type: accountType === "business" ? "CNPJ" : "CPF",
+        document: documentDigits,
+        terms_accepted: true,
       });
       setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
       setMessage("");
@@ -1142,10 +1145,22 @@ function RegisterScreen({ onLogin, onLegal }) {
   );
 }
 
-export default function Home() {
+function AuthHome() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [screen, setScreen] = useState("login");
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [legalOpen, setLegalOpen] = useState(null);
+  const requestedLegalType = searchParams.get("legal");
+  const legalReturnPath = searchParams.get("returnTo") === "/perfil" ? "/perfil" : "/";
+  const legalType = legalOpen
+    ?? (["terms", "privacy"].includes(requestedLegalType) ? requestedLegalType : null);
+
+  useEffect(() => {
+    if (!requestedLegalType && getAuthSession()) {
+      router.replace("/garagem");
+    }
+  }, [requestedLegalType, router]);
 
   return (
     <div className={styles.page}>
@@ -1155,7 +1170,23 @@ export default function Home() {
         <RegisterScreen onLegal={setLegalOpen} onLogin={() => setScreen("login")} />
       )}
       {recoveryOpen && <RecoveryDialog onClose={() => setRecoveryOpen(false)} />}
-      {legalOpen && <LegalDialog onClose={() => setLegalOpen(null)} type={legalOpen} />}
+      {legalType && (
+        <LegalDialog
+          onClose={() => {
+            setLegalOpen(null);
+            if (requestedLegalType) router.replace(legalReturnPath);
+          }}
+          type={legalType}
+        />
+      )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className={styles.page} />}>
+      <AuthHome />
+    </Suspense>
   );
 }
