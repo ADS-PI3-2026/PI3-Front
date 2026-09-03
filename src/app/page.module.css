@@ -158,81 +158,64 @@
   outline: none;
 }
 
-.field {
-  display: grid;
-  gap: 7px;
+.verifiedIdentity {
+  align-items: center;
+  background: #eef5ff;
+  border: 1px solid #d4e3f7;
+  border-radius: 12px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 13px 14px;
 }
 
-.fieldLabel,
-.codeFieldset legend {
+.verifiedIdentity > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.verifiedIdentity span {
+  color: #16734b;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.verifiedIdentity strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.verifiedIdentity small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verifiedIdentity button {
+  color: var(--blue);
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.verifiedIdentity button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fieldLabel {
   color: #344056;
   font-size: 0.79rem;
   font-weight: 690;
 }
 
-.inputShell {
-  align-items: center;
-  background: #fbfcff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  display: flex;
-  min-height: 50px;
-  overflow: hidden;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-}
-
-.inputShell:focus-within {
-  background: var(--surface);
-  border-color: #4a79b2;
-  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
-}
-
-.inputError {
-  border-color: #d92d20;
-}
-
-.inputShell input {
-  background: transparent;
-  border: 0;
-  color: var(--ink);
-  flex: 1;
-  font: inherit;
-  font-size: 0.94rem;
-  min-width: 0;
-  outline: none;
-  padding: 0 12px 0 0;
-}
-
-.inputShell input::placeholder {
-  color: #939bad;
-}
-
-.inputIcon {
-  color: #80899b;
-  display: grid;
-  flex: 0 0 45px;
-  place-items: center;
-}
-
 .icon {
   display: block;
-}
-
-.visibilityButton {
-  align-self: stretch;
-  color: #737e91;
-  display: grid;
-  flex: 0 0 46px;
-  place-items: center;
-}
-
-.visibilityButton:hover {
-  color: var(--blue);
-}
-
-.fieldError {
-  color: var(--danger);
-  font-size: 0.76rem;
 }
 
 .forgotButton {
@@ -246,51 +229,9 @@
   text-underline-offset: 3px;
 }
 
-.primaryButton,
-.secondaryButton {
-  align-items: center;
-  border-radius: 12px;
-  display: flex;
-  font-size: 0.94rem;
-  font-weight: 720;
-  justify-content: center;
-  min-height: 51px;
-  padding: 12px 18px;
-  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
-  width: 100%;
-}
-
-.primaryButton {
-  background: var(--blue);
-  box-shadow: 0 9px 18px rgba(7, 71, 147, 0.2);
-  color: #fff;
-}
-
-.primaryButton:hover {
-  background: var(--blue-hover);
-  box-shadow: 0 11px 23px rgba(7, 71, 147, 0.25);
-  transform: translateY(-1px);
-}
-
-.primaryButton:active {
-  transform: translateY(0);
-}
-
-.primaryButton:disabled,
-.secondaryButton:disabled,
 .resendRow button:disabled {
   cursor: wait;
   opacity: 0.65;
-  transform: none;
-}
-
-.secondaryButton {
-  background: #f1f4f9;
-  color: var(--navy);
-}
-
-.secondaryButton:hover {
-  background: #e8edf5;
 }
 
 .authSwitch {
@@ -552,40 +493,6 @@
   margin-top: 20px;
 }
 
-.codeFieldset {
-  border: 0;
-}
-
-.codeFieldset legend {
-  margin-bottom: 9px;
-}
-
-.codeInputs {
-  display: grid;
-  gap: 7px;
-  grid-template-columns: repeat(6, 1fr);
-}
-
-.codeInputs input {
-  aspect-ratio: 0.88;
-  background: #fbfcff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--navy);
-  font: inherit;
-  font-size: 1.25rem;
-  font-weight: 750;
-  min-width: 0;
-  outline: none;
-  text-align: center;
-}
-
-.codeInputs input:focus {
-  background: #fff;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
-}
-
 .resendRow {
   color: var(--muted);
   display: flex;
@@ -619,7 +526,7 @@
   width: 76px;
 }
 
-.successState .primaryButton {
+.successAction {
   margin-top: 25px;
 }
 
@@ -683,9 +590,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dialog,
-  .primaryButton,
-  .inputShell {
+  .dialog {
     animation: none;
     transition: none;
   }

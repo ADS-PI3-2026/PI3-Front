@@ -1,10 +1,26 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { submitAuthRequest } from "./auth-api";
 import { getAuthSession, saveAuthSession } from "./auth-session";
+import ActionButton from "./components/action-button";
+import FormField from "./components/form-field";
+import VerificationCodeFields from "./components/verification-code-fields";
+import {
+  CODE_RESEND_WAIT_SECONDS,
+  VERIFICATION_CODE_LENGTH,
+  createEmptyCode,
+  formatCnpj,
+  formatCpf,
+  getAccountNameValidationError,
+  getDocumentValidationError,
+  getPasswordValidationError,
+  getPersonNameValidationError,
+  isValidEmail,
+  onlyDigits,
+} from "./lib/form-validation";
 import styles from "./page.module.css";
 
 const legalContent = {
@@ -20,144 +36,6 @@ const legalContent = {
   },
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PERSON_NAME_PATTERN = /^[\p{L}\s'-]+$/u;
-const PASSWORD_NUMBER_PATTERN = /\d/;
-const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^\p{L}\p{N}\s]/u;
-const VERIFICATION_CODE_LENGTH = 6;
-// Controle temporário de UX. O backend deverá aplicar o limite real de reenvio.
-const CODE_RESEND_WAIT_SECONDS = 120;
-
-function createEmptyCode() {
-  return Array.from({ length: VERIFICATION_CODE_LENGTH }, () => "");
-}
-
-function isValidEmail(value) {
-  return EMAIL_PATTERN.test(value.trim());
-}
-
-function onlyDigits(value) {
-  return value.replace(/\D/g, "");
-}
-
-function formatCpf(value) {
-  return onlyDigits(value)
-    .slice(0, 11)
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-}
-
-function formatCnpj(value) {
-  return onlyDigits(value)
-    .slice(0, 14)
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-}
-
-function hasRepeatedDigits(value) {
-  return /^(\d)\1+$/.test(value);
-}
-
-function isValidCpf(value) {
-  const cpf = onlyDigits(value);
-  if (cpf.length !== 11 || hasRepeatedDigits(cpf)) return false;
-
-  for (let digitIndex = 9; digitIndex <= 10; digitIndex += 1) {
-    const sum = cpf
-      .slice(0, digitIndex)
-      .split("")
-      .reduce((total, digit, index) => total + Number(digit) * (digitIndex + 1 - index), 0);
-    const remainder = (sum * 10) % 11;
-    const expectedDigit = remainder === 10 ? 0 : remainder;
-    if (expectedDigit !== Number(cpf[digitIndex])) return false;
-  }
-
-  return true;
-}
-
-function calculateCnpjDigit(base, weights) {
-  const sum = base
-    .split("")
-    .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
-  const remainder = sum % 11;
-  return remainder < 2 ? 0 : 11 - remainder;
-}
-
-function isValidCnpj(value) {
-  const cnpj = onlyDigits(value);
-  if (cnpj.length !== 14 || hasRepeatedDigits(cnpj)) return false;
-
-  const firstDigit = calculateCnpjDigit(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-  const secondDigit = calculateCnpjDigit(`${cnpj.slice(0, 12)}${firstDigit}`, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-
-  return cnpj.endsWith(`${firstDigit}${secondDigit}`);
-}
-
-function getNameValidationError(name, accountType) {
-  const normalizedName = name.trim().replace(/\s+/g, " ");
-
-  if (accountType === "business") {
-    if (!normalizedName) return "Informe o nome fantasia.";
-    if (normalizedName.length < 2) return "O nome fantasia precisa ter pelo menos 2 caracteres.";
-    if (!/\p{L}/u.test(normalizedName)) return "O nome fantasia precisa conter pelo menos uma letra.";
-    return "";
-  }
-
-  if (!normalizedName) return "Informe seu nome completo.";
-  if (!PERSON_NAME_PATTERN.test(normalizedName)) {
-    return "Use somente letras, espaços, apóstrofos e hífens no nome.";
-  }
-  const nameParts = normalizedName.split(" ");
-  if (nameParts.length < 2) return "Informe seu nome e sobrenome.";
-  if (nameParts.some((part) => !/\p{L}/u.test(part))) {
-    return "Cada parte do nome precisa conter pelo menos uma letra.";
-  }
-  return "";
-}
-
-function getDocumentValidationError(document, accountType) {
-  const digits = onlyDigits(document);
-
-  if (accountType === "business") {
-    if (!digits) return "Informe o CNPJ.";
-    if (digits.length !== 14) return "Digite os 14 dígitos do CNPJ.";
-    if (!isValidCnpj(digits)) return "Digite um CNPJ válido.";
-    return "";
-  }
-
-  if (!digits) return "Informe o CPF.";
-  if (digits.length !== 11) return "Digite os 11 dígitos do CPF.";
-  if (!isValidCpf(digits)) return "Digite um CPF válido.";
-  return "";
-}
-
-function getPasswordValidationError(password) {
-  if (!password) {
-    return "Crie uma senha.";
-  }
-  if (password.length < 8) {
-    return "A senha precisa ter pelo menos 8 caracteres.";
-  }
-
-  const hasNumber = PASSWORD_NUMBER_PATTERN.test(password);
-  const hasSpecialCharacter = PASSWORD_SPECIAL_CHARACTER_PATTERN.test(password);
-
-  if (!hasNumber && !hasSpecialCharacter) {
-    return "Inclua pelo menos um número e um caractere especial.";
-  }
-  if (!hasNumber) {
-    return "Inclua pelo menos um número.";
-  }
-  if (!hasSpecialCharacter) {
-    return "Inclua pelo menos um caractere especial.";
-  }
-
-  return "";
-}
-
 function Icon({ name, size = 20 }) {
   const paths = {
     arrow: <path d="m15 18-6-6 6-6M9 12h12" />,
@@ -167,24 +45,6 @@ function Icon({ name, size = 20 }) {
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />
         <path d="m3 7 9 6 9-6" />
-      </>
-    ),
-    idCard: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <circle cx="8" cy="10" r="2" />
-        <path d="M5.5 15a2.5 2.5 0 0 1 5 0M13 9h5M13 13h5" />
-      </>
-    ),
-    eye: (
-      <>
-        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-        <circle cx="12" cy="12" r="2.5" />
-      </>
-    ),
-    eyeOff: (
-      <>
-        <path d="m3 3 18 18M10.6 6.2A9.6 9.6 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-2.1 2.8M6.7 6.7C3.6 8.5 2 12 2 12s3.5 6 10 6c1.5 0 2.8-.3 3.9-.8M9.9 9.9a3 3 0 0 0 4.2 4.2" />
       </>
     ),
     lock: (
@@ -197,12 +57,6 @@ function Icon({ name, size = 20 }) {
       <>
         <path d="M12 3 5 6v5c0 4.7 2.9 8.1 7 10 4.1-1.9 7-5.3 7-10V6l-7-3Z" />
         <path d="m9 12 2 2 4-4" />
-      </>
-    ),
-    user: (
-      <>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
       </>
     ),
   };
@@ -240,86 +94,6 @@ function Brand({ compact = false }) {
         {!compact && <p className={styles.brandTagline}>Seu carro. Sua história.</p>}
       </div>
     </div>
-  );
-}
-
-function Field({
-  autoComplete,
-  error,
-  icon,
-  inputMode,
-  label,
-  maxLength,
-  minLength,
-  name,
-  onChange,
-  placeholder,
-  required = true,
-  toggleLabel,
-  type = "text",
-  value,
-  onToggle,
-}) {
-  return (
-    <label className={styles.field}>
-      <span className={styles.fieldLabel}>{label}</span>
-      <span className={`${styles.inputShell} ${error ? styles.inputError : ""}`}>
-        <span className={styles.inputIcon}><Icon name={icon} /></span>
-        <input
-          aria-invalid={Boolean(error)}
-          autoComplete={autoComplete}
-          inputMode={inputMode}
-          maxLength={maxLength}
-          minLength={minLength}
-          name={name}
-          onChange={onChange}
-          placeholder={placeholder}
-          required={required}
-          type={type}
-          value={value}
-        />
-        {onToggle && (
-          <button
-            aria-label={toggleLabel}
-            className={styles.visibilityButton}
-            onClick={onToggle}
-            type="button"
-          >
-            <Icon name={type === "password" ? "eye" : "eyeOff"} />
-          </button>
-        )}
-      </span>
-      {error && <span className={styles.fieldError}>{error}</span>}
-    </label>
-  );
-}
-
-function VerificationCodeFields({ code, error, inputRefs, onChange }) {
-  return (
-    <fieldset className={styles.codeFieldset}>
-      <legend>Código de verificação</legend>
-      <div className={styles.codeInputs}>
-        {code.map((digit, index) => (
-          <input
-            aria-invalid={Boolean(error)}
-            aria-label={`Dígito ${index + 1}`}
-            autoComplete={index === 0 ? "one-time-code" : "off"}
-            autoFocus={index === 0}
-            inputMode="numeric"
-            key={index}
-            maxLength={VERIFICATION_CODE_LENGTH}
-            onChange={(event) => onChange(index, event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Backspace" && !digit && index > 0) {
-                inputRefs.current[index - 1]?.focus();
-              }
-            }}
-            ref={(element) => { inputRefs.current[index] = element; }}
-            value={digit}
-          />
-        ))}
-      </div>
-    </fieldset>
   );
 }
 
@@ -385,7 +159,7 @@ function LegalDialog({ type, onClose }) {
         </p>
         <p className={styles.legalUpdated}>Última atualização: agosto de 2026.</p>
       </div>
-      <button className={styles.primaryButton} onClick={onClose} type="button">Entendi</button>
+      <ActionButton onClick={onClose} type="button">Entendi</ActionButton>
     </Dialog>
   );
 }
@@ -401,7 +175,6 @@ function RecoveryDialog({ onClose }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
-  const codeRefs = useRef([]);
 
   useEffect(() => {
     if (step !== "code" || timeLeft <= 0) return;
@@ -413,23 +186,6 @@ function RecoveryDialog({ onClose }) {
 
   const seconds = String(timeLeft % 60).padStart(2, "0");
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-
-  const updateCode = (index, rawValue) => {
-    const digits = rawValue.replace(/\D/g, "");
-    setMessage("");
-    if (!digits) {
-      setCode((current) => current.map((digit, position) => position === index ? "" : digit));
-      return;
-    }
-
-    const next = [...code];
-    digits.slice(0, VERIFICATION_CODE_LENGTH - index).split("").forEach((digit, offset) => {
-      next[index + offset] = digit;
-    });
-    setCode(next);
-    const focusIndex = Math.min(index + digits.length, VERIFICATION_CODE_LENGTH - 1);
-    codeRefs.current[focusIndex]?.focus();
-  };
 
   const submitEmail = async (event) => {
     event.preventDefault();
@@ -523,7 +279,6 @@ function RecoveryDialog({ onClose }) {
       await submitAuthRequest("requestPasswordReset", { email });
       setCode(createEmptyCode());
       setTimeLeft(CODE_RESEND_WAIT_SECONDS);
-      codeRefs.current[0]?.focus();
     } catch {
       setMessage("Não foi possível reenviar o código. Tente novamente.");
     } finally {
@@ -551,7 +306,7 @@ function RecoveryDialog({ onClose }) {
             <h2>Esqueceu sua senha?</h2>
             <p>Informe o e-mail da sua conta. Enviaremos um código para confirmar sua identidade.</p>
           </div>
-          <Field
+          <FormField
             autoComplete="email"
             icon="envelope"
             label="E-mail"
@@ -567,10 +322,10 @@ function RecoveryDialog({ onClose }) {
             value={email}
           />
           {message && <p className={styles.formMessageError}>{message}</p>}
-          <button className={styles.primaryButton} disabled={pending} type="submit">
+          <ActionButton disabled={pending} type="submit">
             {pending ? "Enviando..." : "Enviar código"}
-          </button>
-          <button className={styles.secondaryButton} onClick={onClose} type="button">Voltar para o login</button>
+          </ActionButton>
+          <ActionButton onClick={onClose} type="button" variant="secondary">Voltar para o login</ActionButton>
         </form>
       )}
 
@@ -585,8 +340,10 @@ function RecoveryDialog({ onClose }) {
           <VerificationCodeFields
             code={code}
             error={message}
-            inputRefs={codeRefs}
-            onChange={updateCode}
+            onChange={(nextCode) => {
+              setCode(nextCode);
+              setMessage("");
+            }}
           />
           {message && <p className={styles.formMessageError}>{message}</p>}
           <div className={styles.resendRow}>
@@ -603,10 +360,10 @@ function RecoveryDialog({ onClose }) {
               </button>
             )}
           </div>
-          <button className={styles.primaryButton} disabled={pending} type="submit">
+          <ActionButton disabled={pending} type="submit">
             {pending ? "Validando..." : "Validar código"}
-          </button>
-          <button className={styles.secondaryButton} onClick={() => setStep("email")} type="button">Alterar e-mail</button>
+          </ActionButton>
+          <ActionButton onClick={() => setStep("email")} type="button" variant="secondary">Alterar e-mail</ActionButton>
         </form>
       )}
 
@@ -619,7 +376,7 @@ function RecoveryDialog({ onClose }) {
             <p>Use pelo menos 8 caracteres, incluindo um número e um caractere especial.</p>
             {/* TODO: Junto com o backend, conferir se a senha inserida não é idêntica à antiga. */}
           </div>
-          <Field
+          <FormField
             autoComplete="new-password"
             icon="lock"
             label="Nova senha"
@@ -637,7 +394,7 @@ function RecoveryDialog({ onClose }) {
             type={showPassword ? "text" : "password"}
             value={password}
           />
-          <Field
+          <FormField
             autoComplete="new-password"
             icon="lock"
             label="Confirmar nova senha"
@@ -654,9 +411,9 @@ function RecoveryDialog({ onClose }) {
             value={confirmPassword}
           />
           {message && <p className={styles.formMessageError}>{message}</p>}
-          <button className={styles.primaryButton} disabled={pending} type="submit">
+          <ActionButton disabled={pending} type="submit">
             {pending ? "Salvando..." : "Redefinir senha"}
-          </button>
+          </ActionButton>
         </form>
       )}
 
@@ -666,7 +423,7 @@ function RecoveryDialog({ onClose }) {
           <p className={styles.eyebrow}>Tudo certo</p>
           <h2>Senha redefinida!</h2>
           <p>Sua nova senha foi salva. Você já pode acessar o Legado Car.</p>
-          <button className={styles.primaryButton} onClick={onClose} type="button">Voltar para o login</button>
+          <ActionButton className={styles.successAction} onClick={onClose} type="button">Voltar para o login</ActionButton>
         </div>
       )}
     </Dialog>
@@ -676,10 +433,10 @@ function RecoveryDialog({ onClose }) {
 function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
   const [step, setStep] = useState("code");
   const [code, setCode] = useState(createEmptyCode);
+  const [verificationResult, setVerificationResult] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [pending, setPending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
-  const codeRefs = useRef([]);
 
   useEffect(() => {
     if (step !== "code" || timeLeft <= 0) return;
@@ -691,24 +448,6 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
 
   const seconds = String(timeLeft % 60).padStart(2, "0");
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-
-  const updateCode = (index, rawValue) => {
-    const digits = rawValue.replace(/\D/g, "");
-    setFeedback(null);
-
-    if (!digits) {
-      setCode((current) => current.map((digit, position) => position === index ? "" : digit));
-      return;
-    }
-
-    const next = [...code];
-    digits.slice(0, VERIFICATION_CODE_LENGTH - index).split("").forEach((digit, offset) => {
-      next[index + offset] = digit;
-    });
-    setCode(next);
-    const focusIndex = Math.min(index + digits.length, VERIFICATION_CODE_LENGTH - 1);
-    codeRefs.current[focusIndex]?.focus();
-  };
 
   const submitCode = async (event) => {
     event.preventDefault();
@@ -722,10 +461,11 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
     setFeedback(null);
     setPending(true);
     try {
-      await submitAuthRequest("verifyEmail", {
+      const result = await submitAuthRequest("verifyEmail", {
         email,
         code: verificationCode,
       });
+      setVerificationResult(result);
       setStep("success");
     } catch {
       setFeedback({ type: "error", text: "O código não pôde ser validado. Confira e tente novamente." });
@@ -744,7 +484,6 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
       setCode(createEmptyCode());
       setTimeLeft(CODE_RESEND_WAIT_SECONDS);
       setFeedback({ type: "success", text: "Um novo código foi enviado para o seu e-mail." });
-      codeRefs.current[0]?.focus();
     } catch {
       setFeedback({ type: "error", text: "Não foi possível reenviar o código. Tente novamente." });
     } finally {
@@ -765,8 +504,10 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
           <VerificationCodeFields
             code={code}
             error={feedback?.type === "error"}
-            inputRefs={codeRefs}
-            onChange={updateCode}
+            onChange={(nextCode) => {
+              setCode(nextCode);
+              setFeedback(null);
+            }}
           />
           {feedback && (
             <p
@@ -786,20 +527,20 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
               </button>
             )}
           </div>
-          <button className={styles.primaryButton} disabled={pending} type="submit">
+          <ActionButton disabled={pending} type="submit">
             {pending ? "Validando..." : "Confirmar e-mail"}
-          </button>
-          <button className={styles.secondaryButton} onClick={onClose} type="button">Voltar ao cadastro</button>
+          </ActionButton>
+          <ActionButton onClick={onClose} type="button" variant="secondary">Voltar ao cadastro</ActionButton>
         </form>
       )}
 
       {step === "success" && (
         <div className={styles.successState}>
           <span className={styles.successIcon}><Icon name="check" size={34} /></span>
-          <p className={styles.eyebrow}>Cadastro confirmado</p>
+          <p className={styles.eyebrow}>Identidade confirmada</p>
           <h2>E-mail confirmado!</h2>
-          <p>Sua conta está pronta. Você já pode acessar o Legado Car.</p>
-          <button className={styles.primaryButton} onClick={onConfirmed} type="button">Ir para o login</button>
+          <p>Agora você pode completar os dados necessários para criar sua conta.</p>
+          <ActionButton className={styles.successAction} onClick={() => onConfirmed(verificationResult)} type="button">Continuar cadastro</ActionButton>
         </div>
       )}
     </Dialog>
@@ -868,7 +609,7 @@ function LoginScreen({ onRegister, onRecovery }) {
             noValidate
             onSubmit={submit}
           >
-            <Field
+            <FormField
               autoComplete="email"
               error={errors.email}
               icon="envelope"
@@ -883,7 +624,7 @@ function LoginScreen({ onRegister, onRecovery }) {
               type="email"
               value={email}
             />
-            <Field
+            <FormField
               autoComplete="current-password"
               error={errors.password}
               icon="lock"
@@ -903,9 +644,9 @@ function LoginScreen({ onRegister, onRecovery }) {
             />
             <button className={styles.forgotButton} onClick={onRecovery} type="button">Esqueci minha senha</button>
             {message && <p className={styles.formMessageError}>{message}</p>}
-            <button className={styles.primaryButton} disabled={pending} type="submit">
+            <ActionButton disabled={pending} type="submit">
               {pending ? "Entrando..." : "Entrar"}
-            </button>
+            </ActionButton>
           </form>
         </section>
         <p className={styles.authSwitch}>Não tem uma conta? <button onClick={onRegister} type="button">Cadastre-se</button></p>
@@ -916,8 +657,12 @@ function LoginScreen({ onRegister, onRecovery }) {
 }
 
 function RegisterScreen({ onLogin, onLegal }) {
+  const router = useRouter();
+  const [step, setStep] = useState("identity");
   const [accountType, setAccountType] = useState("person");
   const [form, setForm] = useState({ name: "", document: "", email: "", password: "", confirm: "" });
+  const [emailVerificationToken, setEmailVerificationToken] = useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -933,8 +678,8 @@ function RegisterScreen({ onLogin, onLegal }) {
   const changeAccountType = (nextAccountType) => {
     if (nextAccountType === accountType) return;
     setAccountType(nextAccountType);
-    setForm((current) => ({ ...current, name: "", document: "" }));
-    setErrors((current) => ({ ...current, name: "", document: "" }));
+    setForm((current) => ({ ...current, document: "" }));
+    setErrors((current) => ({ ...current, document: "" }));
     setMessage("");
   };
 
@@ -946,22 +691,62 @@ function RegisterScreen({ onLogin, onLegal }) {
     setErrors((current) => ({ ...current, document: "" }));
   };
 
-  const submit = async (event) => {
+  const submitIdentity = async (event) => {
     event.preventDefault();
     const normalizedName = form.name.trim().replace(/\s+/g, " ");
-    const documentDigits = onlyDigits(form.document);
     const normalizedEmail = form.email.trim().toLowerCase();
     const nextErrors = {};
 
-    const nameError = getNameValidationError(normalizedName, accountType);
+    const nameError = getAccountNameValidationError(normalizedName);
     if (nameError) nextErrors.name = nameError;
-    const documentError = getDocumentValidationError(form.document, accountType);
-    if (documentError) nextErrors.document = documentError;
     if (!normalizedEmail) {
       nextErrors.email = "Informe seu e-mail.";
     } else if (!isValidEmail(normalizedEmail)) {
       nextErrors.email = "Digite um endereço de e-mail válido.";
     }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      setMessage("");
+      return;
+    }
+
+    setErrors({});
+    setMessage("");
+
+    if (normalizedEmail === verifiedEmail) {
+      setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
+      setStep("details");
+      return;
+    }
+
+    setPending(true);
+    try {
+      await submitAuthRequest("requestEmailVerification", { email: normalizedEmail });
+      setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
+      setConfirmationEmail(normalizedEmail);
+    } catch {
+      setMessage("Não foi possível enviar o código. Tente novamente.");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const submitRegistration = async (event) => {
+    event.preventDefault();
+    const nextErrors = {};
+    const nameError = accountType === "person"
+      ? getPersonNameValidationError(form.name)
+      : getAccountNameValidationError(form.name);
+
+    if (nameError) {
+      setErrors({ name: nameError });
+      setMessage("");
+      setStep("identity");
+      return;
+    }
+
+    const documentError = getDocumentValidationError(form.document, accountType);
+    if (documentError) nextErrors.document = documentError;
     const passwordError = getPasswordValidationError(form.password);
     if (passwordError) nextErrors.password = passwordError;
     if (!form.confirm) {
@@ -978,22 +763,24 @@ function RegisterScreen({ onLogin, onLegal }) {
       return;
     }
 
+    const payload = {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      password_confirmation: form.confirm,
+      document_type: accountType === "business" ? "CNPJ" : "CPF",
+      document: onlyDigits(form.document),
+      terms_accepted: true,
+      ...(emailVerificationToken ? { email_verification_token: emailVerificationToken } : {}),
+    };
+
     setErrors({});
     setMessage("");
     setPending(true);
     try {
-      await submitAuthRequest("register", {
-        name: normalizedName,
-        email: normalizedEmail,
-        password: form.password,
-        password_confirmation: form.confirm,
-        document_type: accountType === "business" ? "CNPJ" : "CPF",
-        document: documentDigits,
-        terms_accepted: true,
-      });
-      setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
-      setMessage("");
-      setConfirmationEmail(normalizedEmail);
+      const authResult = await submitAuthRequest("register", payload);
+      saveAuthSession({ authResult, email: form.email });
+      router.replace("/garagem");
     } catch {
       setMessage("Não foi possível criar a conta. Tente novamente.");
     } finally {
@@ -1010,124 +797,147 @@ function RegisterScreen({ onLogin, onLegal }) {
       </header>
       <div className={styles.registerContent}>
         <div className={styles.cardHeading}>
-          <p className={styles.eyebrow}>Comece sua jornada</p>
-          <h1>Criar conta</h1>
-          <p>Preencha seus dados para começar a preservar a história dos seus veículos.</p>
+          <p className={styles.eyebrow}>Etapa {step === "identity" ? "1" : "2"} de 2</p>
+          <h1>{step === "identity" ? "Comece seu cadastro" : "Complete seu cadastro"}</h1>
+          <p>{step === "identity"
+            ? "Primeiro, informe seu nome e confirme o endereço de e-mail."
+            : "Escolha o tipo de conta e informe os dados restantes."}</p>
         </div>
-        <form className={styles.authForm} noValidate onSubmit={submit}>
-          <div className={styles.accountTypeField}>
-            <span className={styles.fieldLabel}>Tipo de cadastro</span>
-            <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
-              <button
-                aria-pressed={accountType === "person"}
-                className={accountType === "person" ? styles.accountTypeActive : ""}
-                onClick={() => changeAccountType("person")}
-                type="button"
-              >
-                Pessoa física
-              </button>
-              <button
-                aria-pressed={accountType === "business"}
-                className={accountType === "business" ? styles.accountTypeActive : ""}
-                onClick={() => changeAccountType("business")}
-                type="button"
-              >
-                Pessoa jurídica
-              </button>
-            </div>
-          </div>
-          <Field
-            autoComplete={accountType === "business" ? "organization" : "name"}
-            error={errors.name}
-            icon="user"
-            label={accountType === "business" ? "Nome fantasia" : "Nome completo"}
-            maxLength={100}
-            name="name"
-            onChange={update("name")}
-            placeholder={accountType === "business" ? "Nome da sua empresa" : "Seu nome completo"}
-            value={form.name}
-          />
-          <Field
-            autoComplete="off"
-            error={errors.document}
-            icon="idCard"
-            inputMode="numeric"
-            label={accountType === "business" ? "CNPJ" : "CPF"}
-            maxLength={accountType === "business" ? 18 : 14}
-            name={accountType === "business" ? "cnpj" : "cpf"}
-            onChange={updateDocument}
-            placeholder={accountType === "business" ? "00.000.000/0000-00" : "000.000.000-00"}
-            value={form.document}
-          />
-          <Field
-            autoComplete="email"
-            error={errors.email}
-            icon="envelope"
-            label="E-mail"
-            maxLength={254}
-            name="register-email"
-            onChange={update("email")}
-            placeholder="seu@email.com"
-            type="email"
-            value={form.email}
-          />
-          <Field
-            autoComplete="new-password"
-            error={errors.password}
-            icon="lock"
-            label="Senha"
-            maxLength={72}
-            minLength={8}
-            name="register-password"
-            onChange={update("password")}
-            onToggle={() => setShowPassword((current) => !current)}
-            placeholder="8+ caracteres, número e símbolo"
-            toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-          />
-          <Field
-            autoComplete="new-password"
-            error={errors.confirm}
-            icon="lock"
-            label="Confirmar senha"
-            maxLength={72}
-            minLength={8}
-            name="register-confirm"
-            onChange={update("confirm")}
-            placeholder="Repita sua senha"
-            type={showPassword ? "text" : "password"}
-            value={form.confirm}
-          />
-          <label className={styles.consentBox}>
-            <input
-              aria-required="true"
-              checked={accepted}
-              onChange={(event) => {
-                setAccepted(event.target.checked);
-                if (event.target.checked) {
-                  setErrors((current) => ({ ...current, terms: "" }));
-                }
-              }}
-              required
-              type="checkbox"
+        {step === "identity" ? (
+          <form className={styles.authForm} noValidate onSubmit={submitIdentity}>
+            <FormField
+              autoComplete="name"
+              error={errors.name}
+              icon="user"
+              label="Nome"
+              maxLength={100}
+              name="name"
+              onChange={update("name")}
+              placeholder="Seu nome ou nome fantasia"
+              value={form.name}
             />
-            <span className={styles.customCheckbox}><Icon name="check" size={16} /></span>
-            <span>
-              Li e concordo com os{" "}
-              <button onClick={(event) => { event.preventDefault(); onLegal("terms"); }} type="button">Termos de Uso</button>
-              {" "}e a{" "}
-              <button onClick={(event) => { event.preventDefault(); onLegal("privacy"); }} type="button">Política de Privacidade</button>
-              <span aria-hidden="true" className={styles.requiredMark}> *</span>
-              <span className={styles.srOnly}> Campo obrigatório.</span>
-            </span>
-          </label>
-          {errors.terms && <p className={styles.formMessageError}>{errors.terms}</p>}
-          {message && <p className={styles.formMessageError}>{message}</p>}
-          <button className={styles.primaryButton} disabled={pending} type="submit">
-            {pending ? "Criando conta..." : "Criar minha conta"}
-          </button>
-        </form>
+            <FormField
+              autoComplete="email"
+              error={errors.email}
+              icon="envelope"
+              label="E-mail"
+              maxLength={254}
+              name="register-email"
+              onChange={update("email")}
+              placeholder="seu@email.com"
+              type="email"
+              value={form.email}
+            />
+            {message && <p className={styles.formMessageError}>{message}</p>}
+            <ActionButton disabled={pending} type="submit">
+              {pending
+                ? "Enviando código..."
+                : form.email.trim().toLowerCase() === verifiedEmail
+                  ? "Salvar e continuar"
+                  : "Confirmar e avançar"}
+            </ActionButton>
+          </form>
+        ) : (
+          <form className={styles.authForm} noValidate onSubmit={submitRegistration}>
+            <div className={styles.verifiedIdentity}>
+              <div>
+                <span>E-mail confirmado</span>
+                <strong>{form.name}</strong>
+                <small>{form.email}</small>
+              </div>
+              <button onClick={() => setStep("identity")} type="button">Alterar</button>
+            </div>
+            <div className={styles.accountTypeField}>
+              <span className={styles.fieldLabel}>Tipo de cadastro</span>
+              <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
+                <button
+                  aria-pressed={accountType === "person"}
+                  className={accountType === "person" ? styles.accountTypeActive : ""}
+                  onClick={() => changeAccountType("person")}
+                  type="button"
+                >
+                  Pessoa física
+                </button>
+                <button
+                  aria-pressed={accountType === "business"}
+                  className={accountType === "business" ? styles.accountTypeActive : ""}
+                  onClick={() => changeAccountType("business")}
+                  type="button"
+                >
+                  Pessoa jurídica
+                </button>
+              </div>
+            </div>
+            <FormField
+              autoComplete="off"
+              error={errors.document}
+              icon="idCard"
+              inputMode="numeric"
+              label={accountType === "business" ? "CNPJ" : "CPF"}
+              maxLength={accountType === "business" ? 18 : 14}
+              name={accountType === "business" ? "cnpj" : "cpf"}
+              onChange={updateDocument}
+              placeholder={accountType === "business" ? "00.000.000/0000-00" : "000.000.000-00"}
+              value={form.document}
+            />
+            <FormField
+              autoComplete="new-password"
+              error={errors.password}
+              icon="lock"
+              label="Senha"
+              maxLength={72}
+              minLength={8}
+              name="register-password"
+              onChange={update("password")}
+              onToggle={() => setShowPassword((current) => !current)}
+              placeholder="8+ caracteres, número e símbolo"
+              toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+            />
+            <FormField
+              autoComplete="new-password"
+              error={errors.confirm}
+              icon="lock"
+              label="Confirmar senha"
+              maxLength={72}
+              minLength={8}
+              name="register-confirm"
+              onChange={update("confirm")}
+              placeholder="Repita sua senha"
+              type={showPassword ? "text" : "password"}
+              value={form.confirm}
+            />
+            <label className={styles.consentBox}>
+              <input
+                aria-required="true"
+                checked={accepted}
+                onChange={(event) => {
+                  setAccepted(event.target.checked);
+                  if (event.target.checked) {
+                    setErrors((current) => ({ ...current, terms: "" }));
+                  }
+                }}
+                required
+                type="checkbox"
+              />
+              <span className={styles.customCheckbox}><Icon name="check" size={16} /></span>
+              <span>
+                Li e concordo com os{" "}
+                <button onClick={(event) => { event.preventDefault(); onLegal("terms"); }} type="button">Termos de Uso</button>
+                {" "}e a{" "}
+                <button onClick={(event) => { event.preventDefault(); onLegal("privacy"); }} type="button">Política de Privacidade</button>
+                <span aria-hidden="true" className={styles.requiredMark}> *</span>
+                <span className={styles.srOnly}> Campo obrigatório.</span>
+              </span>
+            </label>
+            {errors.terms && <p className={styles.formMessageError}>{errors.terms}</p>}
+            {message && <p className={styles.formMessageError}>{message}</p>}
+            <ActionButton disabled={pending} type="submit">
+              {pending ? "Criando conta..." : "Criar conta e entrar"}
+            </ActionButton>
+          </form>
+        )}
         <p className={styles.authSwitch}>Já tem uma conta? <button onClick={onLogin} type="button">Fazer login</button></p>
       </div>
 
@@ -1135,9 +945,15 @@ function RegisterScreen({ onLogin, onLegal }) {
         <EmailConfirmationDialog
           email={confirmationEmail}
           onClose={() => setConfirmationEmail("")}
-          onConfirmed={() => {
+          onConfirmed={(verificationResult) => {
+            setVerifiedEmail(confirmationEmail);
             setConfirmationEmail("");
-            onLogin();
+            setEmailVerificationToken(
+              verificationResult?.data?.verification_token
+              ?? verificationResult?.data?.token
+              ?? "",
+            );
+            setStep("details");
           }}
         />
       )}

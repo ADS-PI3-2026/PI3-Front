@@ -1,66 +1,44 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle,
-  EnvelopeSimple,
   FloppyDisk,
   GearSix,
-  IdentificationCard,
-  Phone,
   ShieldCheck,
   SignOut,
   Trash,
   UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
+import ActionButton from "../components/action-button";
 import AppShell from "../components/app-shell";
+import FormField from "../components/form-field";
+import VerificationCodeFields from "../components/verification-code-fields";
 import { submitJsonRequest } from "../app-api";
-import { clearAuthSession } from "../auth-session";
+import { clearAuthSession, getAuthSession } from "../auth-session";
+import {
+  CODE_RESEND_WAIT_SECONDS,
+  VERIFICATION_CODE_LENGTH,
+  createEmptyCode,
+  getAccountNameValidationError,
+} from "../lib/form-validation";
 import { mockUser } from "../mock-data";
 import styles from "./page.module.css";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
 const PROFILE_TABS = [
-  { id: "settings", label: "Alterar configurações", Icon: GearSix },
+  { id: "settings", label: "Alterar dados pessoais", Icon: GearSix },
   { id: "privacy", label: "Privacidade e termos", Icon: ShieldCheck },
   { id: "access", label: "Acesso à conta", Icon: SignOut },
   { id: "deletion", label: "Excluir conta", Icon: Trash },
 ];
 
-function onlyDigits(value) {
-  return value.replace(/\D/g, "");
-}
-
-function formatPhone(value) {
-  return onlyDigits(value)
-    .slice(0, 11)
-    .replace(/^(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-}
-
-function ProfileField({ error, Icon, label, ...inputProps }) {
-  return (
-    <label className={styles.field}>
-      <span>{label}</span>
-      <span className={`${styles.inputShell} ${error ? styles.inputError : ""}`}>
-        <Icon aria-hidden size={20} weight="regular" />
-        <input aria-invalid={Boolean(error)} {...inputProps} />
-      </span>
-      {error && <small className={styles.fieldError}>{error}</small>}
-    </label>
-  );
-}
-
 export default function ProfilePage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: mockUser.name,
-    email: mockUser.email,
-    phone: mockUser.phone,
   });
   const [errors, setErrors] = useState({});
   const [pending, setPending] = useState(false);
@@ -68,9 +46,25 @@ export default function ProfilePage() {
   const [submittedJson, setSubmittedJson] = useState(null);
   const [submittedFrom, setSubmittedFrom] = useState("");
   const [activeTab, setActiveTab] = useState("settings");
+  const [deletionStep, setDeletionStep] = useState("request");
+  const [deletionCode, setDeletionCode] = useState(createEmptyCode);
+  const [verifiedDeletionCode, setVerifiedDeletionCode] = useState("");
+  const [deletionVerificationToken, setDeletionVerificationToken] = useState("");
   const [deletionConfirmation, setDeletionConfirmation] = useState("");
   const [deletionMessage, setDeletionMessage] = useState("");
+  const [deletionTimeLeft, setDeletionTimeLeft] = useState(0);
   const tabRefs = useRef([]);
+
+  useEffect(() => {
+    if (deletionStep !== "code" || deletionTimeLeft <= 0) return;
+    const timer = window.setInterval(() => {
+      setDeletionTimeLeft((current) => Math.max(current - 1, 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [deletionStep, deletionTimeLeft]);
+
+  const deletionSeconds = String(deletionTimeLeft % 60).padStart(2, "0");
+  const deletionMinutes = String(Math.floor(deletionTimeLeft / 60)).padStart(2, "0");
 
   const handleTabKeyDown = (event, currentIndex) => {
     let nextIndex = null;
@@ -87,52 +81,38 @@ export default function ProfilePage() {
     tabRefs.current[nextIndex]?.focus();
   };
 
-  const update = (key) => (event) => {
-    const value = key === "phone" ? formatPhone(event.target.value) : event.target.value;
-    setForm((current) => ({ ...current, [key]: value }));
-    setErrors((current) => ({ ...current, [key]: "" }));
+  const updateName = (event) => {
+    setForm({ name: event.target.value });
+    setErrors({});
     setMessage("");
   };
 
   const submitProfile = async (event) => {
     event.preventDefault();
     const name = form.name.trim().replace(/\s+/g, " ");
-    const email = form.email.trim().toLowerCase();
-    const phone = onlyDigits(form.phone);
     const nextErrors = {};
 
-    if (name.split(" ").filter(Boolean).length < 2) {
-      nextErrors.name = "Informe nome e sobrenome.";
-    }
-    if (!EMAIL_PATTERN.test(email)) {
-      nextErrors.email = "Digite um e-mail válido.";
-    }
-    if (phone.length !== 11) {
-      nextErrors.phone = "Digite um celular com DDD.";
-    }
+    const nameError = getAccountNameValidationError(name);
+    if (nameError) nextErrors.name = nameError;
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
     }
 
-    const payload = {
-      name,
-      email,
-      phone,
-      document_type: mockUser.personType === "PJ" ? "CNPJ" : "CPF",
-      document: onlyDigits(mockUser.document),
-    };
+    const payload = { name };
 
     setPending(true);
     setMessage("");
     try {
       const result = await submitJsonRequest("/users/me", {
+        accessToken: getAuthSession()?.accessToken,
         method: "PATCH",
         payload,
       });
       setSubmittedJson(payload);
       setSubmittedFrom("settings");
+      setForm({ name });
       setMessage(result.mode === "preview"
         ? "Dados validados. O JSON está pronto para a futura API."
         : "Perfil atualizado com sucesso.");
@@ -143,34 +123,94 @@ export default function ProfilePage() {
     }
   };
 
+  const requestDeletionCode = async () => {
+    setPending(true);
+    setDeletionMessage("");
+    try {
+      await submitJsonRequest("/users/me/deletion-otp", {
+        accessToken: getAuthSession()?.accessToken,
+        method: "POST",
+        payload: { purpose: "account_deletion" },
+      });
+      setDeletionCode(createEmptyCode());
+      setDeletionTimeLeft(CODE_RESEND_WAIT_SECONDS);
+      setDeletionStep("code");
+    } catch {
+      setDeletionMessage("Não foi possível enviar o código. Tente novamente.");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const verifyDeletionCode = async (event) => {
+    event.preventDefault();
+    const otpCode = deletionCode.join("");
+    if (otpCode.length !== VERIFICATION_CODE_LENGTH) {
+      setDeletionMessage("Digite os seis números enviados para o seu e-mail cadastrado.");
+      return;
+    }
+
+    setPending(true);
+    setDeletionMessage("");
+    try {
+      const result = await submitJsonRequest("/users/me/deletion-otp/verify", {
+        accessToken: getAuthSession()?.accessToken,
+        method: "POST",
+        payload: { code: otpCode, purpose: "account_deletion" },
+      });
+      setVerifiedDeletionCode(otpCode);
+      setDeletionVerificationToken(
+        result?.data?.verification_token
+        ?? result?.data?.token
+        ?? "",
+      );
+      setDeletionStep("confirm");
+    } catch {
+      setDeletionMessage("O código não pôde ser validado. Confira e tente novamente.");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const resendDeletionCode = async () => {
+    if (deletionTimeLeft > 0) return;
+    await requestDeletionCode();
+  };
+
   const submitDeletionRequest = async (event) => {
     event.preventDefault();
-    if (deletionConfirmation !== "EXCLUIR") {
-      setDeletionMessage("Digite EXCLUIR para confirmar a solicitação.");
+    if (deletionConfirmation !== "DELETAR") {
+      setDeletionMessage("Digite DELETAR para confirmar a exclusão.");
       return;
     }
 
     const payload = {
-      user_id: mockUser.id,
-      reason: "user_request",
+      confirmation: "DELETAR",
+      otp_code: verifiedDeletionCode,
       anonymize_personal_data: true,
+      ...(deletionVerificationToken ? { verification_token: deletionVerificationToken } : {}),
     };
 
     setPending(true);
     setDeletionMessage("");
     try {
-      const result = await submitJsonRequest("/users/me/deletion-requests", {
-        method: "POST",
+      const result = await submitJsonRequest("/users/me", {
+        accessToken: getAuthSession()?.accessToken,
+        method: "DELETE",
         payload,
       });
       setSubmittedJson(payload);
       setSubmittedFrom("deletion");
-      setDeletionMessage(result.mode === "preview"
-        ? "Solicitação validada em modo de pré-visualização."
-        : "Solicitação enviada com sucesso.");
       setDeletionConfirmation("");
+      if (result.mode === "preview") {
+        setDeletionMessage("Exclusão validada em modo de pré-visualização. Nenhum dado foi removido.");
+        setDeletionStep("success");
+      } else {
+        clearAuthSession();
+        router.replace("/");
+      }
     } catch {
-      setDeletionMessage("Não foi possível enviar a solicitação.");
+      setDeletionMessage("Não foi possível excluir a conta. Tente novamente.");
     } finally {
       setPending(false);
     }
@@ -197,9 +237,7 @@ export default function ProfilePage() {
             <UserCircle aria-hidden size={58} weight="duotone" />
           </div>
           <div>
-            <h2>{mockUser.name}</h2>
-            <p>{mockUser.email}</p>
-            <span>{mockUser.personType === "PJ" ? "Pessoa jurídica" : "Pessoa física"}</span>
+            <h2>{form.name || mockUser.name}</h2>
           </div>
         </section>
 
@@ -236,50 +274,21 @@ export default function ProfilePage() {
               <div className={styles.cardHeading}>
                 <div>
                   <p>Dados cadastrais</p>
-                  <h2>Alterar configurações</h2>
+                  <h2>Alterar dados pessoais</h2>
                 </div>
                 <GearSix aria-hidden size={27} weight="duotone" />
               </div>
 
               <form className={styles.form} noValidate onSubmit={submitProfile}>
-                <ProfileField
+                <FormField
                   autoComplete="name"
                   error={errors.name}
                   Icon={UserCircle}
-                  label="Nome completo"
+                  label="Nome"
                   maxLength={100}
                   name="name"
-                  onChange={update("name")}
+                  onChange={updateName}
                   value={form.name}
-                />
-                <ProfileField
-                  autoComplete="email"
-                  error={errors.email}
-                  Icon={EnvelopeSimple}
-                  label="E-mail"
-                  maxLength={254}
-                  name="email"
-                  onChange={update("email")}
-                  type="email"
-                  value={form.email}
-                />
-                <ProfileField
-                  autoComplete="tel"
-                  error={errors.phone}
-                  Icon={Phone}
-                  inputMode="numeric"
-                  label="Celular"
-                  maxLength={15}
-                  name="phone"
-                  onChange={update("phone")}
-                  value={form.phone}
-                />
-                <ProfileField
-                  Icon={IdentificationCard}
-                  label={mockUser.personType === "PJ" ? "CNPJ" : "CPF"}
-                  name="document"
-                  readOnly
-                  value={mockUser.document}
                 />
 
                 {message && (
@@ -291,10 +300,10 @@ export default function ProfilePage() {
                   </p>
                 )}
 
-                <button className={styles.primaryButton} disabled={pending} type="submit">
+                <ActionButton disabled={pending} type="submit">
                   <FloppyDisk aria-hidden size={21} weight="bold" />
                   {pending ? "Preparando JSON..." : "Salvar alterações"}
-                </button>
+                </ActionButton>
               </form>
             </section>
           )}
@@ -326,10 +335,10 @@ export default function ProfilePage() {
                 <SignOut aria-hidden size={27} weight="duotone" />
               </div>
               <p className={styles.panelDescription}>Encerre com segurança a sessão atual neste dispositivo.</p>
-              <button className={styles.secondaryButton} onClick={logout} type="button">
+              <ActionButton onClick={logout} type="button" variant="secondary">
                 <SignOut aria-hidden size={20} weight="bold" />
                 Sair da conta
-              </button>
+              </ActionButton>
             </section>
           )}
 
@@ -337,44 +346,88 @@ export default function ProfilePage() {
             <section className={`${styles.card} ${styles.dangerCard}`}>
               <div className={`${styles.cardHeading} ${styles.dangerHeading}`}>
                 <div>
-                  <p>Zona de atenção</p>
                   <h2>Excluir minha conta</h2>
                 </div>
                 <Trash aria-hidden size={27} weight="duotone" />
               </div>
-              <form className={styles.deletionForm} onSubmit={submitDeletionRequest}>
-                <p>O pedido será enviado para anonimizar seus dados pessoais, preservando o histórico dos veículos.</p>
-                <label className={styles.field}>
-                  <span>Digite EXCLUIR para continuar</span>
-                  <span className={styles.inputShell}>
-                    <WarningCircle aria-hidden size={20} weight="regular" />
-                    <input
-                      autoComplete="off"
-                      onChange={(event) => {
-                        setDeletionConfirmation(event.target.value.toUpperCase());
-                        setDeletionMessage("");
-                      }}
-                      value={deletionConfirmation}
-                    />
-                  </span>
-                </label>
-                {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
-                <button className={styles.deleteButton} disabled={pending} type="submit">
-                  <Trash aria-hidden size={20} weight="bold" />
-                  Solicitar exclusão
-                </button>
-              </form>
+
+              {deletionStep === "request" && (
+                <div className={styles.deletionForm}>
+                  <p>Antes da exclusão, enviaremos um código OTP para o e-mail cadastrado da conta.</p>
+                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
+                  <ActionButton disabled={pending} onClick={requestDeletionCode} type="button" variant="danger">
+                    {pending ? "Enviando código..." : "Enviar código de confirmação"}
+                  </ActionButton>
+                </div>
+              )}
+
+              {deletionStep === "code" && (
+                <form className={styles.deletionForm} noValidate onSubmit={verifyDeletionCode}>
+                  <p>Digite o código de seis dígitos enviado para o e-mail cadastrado.</p>
+                  <VerificationCodeFields
+                    code={deletionCode}
+                    error={Boolean(deletionMessage)}
+                    onChange={(nextCode) => {
+                      setDeletionCode(nextCode);
+                      setDeletionMessage("");
+                    }}
+                  />
+                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
+                  <div className={styles.resendRow}>
+                    {deletionTimeLeft > 0 ? (
+                      <span>Reenvie em {deletionMinutes}:{deletionSeconds}</span>
+                    ) : (
+                      <button disabled={pending} onClick={resendDeletionCode} type="button">Reenviar código</button>
+                    )}
+                  </div>
+                  <ActionButton disabled={pending} type="submit" variant="danger">
+                    {pending ? "Validando..." : "Validar código"}
+                  </ActionButton>
+                </form>
+              )}
+
+              {deletionStep === "confirm" && (
+                <form className={styles.deletionForm} onSubmit={submitDeletionRequest}>
+                  <p>Código confirmado. Para concluir, digite DELETAR. Essa ação será definitiva quando conectada à API.</p>
+                  <FormField
+                    autoComplete="off"
+                    Icon={WarningCircle}
+                    label="Digite DELETAR para continuar"
+                    name="deletion-confirmation"
+                    onChange={(event) => {
+                      setDeletionConfirmation(event.target.value.toUpperCase());
+                      setDeletionMessage("");
+                    }}
+                    value={deletionConfirmation}
+                  />
+                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
+                  <ActionButton disabled={pending} type="submit" variant="danger">
+                    <Trash aria-hidden size={20} weight="bold" />
+                    {pending ? "Excluindo..." : "Confirmar exclusão"}
+                  </ActionButton>
+                </form>
+              )}
+
+              {deletionStep === "success" && (
+                <div className={styles.deletionSuccess}>
+                  <CheckCircle aria-hidden size={38} weight="duotone" />
+                  <p>{deletionMessage}</p>
+                  <ActionButton
+                    onClick={() => {
+                      setDeletionMessage("");
+                      setDeletionStep("request");
+                    }}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Voltar
+                  </ActionButton>
+                </div>
+              )}
             </section>
           )}
         </div>
       </div>
-
-      {submittedJson && submittedFrom === activeTab && (
-        <details className={styles.jsonPreview}>
-          <summary>Ver último JSON preparado</summary>
-          <pre>{JSON.stringify(submittedJson, null, 2)}</pre>
-        </details>
-      )}
     </AppShell>
   );
 }

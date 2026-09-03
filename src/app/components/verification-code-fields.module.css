@@ -1,0 +1,40 @@
+.fieldset {
+  border: 0;
+}
+
+.fieldset legend {
+  color: #344056;
+  font-size: 0.79rem;
+  font-weight: 690;
+  margin-bottom: 9px;
+}
+
+.inputs {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.inputs input {
+  aspect-ratio: 0.88;
+  background: #fbfcff;
+  border: 1px solid #d9deea;
+  border-radius: 10px;
+  color: #073b7a;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 750;
+  min-width: 0;
+  outline: none;
+  text-align: center;
+}
+
+.inputs input:focus {
+  background: #fff;
+  border-color: #074793;
+  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
+}
+
+.inputs input[aria-invalid="true"] {
+  border-color: #d92d20;
+}

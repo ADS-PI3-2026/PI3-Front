@@ -58,21 +58,6 @@
   letter-spacing: -0.025em;
 }
 
-.profileSummary p {
-  color: #687081;
-  font-size: 0.8rem;
-  margin: 3px 0 7px;
-}
-
-.profileSummary span {
-  background: #eef3fa;
-  border-radius: 999px;
-  color: #074793;
-  font-size: 0.68rem;
-  font-weight: 720;
-  padding: 5px 8px;
-}
-
 .tabList {
   background: #fff;
   border: 1px solid #e1e4ec;
@@ -158,95 +143,6 @@
   gap: 16px;
 }
 
-.field {
-  display: grid;
-  gap: 7px;
-}
-
-.field > span:first-child {
-  color: #3f4859;
-  font-size: 0.76rem;
-  font-weight: 690;
-}
-
-.inputShell {
-  align-items: center;
-  background: #fafbfe;
-  border: 1px solid #d9deea;
-  border-radius: 11px;
-  color: #7d8697;
-  display: flex;
-  gap: 10px;
-  min-height: 49px;
-  padding: 0 13px;
-  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
-}
-
-.inputShell:focus-within {
-  background: #fff;
-  border-color: #5b83b5;
-  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
-}
-
-.inputError {
-  border-color: #d52b2b;
-}
-
-.inputShell input {
-  background: transparent;
-  border: 0;
-  color: #252b36;
-  flex: 1;
-  font-size: 0.88rem;
-  min-width: 0;
-  outline: 0;
-}
-
-.inputShell input[readonly] {
-  color: #737b89;
-  cursor: not-allowed;
-}
-
-.fieldError {
-  color: #b42318;
-  font-size: 0.72rem;
-}
-
-.primaryButton,
-.secondaryButton,
-.deleteButton {
-  align-items: center;
-  border-radius: 12px;
-  display: flex;
-  font-size: 0.88rem;
-  font-weight: 730;
-  gap: 8px;
-  justify-content: center;
-  min-height: 49px;
-  padding: 11px 14px;
-  width: 100%;
-}
-
-.primaryButton {
-  background: #074793;
-  color: #fff;
-}
-
-.primaryButton:hover {
-  background: #053a79;
-}
-
-.primaryButton:disabled,
-.deleteButton:disabled {
-  cursor: wait;
-  opacity: 0.62;
-}
-
-.secondaryButton {
-  background: #eef2f8;
-  color: #074793;
-}
-
 .successMessage,
 .errorMessage {
   align-items: flex-start;
@@ -320,9 +216,31 @@
   color: #b42318;
 }
 
-.deleteButton {
-  background: #b42318;
-  color: #fff;
+.resendRow {
+  color: #697181;
+  display: flex;
+  font-size: 0.78rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.resendRow button {
+  color: #074793;
+  font-weight: 720;
+}
+
+.deletionSuccess {
+  align-items: center;
+  color: #12663b;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
+}
+
+.deletionSuccess p {
+  font-size: 0.82rem;
+  line-height: 1.55;
 }
 
 .jsonPreview {

@@ -1,0 +1,88 @@
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.label {
+  color: #344056;
+  font-size: 0.79rem;
+  font-weight: 690;
+}
+
+.inputShell {
+  align-items: center;
+  background: #fbfcff;
+  border: 1px solid #d9deea;
+  border-radius: 12px;
+  color: #80899b;
+  display: flex;
+  min-height: 50px;
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.inputShell:focus-within {
+  background: #fff;
+  border-color: #4a79b2;
+  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
+}
+
+.inputError {
+  border-color: #d92d20;
+}
+
+.inputShell input {
+  background: transparent;
+  border: 0;
+  color: #202534;
+  flex: 1;
+  font: inherit;
+  font-size: 0.94rem;
+  min-width: 0;
+  outline: none;
+  padding: 0 12px 0 0;
+}
+
+.inputShell input::placeholder {
+  color: #939bad;
+}
+
+.inputShell input[readonly] {
+  color: #737b89;
+  cursor: not-allowed;
+}
+
+.inputIcon {
+  color: #80899b;
+  display: grid;
+  flex: 0 0 45px;
+  place-items: center;
+}
+
+.visibilityButton {
+  align-self: stretch;
+  color: #737e91;
+  display: grid;
+  flex: 0 0 46px;
+  place-items: center;
+}
+
+.visibilityButton:hover {
+  color: #074793;
+}
+
+.visibilityButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.2);
+  outline-offset: -3px;
+}
+
+.fieldError {
+  color: #b42318;
+  font-size: 0.76rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputShell {
+    transition: none;
+  }
+}
