@@ -1,8 +1,10 @@
 "use client";
 
 import { Gauge, Plus } from "@phosphor-icons/react";
+import Link from "next/link";
 import AppShell from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
+import VehiclePlate from "../components/vehicle-plate";
 import { formatMileage, mockUser, mockVehicles } from "../mock-data";
 import styles from "./page.module.css";
 
@@ -25,13 +27,18 @@ export default function GaragePage() {
 
           <div className={styles.vehicleList}>
             {mockVehicles.map((vehicle) => (
-              <article className={styles.vehicleCard} key={vehicle.id}>
+              <Link
+                aria-label={"Abrir histórico de " + vehicle.name}
+                className={styles.vehicleCard}
+                href={"/garagem/" + vehicle.id}
+                key={vehicle.id}
+              >
                 <div className={styles.vehicleHeading}>
                   <div>
                     <h3>{vehicle.name}</h3>
                     <p>{vehicle.version}</p>
                   </div>
-                  <span className={styles.plate}>{vehicle.plate}</span>
+                  <VehiclePlate className={styles.vehiclePlate} plate={vehicle.plate} />
                 </div>
 
                 <div className={styles.mileage}>
@@ -48,22 +55,20 @@ export default function GaragePage() {
                 <div aria-hidden className={styles.progressTrack}>
                   <span
                     className={vehicle.nextMaintenance.tone === "danger" ? styles.progressDanger : styles.progressInfo}
-                    style={{ width: `${vehicle.nextMaintenance.progress}%` }}
+                    style={{ width: vehicle.nextMaintenance.progress + "%" }}
                   />
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
 
-          <button
-            aria-label="Adicionar veículo — disponível na próxima etapa"
+          <Link
+            aria-label="Adicionar veículo"
             className={styles.addVehicleButton}
-            disabled
-            title="Disponível na próxima etapa"
-            type="button"
+            href="/garagem/novo"
           >
             <Plus aria-hidden size={28} weight="regular" />
-          </button>
+          </Link>
         </section>
       </div>
     </AppShell>

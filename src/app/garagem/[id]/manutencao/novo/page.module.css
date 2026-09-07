@@ -1,0 +1,230 @@
+.topBar {
+  align-items: center;
+  border-bottom: 1px solid #e5e6ed;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  margin: 0 -14px;
+  min-height: 68px;
+  padding: 10px;
+}
+
+.topBar h1 {
+  color: #074793;
+  font-size: 1.2rem;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.backButton {
+  color: #074793;
+  display: grid;
+  height: 44px;
+  place-items: center;
+  width: 44px;
+}
+
+.backButton:focus-visible,
+.statusButton:focus-visible,
+.statusActive:focus-visible,
+.inputShell:focus-within,
+.selectShell:focus-within,
+.uploadBox:focus-within,
+.field textarea:focus {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
+.formScreen {
+  margin: 0 auto;
+  max-width: 430px;
+  padding: 24px 0 10px;
+}
+
+.heading {
+  margin-bottom: 18px;
+}
+
+.heading h2 {
+  color: #20222c;
+  font-size: 1.8rem;
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+  max-width: 260px;
+}
+
+.heading p {
+  color: #697181;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  margin-top: 9px;
+}
+
+.maintenanceForm {
+  background: #fff;
+  border: 1px solid #e1e4ec;
+  border-radius: 12px;
+  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.statusField {
+  border: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.statusField legend,
+.field > span:first-child {
+  color: #344056;
+  font-size: 0.74rem;
+  font-weight: 780;
+}
+
+.statusToggle {
+  background: #f0f1fa;
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 3px;
+}
+
+.statusButton,
+.statusActive {
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 730;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.statusButton {
+  color: #505767;
+}
+
+.statusActive {
+  background: #074793;
+  box-shadow: 0 4px 10px rgba(7, 71, 147, 0.2);
+  color: #fff;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field small {
+  color: #697181;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.inputShell,
+.selectShell,
+.field textarea {
+  background: #f8f9ff;
+  border: 1px solid #d1d7e6;
+  border-radius: 7px;
+  color: #80899b;
+}
+
+.inputShell,
+.selectShell {
+  align-items: center;
+  display: flex;
+  min-height: 44px;
+  overflow: hidden;
+}
+
+.inputShell input,
+.selectShell select,
+.field textarea {
+  background: transparent;
+  border: 0;
+  color: #292d39;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  outline: none;
+}
+
+.inputShell input,
+.selectShell select {
+  height: 44px;
+  padding: 0 13px;
+}
+
+.inputShell svg,
+.selectShell svg {
+  color: #6f7788;
+  flex: 0 0 auto;
+  margin-right: 12px;
+}
+
+.inputShell svg:first-child {
+  margin-left: 12px;
+  margin-right: 0;
+}
+
+.selectShell select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.field textarea {
+  min-height: 96px;
+  padding: 13px;
+  resize: vertical;
+}
+
+.inputShell input::placeholder,
+.field textarea::placeholder {
+  color: #8f97aa;
+}
+
+.uploadBox {
+  align-items: center;
+  background: #f0f1fa;
+  border: 1px dashed #cbd3e4;
+  border-radius: 7px;
+  color: #074793;
+  cursor: pointer;
+  display: flex;
+  gap: 9px;
+  justify-content: center;
+  min-height: 50px;
+  padding: 10px 14px;
+  position: relative;
+}
+
+.uploadBox strong {
+  font-size: 0.88rem;
+}
+
+.uploadBox input {
+  cursor: pointer;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.successMessage {
+  background: #e9f7ef;
+  border-radius: 10px;
+  color: #12663b;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  padding: 10px 11px;
+}
+
+@media (min-width: 760px) {
+  .topBar {
+    margin-left: -28px;
+    margin-right: -28px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}

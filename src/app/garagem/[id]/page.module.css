@@ -1,0 +1,318 @@
+.topBar {
+  align-items: center;
+  border-bottom: 1px solid #e5e6ed;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  margin: 0 -14px;
+  min-height: 68px;
+  padding: 10px 10px;
+}
+
+.topBar h1 {
+  color: #074793;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.backButton {
+  color: #074793;
+  display: grid;
+  height: 44px;
+  place-items: center;
+  width: 44px;
+}
+
+.backButton:focus-visible,
+.transferButton:focus-visible,
+.addMaintenanceButton:focus-visible,
+.emptyLink:focus-visible,
+.attachmentLink:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
+}
+
+.vehicleHero {
+  border-bottom: 1px solid #eceef5;
+  margin: 0 -14px 14px;
+  padding: 14px 14px 18px;
+}
+
+.vehicleHero h2 {
+  color: #20222c;
+  font-size: 2rem;
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+  margin-bottom: 10px;
+}
+
+.vehicleMeta {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heroPlate {
+  --plate-scale: 0.86;
+}
+
+.metaItem,
+.transferButton {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.86rem;
+  font-weight: 690;
+  gap: 6px;
+}
+
+.metaItem {
+  color: #535a69;
+}
+
+.transferButton {
+  background: #eef4ff;
+  border: 1px solid #dfe9f8;
+  border-radius: 999px;
+  color: #074793;
+  min-height: 34px;
+  padding: 7px 12px;
+}
+
+.historySection {
+  padding: 0 0 16px;
+}
+
+.historySection > h2 {
+  color: #242630;
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  margin: 14px 0 22px;
+}
+
+.timeline {
+  display: grid;
+  gap: 24px;
+  padding-left: 56px;
+  position: relative;
+}
+
+.timeline::before {
+  background: #d9dce7;
+  bottom: 18px;
+  content: "";
+  left: 27px;
+  position: absolute;
+  top: 18px;
+  width: 2px;
+}
+
+.historyItem {
+  position: relative;
+}
+
+.timelineMarker {
+  align-items: center;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(31, 43, 74, 0.08);
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  left: -46px;
+  position: absolute;
+  top: 10px;
+  width: 34px;
+  z-index: 1;
+}
+
+.timelineMarker.pending {
+  background: #ffe897;
+  color: #9a6500;
+}
+
+.timelineMarker.done {
+  background: #d7f8e3;
+  color: #157347;
+}
+
+.timelineMarker.readonly {
+  background: #f0f1f6;
+  color: #9aa1af;
+}
+
+.historyCard {
+  background: #fff;
+  border: 1px solid #e5e7f0;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(34, 46, 78, 0.055);
+  display: grid;
+  gap: 12px;
+  padding: 18px 19px;
+}
+
+.historyItemReadonly .historyCard {
+  opacity: 0.62;
+}
+
+.cardHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.cardHeader h3 {
+  color: #262933;
+  font-size: 1.06rem;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+}
+
+.badges {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.statusBadge,
+.readonlyBadge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 780;
+  gap: 4px;
+  line-height: 1;
+  min-height: 25px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.statusBadge.pending {
+  background: #ffe779;
+  color: #8a5c00;
+}
+
+.statusBadge.done {
+  background: #cdf8de;
+  color: #157347;
+}
+
+.statusBadge.readonly {
+  background: #e9ebf3;
+  color: #737988;
+}
+
+.readonlyBadge {
+  background: #eceef5;
+  color: #767d8d;
+}
+
+.itemMeta {
+  align-items: center;
+  color: #596172;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  font-weight: 640;
+  gap: 16px;
+}
+
+.itemMeta span,
+.attachmentLink {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.attachmentLink {
+  border-top: 1px solid #edf0f6;
+  color: #074793;
+  font-size: 0.84rem;
+  font-weight: 760;
+  padding-top: 12px;
+}
+
+.addMaintenanceButton {
+  align-items: center;
+  background: #074793;
+  border-radius: 50%;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  box-shadow: 0 12px 24px rgba(7, 71, 147, 0.26);
+  color: #fff;
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  position: fixed;
+  right: max(14px, calc((100vw - 1040px) / 2 + 28px));
+  width: 58px;
+  z-index: 19;
+}
+
+.addMaintenanceButton:hover,
+.emptyLink:hover,
+.transferButton:hover {
+  background: #053a79;
+  color: #fff;
+}
+
+.emptyState {
+  background: #fff;
+  border: 1px solid #e1e4ec;
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 22px;
+}
+
+.emptyState h2 {
+  color: #242630;
+  font-size: 1.25rem;
+}
+
+.emptyState p {
+  color: #697181;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.emptyLink {
+  align-items: center;
+  background: #074793;
+  border-radius: 12px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 720;
+  justify-content: center;
+  margin-top: 6px;
+  min-height: 46px;
+  padding: 10px 16px;
+}
+
+@media (min-width: 760px) {
+  .topBar,
+  .vehicleHero {
+    margin-left: -28px;
+    margin-right: -28px;
+  }
+
+  .topBar {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .vehicleHero {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .vehicleHero h2 {
+    font-size: 2.2rem;
+  }
+}

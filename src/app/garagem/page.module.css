@@ -43,7 +43,20 @@
   border: 1px solid #e2e4ec;
   border-radius: 17px;
   box-shadow: 0 4px 14px rgba(34, 46, 78, 0.05);
+  display: block;
   padding: 20px 21px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.vehicleCard:hover {
+  border-color: #c9d4e6;
+  box-shadow: 0 8px 20px rgba(34, 46, 78, 0.08);
+  transform: translateY(-1px);
+}
+
+.vehicleCard:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
 }
 
 .vehicleHeading {
@@ -65,16 +78,9 @@
   margin-top: 2px;
 }
 
-.plate {
-  background: #f0f1f6;
-  border: 1px solid #d8dbe5;
-  border-radius: 5px;
-  color: #303541;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.76rem;
-  font-weight: 720;
-  letter-spacing: 0.06em;
-  padding: 8px 9px;
+.vehiclePlate {
+  --plate-scale: 0.8;
+  justify-self: end;
 }
 
 .mileage {
@@ -147,8 +153,8 @@
   z-index: 19;
 }
 
-.addVehicleButton:disabled {
-  cursor: not-allowed;
+.addVehicleButton:hover {
+  background: #053a79;
 }
 
 @media (min-width: 760px) {
