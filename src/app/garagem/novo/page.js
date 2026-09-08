@@ -1,29 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Car,
   CaretDown,
   FloppyDisk,
   Gauge,
   IdentificationCard,
-  UploadSimple,
-  WarningCircle,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
 import SearchableSelect from "../../components/searchable-select";
+import FileUploadField from "../_components/file-upload-field";
+import PageTopBar from "../_components/page-top-bar";
+import { getBrands, getModels, getYears, vehicleTypes } from "../_lib/fipe-api";
+import { onlyDigits, validateVehicleForm } from "../_lib/garage-validation";
 import styles from "./page.module.css";
-
-const FIPE_API_BASE_URL = "https://fipe.parallelum.com.br/api/v2";
-
-const vehicleTypes = [
-  { value: "cars", label: "Carro ou utilitário pequeno" },
-  { value: "motorcycles", label: "Moto" },
-  { value: "trucks", label: "Caminhão ou Micro-ônibus" },
-];
 
 const initialForm = {
   type: "cars",
@@ -35,37 +27,14 @@ const initialForm = {
   documentName: "",
 };
 
-function normalizeFipeOption(option) {
-  return {
-    code: String(option.code ?? option.id ?? ""),
-    name: option.name ?? option.label ?? "",
-  };
-}
-
-function isZeroKmYearOption(option) {
-  return option.code === "32000" || option.name.trim().startsWith("32000");
-}
-
-async function fetchFipeOptions(path) {
-  const response = await fetch(FIPE_API_BASE_URL + path);
-
-  if (!response.ok) {
-    throw new Error("Não foi possível carregar os dados da tabela FIPE.");
-  }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data.map(normalizeFipeOption) : [];
-}
-
 export default function NewVehiclePage() {
-  const router = useRouter();
   const [form, setForm] = useState(initialForm);
+  const [errors, setErrors] = useState({});
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [years, setYears] = useState([]);
   const [loading, setLoading] = useState({ brands: false, models: false, years: false });
   const [fipeError, setFipeError] = useState("");
-  const [message, setMessage] = useState("");
 
   const selectedBrand = useMemo(
     () => brands.find((brand) => brand.code === form.brand),
@@ -77,11 +46,6 @@ export default function NewVehiclePage() {
     [models, form.model],
   );
 
-  const selectedYear = useMemo(
-    () => years.find((year) => year.code === form.year),
-    [years, form.year],
-  );
-
   const loadBrands = useCallback(async (vehicleType) => {
     setBrands([]);
     setModels([]);
@@ -90,9 +54,7 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, brands: true }));
 
     try {
-      const options = await fetchFipeOptions("/" + vehicleType + "/brands");
-      console.log(options);
-      setBrands(options);
+      setBrands(await getBrands(vehicleType));
     } catch {
       setFipeError("Não foi possível carregar as marcas da tabela FIPE.");
     } finally {
@@ -107,8 +69,7 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, models: true }));
 
     try {
-      const options = await fetchFipeOptions("/" + vehicleType + "/brands/" + brandId + "/models");
-      setModels(options);
+      setModels(await getModels(vehicleType, brandId));
     } catch {
       setFipeError("Não foi possível carregar os modelos da tabela FIPE.");
     } finally {
@@ -122,8 +83,7 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, years: true }));
 
     try {
-      const options = await fetchFipeOptions("/" + vehicleType + "/brands/" + brandId + "/models/" + modelId + "/years");
-      setYears(options.filter((option) => !isZeroKmYearOption(option)));
+      setYears(await getYears(vehicleType, brandId, modelId));
     } catch {
       setFipeError("Não foi possível carregar os anos da tabela FIPE.");
     } finally {
@@ -139,19 +99,23 @@ export default function NewVehiclePage() {
     return () => window.clearTimeout(timer);
   }, [loadBrands]);
 
+  const clearError = (field) => {
+    setErrors((current) => ({ ...current, [field]: "" }));
+  };
+
   const updateField = (field, value) => {
-    setMessage("");
+    clearError(field);
     setForm((current) => ({ ...current, [field]: value }));
   };
 
   const updateVehicleType = (value) => {
-    setMessage("");
+    setErrors({});
     setForm((current) => ({ ...current, type: value, brand: "", model: "", year: "" }));
     void loadBrands(value);
   };
 
   const updateBrand = (value) => {
-    setMessage("");
+    setErrors((current) => ({ ...current, brand: "", model: "", year: "" }));
     setForm((current) => ({ ...current, brand: value, model: "", year: "" }));
     setModels([]);
     setYears([]);
@@ -159,7 +123,7 @@ export default function NewVehiclePage() {
   };
 
   const updateModel = (value) => {
-    setMessage("");
+    setErrors((current) => ({ ...current, model: "", year: "" }));
     setForm((current) => ({ ...current, model: value, year: "" }));
     setYears([]);
     if (value) void loadYears(form.type, form.brand, value);
@@ -167,45 +131,16 @@ export default function NewVehiclePage() {
 
   const submitVehicle = (event) => {
     event.preventDefault();
-
-    const payload = {
-      vehicleType: form.type,
-      plate: form.plate.trim().toUpperCase(),
-      brandId: form.brand,
-      brandName: selectedBrand?.name ?? "",
-      modelId: form.model,
-      modelName: selectedModel?.name ?? "",
-      yearId: form.year,
-      yearName: selectedYear?.name ?? "",
-      initialMileage: form.mileage,
-      documentName: form.documentName,
-    };
-
-    console.info("Payload de veículo pronto para o backend", payload);
-    setMessage("Veículo validado em modo de pré-visualização. Os códigos FIPE estão prontos para envio ao backend.");
+    setErrors(validateVehicleForm(form));
   };
 
   const brandPlaceholder = loading.brands ? "Carregando marcas..." : "Selecione a marca";
-  const modelPlaceholder = loading.models
-    ? "Carregando modelos..."
-    : selectedBrand
-      ? "Selecione o modelo"
-      : "Aguardando marca...";
-  const yearPlaceholder = loading.years
-    ? "Carregando anos..."
-    : selectedModel
-      ? "Selecione o ano/combustível"
-      : "Aguardando modelo...";
+  const modelPlaceholder = loading.models ? "Carregando modelos..." : selectedBrand ? "Selecione o modelo" : "Aguardando marca...";
+  const yearPlaceholder = loading.years ? "Carregando anos..." : selectedModel ? "Selecione o ano/combustível" : "Aguardando modelo...";
 
   return (
     <AppShell>
-      <header className={styles.topBar}>
-        <button aria-label="Voltar" className={styles.backButton} onClick={() => router.back()} type="button">
-          <ArrowLeft aria-hidden size={24} weight="bold" />
-        </button>
-        <h1>Novo Veículo</h1>
-        <span />
-      </header>
+      <PageTopBar title="Novo Veículo" />
 
       <main className={styles.formScreen}>
         <div className={styles.iconCircle}>
@@ -219,7 +154,7 @@ export default function NewVehiclePage() {
         <form className={styles.vehicleForm} id="new-vehicle-form" noValidate onSubmit={submitVehicle}>
           <label className={styles.field}>
             <span>Tipo de veículo</span>
-            <span className={styles.selectShell}>
+            <span className={styles.selectShell} data-error={Boolean(errors.type)}>
               <select value={form.type} onChange={(event) => updateVehicleType(event.target.value)}>
                 {vehicleTypes.map((type) => (
                   <option key={type.value} value={type.value}>{type.label}</option>
@@ -227,11 +162,13 @@ export default function NewVehiclePage() {
               </select>
               <CaretDown aria-hidden size={18} weight="bold" />
             </span>
+            {errors.type && <small className={styles.errorText}>{errors.type}</small>}
           </label>
 
           <SearchableSelect
             disabled={loading.brands}
             emptyMessage="Nenhuma marca encontrada."
+            error={errors.brand}
             label="Marca"
             loading={loading.brands}
             onChange={updateBrand}
@@ -244,6 +181,7 @@ export default function NewVehiclePage() {
           <SearchableSelect
             disabled={!selectedBrand || loading.models}
             emptyMessage="Nenhum modelo encontrado."
+            error={errors.model}
             label="Modelo"
             loading={loading.models}
             onChange={updateModel}
@@ -255,7 +193,7 @@ export default function NewVehiclePage() {
 
           <label className={styles.field}>
             <span>Ano / Modelo</span>
-            <span className={styles.selectShell} data-disabled={!selectedModel || loading.years}>
+            <span className={styles.selectShell} data-disabled={!selectedModel || loading.years} data-error={Boolean(errors.year)}>
               <select
                 disabled={!selectedModel || loading.years}
                 value={form.year}
@@ -268,12 +206,16 @@ export default function NewVehiclePage() {
               </select>
               <CaretDown aria-hidden size={18} weight="bold" />
             </span>
-            <small className={styles.fieldHint}>A FIPE pode retornar o mesmo ano com combustíveis diferentes.</small>
+            {errors.year ? (
+              <small className={styles.errorText}>{errors.year}</small>
+            ) : (
+              <small className={styles.fieldHint}>A FIPE pode retornar o mesmo ano com combustíveis diferentes.</small>
+            )}
           </label>
 
           <label className={styles.field}>
             <span>Placa do veículo</span>
-            <span className={styles.inputShell}>
+            <span className={styles.inputShell} data-error={Boolean(errors.plate)}>
               <IdentificationCard aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
@@ -284,46 +226,36 @@ export default function NewVehiclePage() {
                 value={form.plate}
               />
             </span>
-            <small>Padrão Mercosul ou antigo.</small>
+            {errors.plate ? <small className={styles.errorText}>{errors.plate}</small> : <small>Padrão Mercosul ou antigo.</small>}
           </label>
 
           <label className={styles.field}>
             <span>Quilometragem inicial</span>
-            <span className={styles.inputShell}>
+            <span className={styles.inputShell} data-error={Boolean(errors.mileage)}>
               <Gauge aria-hidden size={20} weight="regular" />
               <input
                 inputMode="numeric"
                 name="mileage"
-                onChange={(event) => updateField("mileage", event.target.value.replace(/\D/g, ""))}
+                onChange={(event) => updateField("mileage", onlyDigits(event.target.value))}
                 placeholder="Ex: 50000"
                 value={form.mileage}
               />
               <em>km</em>
             </span>
+            {errors.mileage && <small className={styles.errorText}>{errors.mileage}</small>}
           </label>
 
-          <label className={styles.field}>
-            <span>Documento do veículo (CRLV)</span>
-            <span className={styles.uploadBox}>
-              <UploadSimple aria-hidden size={30} weight="bold" />
-              <strong>{form.documentName || "Anexar documento CRLV"}</strong>
-              <small>PNG, JPG, PDF até 10MB</small>
-              <input
-                type="file"
-                accept=".png,.jpg,.jpeg,.pdf"
-                name="document"
-                onChange={(event) => updateField("documentName", event.target.files?.[0]?.name ?? "")}
-              />
-            </span>
-          </label>
+          <FileUploadField
+            accept=".png,.jpg,.jpeg,.pdf"
+            error={errors.documentName}
+            hint="PNG, JPG, PDF até 10MB"
+            label="Documento do veículo (CRLV)"
+            name="document"
+            onChange={(value) => updateField("documentName", value)}
+            value={form.documentName || "Anexar documento CRLV"}
+          />
 
-          {fipeError && (
-            <p className={styles.errorMessage}>
-              <WarningCircle aria-hidden size={19} weight="fill" />
-              {fipeError}
-            </p>
-          )}
-          {message && <p className={styles.successMessage}>{message}</p>}
+          {fipeError && <p className={styles.errorMessage}>{fipeError}</p>}
         </form>
       </main>
 

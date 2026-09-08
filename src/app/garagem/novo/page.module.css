@@ -1,37 +1,3 @@
-.topBar {
-  align-items: center;
-  border-bottom: 1px solid #e5e6ed;
-  display: grid;
-  grid-template-columns: 48px 1fr 48px;
-  margin: 0 -14px;
-  min-height: 68px;
-  padding: 10px;
-}
-
-.topBar h1 {
-  color: #074793;
-  font-size: 1.28rem;
-  letter-spacing: -0.035em;
-  text-align: center;
-}
-
-.backButton {
-  color: #074793;
-  display: grid;
-  height: 44px;
-  place-items: center;
-  width: 44px;
-}
-
-.backButton:focus-visible,
-.submitBar button:focus-visible,
-.inputShell:focus-within,
-.selectShell:focus-within,
-.uploadBox:focus-within {
-  outline: 3px solid rgba(7, 71, 147, 0.18);
-  outline-offset: 2px;
-}
-
 .formScreen {
   margin: 0 auto;
   max-width: 460px;
@@ -112,6 +78,17 @@
   overflow: hidden;
 }
 
+.inputShell[data-error="true"],
+.selectShell[data-error="true"] {
+  border-color: #d92d20;
+}
+
+.inputShell:focus-within,
+.selectShell:focus-within {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
 .inputShell input,
 .selectShell select {
   appearance: none;
@@ -166,55 +143,18 @@
   cursor: not-allowed;
 }
 
-.uploadBox {
-  align-items: center;
-  border: 2px dashed #cbd3e4;
-  border-radius: 10px;
-  color: #074793;
-  cursor: pointer;
-  display: grid;
-  justify-items: center;
-  min-height: 116px;
-  padding: 18px;
-  position: relative;
-  text-align: center;
-}
-
-.uploadBox strong {
-  font-size: 0.86rem;
-  margin-top: 7px;
-}
-
-.uploadBox small {
-  margin-top: 4px;
-}
-
-.uploadBox input {
-  cursor: pointer;
-  inset: 0;
-  opacity: 0;
-  position: absolute;
-}
-
-.successMessage,
-.errorMessage {
-  align-items: flex-start;
-  border-radius: 10px;
-  display: flex;
-  font-size: 0.76rem;
-  gap: 8px;
-  line-height: 1.45;
-  padding: 10px 11px;
-}
-
-.successMessage {
-  background: #e9f7ef;
-  color: #12663b;
+.errorText {
+  color: #b42318;
+  font-size: 0.72rem;
 }
 
 .errorMessage {
   background: #fff0ee;
+  border-radius: 10px;
   color: #b42318;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  padding: 10px 11px;
 }
 
 .submitBar {
@@ -231,11 +171,13 @@
 }
 
 @media (min-width: 760px) {
-  .topBar {
-    margin-left: -28px;
-    margin-right: -28px;
-    padding-left: 24px;
-    padding-right: 24px;
+  .formScreen {
+    max-width: 520px;
+    padding-top: 30px;
+  }
+
+  .vehicleForm {
+    padding: 24px;
   }
 
   .submitBar {

@@ -44,6 +44,10 @@
   cursor: not-allowed;
 }
 
+.trigger[data-error="true"] {
+  border-color: #d92d20;
+}
+
 .trigger svg {
   color: #7d8494;
   flex: 0 0 auto;
@@ -153,6 +157,11 @@
   line-height: 1.45;
   padding: 12px 10px;
   text-align: center;
+}
+
+.errorText {
+  color: #b42318;
+  font-size: 0.72rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

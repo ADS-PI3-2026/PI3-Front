@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
 import styles from "./searchable-select.module.css";
 
@@ -15,6 +15,7 @@ function normalizeText(value) {
 export default function SearchableSelect({
   disabled = false,
   emptyMessage = "Nenhuma opção encontrada.",
+  error,
   label,
   loading = false,
   onChange,
@@ -23,6 +24,7 @@ export default function SearchableSelect({
   searchPlaceholder = "Buscar...",
   value,
 }) {
+  const errorId = useId();
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -76,10 +78,12 @@ export default function SearchableSelect({
     <div className={styles.field} onBlur={handleBlur} onKeyDown={handleKeyDown} ref={containerRef}>
       <span className={styles.label}>{label}</span>
       <button
+        aria-describedby={error ? errorId : undefined}
         aria-expanded={open}
         aria-haspopup="listbox"
         className={styles.trigger}
         data-disabled={isDisabled}
+        data-error={Boolean(error)}
         disabled={isDisabled}
         onClick={() => (open ? close() : openList())}
         type="button"
@@ -87,6 +91,8 @@ export default function SearchableSelect({
         <span className={selectedOption ? styles.triggerValue : styles.placeholder}>{buttonText}</span>
         <CaretDown aria-hidden size={18} weight="bold" />
       </button>
+
+      {error && <small className={styles.errorText} id={errorId}>{error}</small>}
 
       {open && (
         <div className={styles.dropdown}>

@@ -69,23 +69,30 @@ export const mockVehicleMaintenance = {
       id: 201,
       title: "Revisão de Freios",
       status: "A realizar",
-      date: "15/06/2023",
+      date: "15/09/2026",
       mileage: 25000,
     },
     {
       id: 202,
+      title: "Geometria e Balanceamento",
+      status: "Atrasada",
+      date: "01/09/2026",
+      mileage: 23350,
+    },
+    {
+      id: 203,
       title: "Troca de Óleo",
       status: "Realizada",
-      date: "20/05/2023",
+      date: "20/05/2026",
       mileage: 22500,
       attachment: "NF_Oleo.pdf",
     },
     {
-      id: 203,
+      id: 204,
       title: "Revisão Completa",
       status: "Realizada",
       readonly: true,
-      date: "10/12/2022",
+      date: "10/12/2025",
       mileage: 15000,
     },
   ],
@@ -117,4 +124,8 @@ export function getVehicleById(id) {
 
 export function getVehicleMaintenance(id) {
   return mockVehicleMaintenance[id] ?? [];
+}
+
+export function getMaintenanceById(vehicleId, maintenanceId) {
+  return getVehicleMaintenance(vehicleId).find((item) => String(item.id) === String(maintenanceId));
 }

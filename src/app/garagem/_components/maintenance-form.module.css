@@ -1,39 +1,3 @@
-.topBar {
-  align-items: center;
-  border-bottom: 1px solid #e5e6ed;
-  display: grid;
-  grid-template-columns: 48px 1fr 48px;
-  margin: 0 -14px;
-  min-height: 68px;
-  padding: 10px;
-}
-
-.topBar h1 {
-  color: #074793;
-  font-size: 1.2rem;
-  letter-spacing: -0.035em;
-  text-align: center;
-}
-
-.backButton {
-  color: #074793;
-  display: grid;
-  height: 44px;
-  place-items: center;
-  width: 44px;
-}
-
-.backButton:focus-visible,
-.statusButton:focus-visible,
-.statusActive:focus-visible,
-.inputShell:focus-within,
-.selectShell:focus-within,
-.uploadBox:focus-within,
-.field textarea:focus {
-  outline: 3px solid rgba(7, 71, 147, 0.18);
-  outline-offset: 2px;
-}
-
 .formScreen {
   margin: 0 auto;
   max-width: 430px;
@@ -49,7 +13,7 @@
   font-size: 1.8rem;
   letter-spacing: -0.05em;
   line-height: 1.05;
-  max-width: 260px;
+  max-width: 280px;
 }
 
 .heading p {
@@ -110,16 +74,18 @@
   color: #fff;
 }
 
+.statusButton:focus-visible,
+.statusActive:focus-visible,
+.inputShell:focus-within,
+.selectShell:focus-within,
+.field textarea:focus {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
 .field {
   display: grid;
   gap: 7px;
-}
-
-.field small {
-  color: #697181;
-  font-size: 0.66rem;
-  line-height: 1.35;
-  text-align: center;
 }
 
 .inputShell,
@@ -129,6 +95,12 @@
   border: 1px solid #d1d7e6;
   border-radius: 7px;
   color: #80899b;
+}
+
+.inputShell[data-error="true"],
+.selectShell[data-error="true"],
+.field textarea[data-error="true"] {
+  border-color: #d92d20;
 }
 
 .inputShell,
@@ -185,46 +157,18 @@
   color: #8f97aa;
 }
 
-.uploadBox {
-  align-items: center;
-  background: #f0f1fa;
-  border: 1px dashed #cbd3e4;
-  border-radius: 7px;
-  color: #074793;
-  cursor: pointer;
-  display: flex;
-  gap: 9px;
-  justify-content: center;
-  min-height: 50px;
-  padding: 10px 14px;
-  position: relative;
-}
-
-.uploadBox strong {
-  font-size: 0.88rem;
-}
-
-.uploadBox input {
-  cursor: pointer;
-  inset: 0;
-  opacity: 0;
-  position: absolute;
-}
-
-.successMessage {
-  background: #e9f7ef;
-  border-radius: 10px;
-  color: #12663b;
-  font-size: 0.76rem;
-  line-height: 1.45;
-  padding: 10px 11px;
+.errorText {
+  color: #b42318;
+  font-size: 0.72rem;
 }
 
 @media (min-width: 760px) {
-  .topBar {
-    margin-left: -28px;
-    margin-right: -28px;
-    padding-left: 24px;
-    padding-right: 24px;
+  .formScreen {
+    max-width: 500px;
+    padding-top: 30px;
+  }
+
+  .maintenanceForm {
+    padding: 22px;
   }
 }

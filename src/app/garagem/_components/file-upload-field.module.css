@@ -1,0 +1,80 @@
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field > span:first-child {
+  color: #344056;
+  font-size: 0.75rem;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hintText {
+  color: #5e6675;
+  font-size: 0.72rem;
+  line-height: 1.55;  
+  text-align: center;
+}
+
+.uploadBox {
+  align-items: center;
+  border: 2px dashed #cbd3e4;
+  border-radius: 10px;
+  color: #074793;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  min-height: 116px;
+  padding: 18px;
+  position: relative;
+  text-align: center;
+}
+
+.uploadBox[data-compact="true"] {
+  align-items: center;
+  background: #f0f1fa;
+  border-width: 1px;
+  display: flex;
+  gap: 9px;
+  justify-content: center;
+  min-height: 50px;
+  padding: 10px 14px;
+}
+
+.uploadBox[data-compact="true"] strong {
+  margin-top: 0;
+}
+
+.uploadBox[data-error="true"] {
+  border-color: #d92d20;
+}
+
+.uploadBox:focus-within {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
+.uploadBox strong {
+  font-size: 0.86rem;
+  margin-top: 7px;
+}
+
+.uploadBox small {
+  color: #687083;
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+
+.uploadBox input {
+  cursor: pointer;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.errorText {
+  color: #b42318;
+  font-size: 0.72rem;
+}

@@ -1,0 +1,45 @@
+.emptyState {
+  background: #fff;
+  border: 1px solid #e1e4ec;
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+  display: grid;
+  gap: 10px;
+  margin: 20px auto 0;
+  max-width: 500px;
+  padding: 22px;
+}
+
+.emptyState h2 {
+  color: #242630;
+  font-size: 1.25rem;
+}
+
+.emptyState p {
+  color: #697181;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.emptyLink {
+  align-items: center;
+  background: #074793;
+  border-radius: 12px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 720;
+  justify-content: center;
+  margin-top: 6px;
+  min-height: 46px;
+  padding: 10px 16px;
+}
+
+.emptyLink:hover {
+  background: #053a79;
+}
+
+.emptyLink:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
+}

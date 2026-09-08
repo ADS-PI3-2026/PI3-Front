@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  ArrowLeft,
   CalendarBlank,
   CheckCircle,
   FilePdf,
   Gauge,
   LockKey,
+  PencilSimple,
   Plus,
   Repeat,
   WarningCircle,
@@ -16,37 +16,33 @@ import {
 } from "@phosphor-icons/react";
 import AppShell from "../../components/app-shell";
 import VehiclePlate from "../../components/vehicle-plate";
+import PageTopBar from "../_components/page-top-bar";
 import { formatMileage, getVehicleById, getVehicleMaintenance } from "../../mock-data";
 import styles from "./page.module.css";
 
 function getStatusClass(item) {
   if (item.readonly) return styles.readonly;
   if (item.status === "Realizada") return styles.done;
+  if (item.status === "Atrasada") return styles.overdue;
   return styles.pending;
 }
 
 function getTimelineIcon(item) {
   if (item.readonly) return <LockKey aria-hidden size={16} weight="bold" />;
   if (item.status === "Realizada") return <CheckCircle aria-hidden size={16} weight="fill" />;
+  if (item.status === "Atrasada") return <WarningCircle aria-hidden size={16} weight="fill" />;
   return <Wrench aria-hidden size={17} weight="fill" />;
 }
 
 export default function VehicleHistoryPage() {
   const params = useParams();
-  const router = useRouter();
   const vehicle = getVehicleById(params.id);
   const maintenanceItems = getVehicleMaintenance(params.id);
 
   if (!vehicle) {
     return (
       <AppShell>
-        <header className={styles.topBar}>
-          <button aria-label="Voltar" className={styles.backButton} onClick={() => router.back()} type="button">
-            <ArrowLeft aria-hidden size={24} weight="bold" />
-          </button>
-          <h1>Histórico</h1>
-          <span />
-        </header>
+        <PageTopBar title="Histórico" />
         <section className={styles.emptyState}>
           <h2>Veículo não encontrado</h2>
           <p>Volte para a garagem e selecione um automóvel cadastrado.</p>
@@ -58,13 +54,7 @@ export default function VehicleHistoryPage() {
 
   return (
     <AppShell>
-      <header className={styles.topBar}>
-        <button aria-label="Voltar" className={styles.backButton} onClick={() => router.back()} type="button">
-          <ArrowLeft aria-hidden size={24} weight="bold" />
-        </button>
-        <h1>Histórico</h1>
-        <span />
-      </header>
+      <PageTopBar title="Histórico" />
 
       <section className={styles.vehicleHero}>
         <h2>{vehicle.name}</h2>
@@ -74,7 +64,7 @@ export default function VehicleHistoryPage() {
             <Gauge aria-hidden size={18} weight="regular" />
             {formatMileage(vehicle.mileage)} km
           </span>
-          <button className={styles.transferButton} type="button">
+          <button className={styles.transferButton} type="button" onClick={(event) => alert("Transferir veículo para outro proprietário")}>
             <Repeat aria-hidden size={18} weight="bold" />
             Transferir
           </button>
@@ -95,16 +85,16 @@ export default function VehicleHistoryPage() {
                   <div className={styles.cardHeader}>
                     <h3>{item.title}</h3>
                     <div className={styles.badges}>
+                      <span className={styles.statusBadge + " " + toneClass}>
+                        {item.status === "Realizada" ? <CheckCircle aria-hidden size={14} weight="fill" /> : <WarningCircle aria-hidden size={14} weight="fill" />}
+                        {item.status}
+                      </span>
                       {item.readonly && (
                         <span className={styles.readonlyBadge}>
                           <LockKey aria-hidden size={13} weight="fill" />
                           Apenas Leitura
                         </span>
                       )}
-                      <span className={styles.statusBadge + " " + toneClass}>
-                        {item.status === "Realizada" ? <CheckCircle aria-hidden size={14} weight="fill" /> : <WarningCircle aria-hidden size={14} weight="fill" />}
-                        {item.status}
-                      </span>
                     </div>
                   </div>
                   <div className={styles.itemMeta}>
@@ -116,6 +106,12 @@ export default function VehicleHistoryPage() {
                       <Gauge aria-hidden size={18} weight="regular" />
                       {formatMileage(item.mileage)} km
                     </span>
+                    {!item.readonly && (
+                      <Link className={styles.editLink} href={"/garagem/" + vehicle.id + "/manutencao/" + item.id}>
+                        <PencilSimple aria-hidden size={14} weight="bold" />
+                        Editar
+                      </Link>
+                    )}
                   </div>
                   {item.attachment && (
                     <a className={styles.attachmentLink} href="#" onClick={(event) => event.preventDefault()}>
@@ -133,7 +129,7 @@ export default function VehicleHistoryPage() {
       <Link
         aria-label="Adicionar manutenção"
         className={styles.addMaintenanceButton}
-        href={"/garagem/" + vehicle.id + "/manutencao/novo"}
+        href={"/garagem/" + vehicle.id + "/manutencao"}
       >
         <Plus aria-hidden size={28} weight="regular" />
       </Link>
