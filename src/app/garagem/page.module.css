@@ -1,0 +1,170 @@
+.pageHeader {
+  align-items: center;
+  border-bottom: 1px solid #e5e6ed;
+  display: flex;
+  margin: 0 -14px 18px;
+  min-height: 68px;
+  padding: 12px 15px;
+}
+
+.pageHeader h1 {
+  color: #074793;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+
+.dashboardGrid {
+  display: grid;
+  gap: 26px;
+}
+
+.vehiclesSection {
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h2 {
+  color: #22252e;
+  font-size: 1.45rem;
+  letter-spacing: -0.035em;
+}
+
+.vehicleList {
+  display: grid;
+  gap: 14px;
+}
+
+.vehicleCard {
+  background: #fff;
+  border: 1px solid #e2e4ec;
+  border-radius: 17px;
+  box-shadow: 0 4px 14px rgba(34, 46, 78, 0.05);
+  display: block;
+  padding: 20px 21px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.vehicleCard:hover {
+  border-color: #c9d4e6;
+  box-shadow: 0 8px 20px rgba(34, 46, 78, 0.08);
+  transform: translateY(-1px);
+}
+
+.vehicleCard:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
+}
+
+.vehicleHeading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.vehicleHeading h3 {
+  color: #252830;
+  font-size: 1.14rem;
+  letter-spacing: -0.02em;
+}
+
+.vehicleHeading p {
+  color: #5f6675;
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+
+.vehiclePlate {
+  --plate-scale: 0.8;
+  justify-self: end;
+}
+
+.mileage {
+  align-items: center;
+  color: #4d5565;
+  display: flex;
+  font-size: 0.88rem;
+  gap: 8px;
+  margin: 22px 0;
+}
+
+.maintenanceHeader {
+  align-items: center;
+  display: flex;
+  font-size: 0.77rem;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.maintenanceHeader > span {
+  color: #5b6372;
+  font-weight: 690;
+  text-transform: capitalize;
+}
+
+.danger {
+  color: #c91d1d;
+}
+
+.info {
+  color: #074793;
+}
+
+.progressTrack {
+  background: #e7e9ef;
+  border-radius: 999px;
+  height: 8px;
+  margin-top: 7px;
+  overflow: hidden;
+}
+
+.progressTrack span {
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.progressDanger {
+  background: #d01d1d;
+}
+
+.progressInfo {
+  background: #074793;
+}
+
+.addVehicleButton {
+  align-items: center;
+  background: #074793;
+  border: 0;
+  border-radius: 50%;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  box-shadow: 0 12px 24px rgba(7, 71, 147, 0.24);
+  color: #fff;
+  display: flex;
+  height: 62px;
+  justify-content: center;
+  position: fixed;
+  right: max(14px, calc((100vw - 1040px) / 2 + 28px));
+  width: 62px;
+  z-index: 19;
+}
+
+.addVehicleButton:hover {
+  background: #053a79;
+}
+
+@media (min-width: 760px) {
+  .pageHeader {
+    margin: 0 -28px 28px;
+    padding: 15px 28px;
+  }
+
+  .dashboardGrid {
+    align-items: start;
+    grid-template-columns: minmax(330px, 0.9fr) minmax(380px, 1.1fr);
+  }
+}

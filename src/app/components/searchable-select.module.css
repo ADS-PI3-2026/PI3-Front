@@ -1,0 +1,171 @@
+.field {
+  display: grid;
+  gap: 7px;
+  position: relative;
+}
+
+.label {
+  color: #344056;
+  font-size: 0.75rem;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trigger {
+  align-items: center;
+  background: #fbfcff;
+  border: 1px solid #d4d9e7;
+  border-radius: 8px;
+  color: #292d39;
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 13px;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  width: 100%;
+}
+
+.trigger:hover:not(:disabled),
+.trigger[aria-expanded="true"] {
+  background: #fff;
+  border-color: #b9c7dc;
+}
+
+.trigger:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
+.trigger[data-disabled="true"] {
+  background: #ececf2;
+  color: #9ca3b2;
+  cursor: not-allowed;
+}
+
+.trigger[data-error="true"] {
+  border-color: #d92d20;
+}
+
+.trigger svg {
+  color: #7d8494;
+  flex: 0 0 auto;
+  margin-left: 12px;
+}
+
+.triggerValue,
+.placeholder {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: #747c8d;
+}
+
+.dropdown {
+  background: #fff;
+  border: 1px solid #d9deea;
+  border-radius: 12px;
+  box-shadow: 0 16px 34px rgba(25, 37, 64, 0.15);
+  display: grid;
+  gap: 8px;
+  left: 0;
+  margin-top: 4px;
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 30;
+}
+
+.searchShell {
+  align-items: center;
+  background: #f7f8fc;
+  border: 1px solid #dbe1ec;
+  border-radius: 9px;
+  color: #7d8494;
+  display: flex;
+  min-height: 42px;
+  padding: 0 11px;
+}
+
+.searchShell:focus-within {
+  background: #fff;
+  border-color: #4a79b2;
+  box-shadow: 0 0 0 3px rgba(7, 71, 147, 0.1);
+}
+
+.searchShell input {
+  background: transparent;
+  border: 0;
+  color: #292d39;
+  flex: 1;
+  font: inherit;
+  font-size: 0.9rem;
+  min-width: 0;
+  outline: none;
+  padding: 0 0 0 9px;
+}
+
+.searchShell input::placeholder {
+  color: #9aa2b1;
+}
+
+.options {
+  display: grid;
+  gap: 2px;
+  max-height: 230px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.option,
+.optionSelected {
+  border-radius: 8px;
+  color: #313746;
+  font-size: 0.88rem;
+  min-height: 38px;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.option:hover,
+.optionSelected {
+  background: #e9f1fb;
+  color: #074793;
+}
+
+.option:focus-visible,
+.optionSelected:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 1px;
+}
+
+.optionSelected {
+  font-weight: 740;
+}
+
+.emptyMessage {
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.errorText {
+  color: #b42318;
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+}
