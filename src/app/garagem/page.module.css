@@ -1,16 +1,5 @@
 .pageHeader {
-  align-items: center;
-  border-bottom: 1px solid #e5e6ed;
-  display: flex;
-  margin: 0 -14px 18px;
-  min-height: 68px;
-  padding: 12px 15px;
-}
-
-.pageHeader h1 {
-  color: #074793;
-  font-size: 1.35rem;
-  letter-spacing: -0.035em;
+  --app-page-header-margin: 18px;
 }
 
 .dashboardGrid {
@@ -39,12 +28,11 @@
 }
 
 .vehicleCard {
-  background: #fff;
-  border: 1px solid #e2e4ec;
-  border-radius: 17px;
-  box-shadow: 0 4px 14px rgba(34, 46, 78, 0.05);
+  --app-card-border: #e2e4ec;
+  --app-card-padding: 20px 21px;
+  --app-card-radius: 17px;
+  --app-card-shadow: 0 4px 14px rgba(34, 46, 78, 0.05);
   display: block;
-  padding: 20px 21px;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
@@ -66,6 +54,21 @@
   justify-content: space-between;
 }
 
+.vehicleIdentity {
+  align-items: center;
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+}
+
+.vehicleIdentity > div {
+  min-width: 0;
+}
+
+.brandLogo {
+  --vehicle-brand-logo-size: 36px;
+}
+
 .vehicleHeading h3 {
   color: #252830;
   font-size: 1.14rem;
@@ -76,11 +79,6 @@
   color: #5f6675;
   font-size: 0.88rem;
   margin-top: 2px;
-}
-
-.vehiclePlate {
-  --plate-scale: 0.8;
-  justify-self: end;
 }
 
 .mileage {
@@ -137,32 +135,10 @@
 }
 
 .addVehicleButton {
-  align-items: center;
-  background: #074793;
-  border: 0;
-  border-radius: 50%;
-  bottom: calc(90px + env(safe-area-inset-bottom));
-  box-shadow: 0 12px 24px rgba(7, 71, 147, 0.24);
-  color: #fff;
-  display: flex;
-  height: 62px;
-  justify-content: center;
-  position: fixed;
-  right: max(14px, calc((100vw - 1040px) / 2 + 28px));
-  width: 62px;
-  z-index: 19;
-}
-
-.addVehicleButton:hover {
-  background: #053a79;
+  --app-floating-action-size: 62px;
 }
 
 @media (min-width: 760px) {
-  .pageHeader {
-    margin: 0 -28px 28px;
-    padding: 15px 28px;
-  }
-
   .dashboardGrid {
     align-items: start;
     grid-template-columns: minmax(330px, 0.9fr) minmax(380px, 1.1fr);

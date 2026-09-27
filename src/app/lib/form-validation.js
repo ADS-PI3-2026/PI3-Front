@@ -75,6 +75,35 @@ function isValidCnpj(value) {
   return cnpj.endsWith(`${firstDigit}${secondDigit}`);
 }
 
+export function validarRenavam(renavam) {
+    // Remove caracteres não numéricos
+    renavam = renavam.replace(/\D/g, '');
+
+    // RENAVAM precisa ter 11 dígitos (atualmente)
+    if (renavam.length !== 11) {
+        if (renavam.match('^([0-9]{9})$')) {
+            renavam = '00' + renavam;
+        } else {
+            return false;
+        }
+    }
+
+    // Multiplicadores do Módulo 11 para os primeiros 10 dígitos
+    // Os pesos seguem a ordem: 3, 2, 9, 8, 7, 6, 5, 4, 3, 2
+    const multiplicadores = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let soma = 0;
+
+    for (let i = 0; i < 10; i++) {
+        soma += parseInt(renavam.charAt(i)) * multiplicadores[i];
+    }
+
+    let resto = soma % 11;
+    let digitoVerificador = resto < 2 ? 0 : 11 - resto;
+
+    // Compara o dígito calculado com o último dígito do RENAVAM
+    return digitoVerificador === parseInt(renavam.charAt(10));
+}
+
 export function getAccountNameValidationError(name) {
   const normalizedName = name.trim().replace(/\s+/g, " ");
 

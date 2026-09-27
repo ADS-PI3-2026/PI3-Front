@@ -9,9 +9,7 @@
 }
 
 .topBar h1 {
-  color: #074793;
-  font-size: 1.2rem;
-  letter-spacing: -0.035em;
+  --app-page-title-size: 1.2rem;
   text-align: center;
 }
 

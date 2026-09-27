@@ -1,0 +1,18 @@
+.logoFrame {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: var(--vehicle-brand-logo-size, 36px);
+  justify-content: center;
+  width: var(--vehicle-brand-logo-size, 36px);
+}
+
+.logo {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.fallbackIcon {
+  color: var(--app-blue);
+}

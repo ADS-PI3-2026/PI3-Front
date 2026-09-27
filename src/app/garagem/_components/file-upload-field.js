@@ -5,7 +5,7 @@ import styles from "./file-upload-field.module.css";
 
 export default function FileUploadField({ accept, compact = false, error, hint, label, name, onChange, value }) {
   return (
-    <label className={styles.field}>
+    <label className="app-field app-field--uppercase">
       <span>{label}</span>
       <span className={styles.uploadBox} data-compact={compact} data-error={Boolean(error)}>
         <UploadSimple aria-hidden size={26} weight="bold" />
@@ -18,7 +18,7 @@ export default function FileUploadField({ accept, compact = false, error, hint, 
         />
       </span>
       {hint && <small className={styles.hintText}>{hint}</small>}
-      {error && <small className={styles.errorText}>{error}</small>}
+      {error && <small className="app-error-text">{error}</small>}
     </label>
   );
 }

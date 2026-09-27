@@ -34,8 +34,8 @@ export default function FormField({
   const VisibilityIcon = type === "password" ? Eye : EyeSlash;
 
   return (
-    <label className={styles.field}>
-      <span className={styles.label}>{label}</span>
+    <label className={`app-field ${styles.field}`}>
+      <span className="app-field-label">{label}</span>
       <span className={`${styles.inputShell} ${error ? styles.inputError : ""}`}>
         {LeadingIcon && (
           <span className={styles.inputIcon}>
@@ -59,7 +59,7 @@ export default function FormField({
           </button>
         )}
       </span>
-      {error && <span className={styles.fieldError} id={errorId}>{error}</span>}
+      {error && <span className="app-error-text" id={errorId}>{error}</span>}
     </label>
   );
 }

@@ -1,65 +1,47 @@
 .formScreen {
-  margin: 0 auto;
-  max-width: 460px;
-  padding: 22px 0 96px;
+  --app-form-desktop-width: 520px;
+  --app-form-padding: 22px 0 96px;
+  --app-form-width: 460px;
 }
 
 .iconCircle {
+  display: flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  height: 120px;
+  width: 120px;
+  margin: 0 auto 15px;
+}
+
+.icon {
   background: #0752b7;
   border-radius: 50%;
   color: #fff;
-  display: flex;
-  height: 74px;
-  justify-content: center;
-  margin: 0 auto 16px;
-  width: 74px;
+  height: 120px;
+  width: 120px;
+  padding: 10px;
+}
+
+.brandLogo {
+  object-fit: contain;
+  border-radius: 25px;
+  padding: 10px;
 }
 
 .heading {
-  margin-bottom: 26px;
+  --app-form-heading-line-height: 1.15;
+  --app-form-heading-margin: 26px;
+  --app-form-heading-size: 1.43rem;
+  --app-form-heading-spacing: -0.035em;
   text-align: center;
 }
 
-.heading h2 {
-  color: #252733;
-  font-size: 1.43rem;
-  letter-spacing: -0.035em;
-  line-height: 1.15;
-}
-
-.heading p {
-  color: #687083;
-  font-size: 0.86rem;
-  margin-top: 8px;
-}
-
 .vehicleForm {
-  background: #fff;
-  border: 1px solid #e1e4ec;
-  border-radius: 14px;
-  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
-  display: grid;
-  gap: 17px;
-  padding: 20px;
-}
-
-.field {
-  display: grid;
-  gap: 7px;
-}
-
-.field > span:first-child {
-  color: #344056;
-  font-size: 0.75rem;
-  font-weight: 780;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.field small {
-  color: #687083;
-  font-size: 0.72rem;
+  --app-form-card-desktop-padding: 24px;
+  --app-form-card-padding: 20px;
+  --app-form-gap: 17px;
+  --app-form-radius: 14px;
 }
 
 .fieldHint {
@@ -68,36 +50,7 @@
 
 .inputShell,
 .selectShell {
-  align-items: center;
-  background: #fbfcff;
-  border: 1px solid #d4d9e7;
-  border-radius: 8px;
-  color: #80899b;
-  display: flex;
-  min-height: 48px;
-  overflow: hidden;
-}
-
-.inputShell[data-error="true"],
-.selectShell[data-error="true"] {
-  border-color: #d92d20;
-}
-
-.inputShell:focus-within,
-.selectShell:focus-within {
-  outline: 3px solid rgba(7, 71, 147, 0.18);
-  outline-offset: 2px;
-}
-
-.inputShell input,
-.selectShell select {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: #292d39;
-  flex: 1;
-  min-width: 0;
-  outline: none;
+  --app-placeholder: #a1a8b8;
 }
 
 .inputShell input {
@@ -116,13 +69,7 @@
   padding-right: 13px;
 }
 
-.inputShell input::placeholder {
-  color: #a1a8b8;
-}
-
 .selectShell select {
-  cursor: pointer;
-  height: 48px;
   padding: 0 12px;
 }
 
@@ -143,20 +90,6 @@
   cursor: not-allowed;
 }
 
-.errorText {
-  color: #b42318;
-  font-size: 0.72rem;
-}
-
-.errorMessage {
-  background: #fff0ee;
-  border-radius: 10px;
-  color: #b42318;
-  font-size: 0.76rem;
-  line-height: 1.45;
-  padding: 10px 11px;
-}
-
 .submitBar {
   background: rgba(247, 246, 252, 0.92);
   border-top: 1px solid #e1e4ec;
@@ -171,15 +104,6 @@
 }
 
 @media (min-width: 760px) {
-  .formScreen {
-    max-width: 520px;
-    padding-top: 30px;
-  }
-
-  .vehicleForm {
-    padding: 24px;
-  }
-
   .submitBar {
     padding-left: 28px;
     padding-right: 28px;

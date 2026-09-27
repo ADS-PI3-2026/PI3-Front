@@ -321,7 +321,7 @@ function RecoveryDialog({ onClose }) {
             type="email"
             value={email}
           />
-          {message && <p className={styles.formMessageError}>{message}</p>}
+          {message && <p className="app-feedback app-feedback--error">{message}</p>}
           <ActionButton disabled={pending} type="submit">
             {pending ? "Enviando..." : "Enviar código"}
           </ActionButton>
@@ -345,7 +345,7 @@ function RecoveryDialog({ onClose }) {
               setMessage("");
             }}
           />
-          {message && <p className={styles.formMessageError}>{message}</p>}
+          {message && <p className="app-feedback app-feedback--error">{message}</p>}
           <div className={styles.resendRow}>
             <span>Seu e-mail não chegou?</span>
             {timeLeft > 0 ? (
@@ -410,7 +410,7 @@ function RecoveryDialog({ onClose }) {
             type={showPassword ? "text" : "password"}
             value={confirmPassword}
           />
-          {message && <p className={styles.formMessageError}>{message}</p>}
+          {message && <p className="app-feedback app-feedback--error">{message}</p>}
           <ActionButton disabled={pending} type="submit">
             {pending ? "Salvando..." : "Redefinir senha"}
           </ActionButton>
@@ -512,7 +512,7 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
           {feedback && (
             <p
               aria-live="polite"
-              className={feedback.type === "success" ? styles.formMessageSuccess : styles.formMessageError}
+              className={`app-feedback ${feedback.type === "success" ? "app-feedback--success" : "app-feedback--error"}`}
             >
               {feedback.text}
             </p>
@@ -643,7 +643,7 @@ function LoginScreen({ onRegister, onRecovery }) {
               value={password}
             />
             <button className={styles.forgotButton} onClick={onRecovery} type="button">Esqueci minha senha</button>
-            {message && <p className={styles.formMessageError}>{message}</p>}
+            {message && <p className="app-feedback app-feedback--error">{message}</p>}
             <ActionButton disabled={pending} type="submit">
               {pending ? "Entrando..." : "Entrar"}
             </ActionButton>
@@ -828,7 +828,7 @@ function RegisterScreen({ onLogin, onLegal }) {
               type="email"
               value={form.email}
             />
-            {message && <p className={styles.formMessageError}>{message}</p>}
+            {message && <p className="app-feedback app-feedback--error">{message}</p>}
             <ActionButton disabled={pending} type="submit">
               {pending
                 ? "Enviando código..."
@@ -848,7 +848,7 @@ function RegisterScreen({ onLogin, onLegal }) {
               <button onClick={() => setStep("identity")} type="button">Alterar</button>
             </div>
             <div className={styles.accountTypeField}>
-              <span className={styles.fieldLabel}>Tipo de cadastro</span>
+              <span className="app-field-label">Tipo de cadastro</span>
               <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
                 <button
                   aria-pressed={accountType === "person"}
@@ -931,8 +931,8 @@ function RegisterScreen({ onLogin, onLegal }) {
                 <span className={styles.srOnly}> Campo obrigatório.</span>
               </span>
             </label>
-            {errors.terms && <p className={styles.formMessageError}>{errors.terms}</p>}
-            {message && <p className={styles.formMessageError}>{message}</p>}
+            {errors.terms && <p className="app-feedback app-feedback--error">{errors.terms}</p>}
+            {message && <p className="app-feedback app-feedback--error">{message}</p>}
             <ActionButton disabled={pending} type="submit">
               {pending ? "Criando conta..." : "Criar conta e entrar"}
             </ActionButton>

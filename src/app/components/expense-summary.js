@@ -6,7 +6,7 @@ import styles from "./expense-summary.module.css";
 
 export default function ExpenseSummary() {
   return (
-    <section aria-labelledby="expense-title" className={styles.card}>
+    <section aria-labelledby="expense-title" className={`app-card ${styles.card}`}>
       <div className={styles.cardHeader}>
         <h2 id="expense-title">Resumo de Gastos</h2>
       </div>

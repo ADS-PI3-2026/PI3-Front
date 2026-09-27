@@ -1,0 +1,43 @@
+.control {
+  background: #f0f1fa;
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 3px;
+}
+
+.button,
+.active {
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 730;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.button {
+  color: #505767;
+}
+
+.button:hover:not(:disabled) {
+  color: var(--app-blue);
+}
+
+.active {
+  background: var(--app-blue);
+  box-shadow: 0 4px 10px rgba(7, 71, 147, 0.2);
+  color: #fff;
+}
+
+.button:focus-visible,
+.active:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.button:disabled,
+.active:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
