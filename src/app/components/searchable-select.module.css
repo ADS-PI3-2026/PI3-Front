@@ -1,15 +1,6 @@
 .field {
-  display: grid;
-  gap: 7px;
   position: relative;
-}
-
-.label {
-  color: #344056;
-  font-size: 0.75rem;
-  font-weight: 780;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  scroll-margin-top: 12px;
 }
 
 .trigger {
@@ -159,13 +150,29 @@
   text-align: center;
 }
 
-.errorText {
-  color: #b42318;
-  font-size: 0.72rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .trigger {
     transition: none;
   }
+}
+
+.triggerContent {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.optionContent {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.optionImage {
+  flex-shrink: 0;
+  height: 28px;
+  object-fit: contain;
+  width: 28px;
 }

@@ -32,11 +32,16 @@ export function getBrands(vehicleType) {
   return fetchFipeOptions("/" + vehicleType + "/brands");
 }
 
-export function getModels(vehicleType, brandId) {
-  return fetchFipeOptions("/" + vehicleType + "/brands/" + brandId + "/models");
+export async function getBrandYears(vehicleType, brandId) {
+  const years = await fetchFipeOptions(
+    "/" + vehicleType + "/brands/" + brandId + "/years",
+  );
+
+  return years.filter((year) => !isZeroKmYearOption(year));
 }
 
-export async function getYears(vehicleType, brandId, modelId) {
-  const years = await fetchFipeOptions("/" + vehicleType + "/brands/" + brandId + "/models/" + modelId + "/years");
-  return years.filter((year) => !isZeroKmYearOption(year));
+export function getModelsByYear(vehicleType, brandId, yearId) {
+  return fetchFipeOptions(
+    "/" + vehicleType + "/brands/" + brandId + "/years/" + yearId + "/models",
+  );
 }

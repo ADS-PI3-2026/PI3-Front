@@ -1,14 +1,14 @@
 .page {
   --navy: #062e67;
-  --blue: #074793;
-  --blue-hover: #053a79;
+  --blue: var(--app-blue);
+  --blue-hover: var(--app-blue-hover);
   --blue-soft: #e9f1fb;
-  --ink: #13233a;
-  --muted: #657188;
+  --ink: var(--foreground);
+  --muted: var(--app-muted);
   --line: #d9dfeb;
-  --surface: #ffffff;
-  --canvas: #f5f3fb;
-  --danger: #b42318;
+  --surface: var(--app-surface);
+  --canvas: var(--background);
+  --danger: var(--app-danger);
   min-height: 100svh;
   background:
     radial-gradient(circle at 80% 4%, rgba(49, 112, 190, 0.13), transparent 25rem),
@@ -208,12 +208,6 @@
   text-underline-offset: 3px;
 }
 
-.fieldLabel {
-  color: #344056;
-  font-size: 0.79rem;
-  font-weight: 690;
-}
-
 .icon {
   display: block;
 }
@@ -253,24 +247,6 @@
   font-size: 0.7rem;
   padding-top: 24px;
   text-align: center;
-}
-
-.formMessageError,
-.formMessageSuccess {
-  border-radius: 10px;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  padding: 10px 12px;
-}
-
-.formMessageError {
-  background: #fff0ee;
-  color: var(--danger);
-}
-
-.formMessageSuccess {
-  background: #e9f7ef;
-  color: #12663b;
 }
 
 .registerScreen {

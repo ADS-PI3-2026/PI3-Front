@@ -4,12 +4,22 @@
   padding: 14px 14px 18px;
 }
 
+.vehicleTitle {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.brandLogo {
+  --vehicle-brand-logo-size: 42px;
+}
+
 .vehicleHero h2 {
   color: #20222c;
   font-size: 2rem;
   letter-spacing: -0.055em;
   line-height: 1.02;
-  margin-bottom: 10px;
 }
 
 .vehicleMeta {
@@ -20,12 +30,8 @@
   gap: 8px;
 }
 
-.heroPlate {
-  --plate-scale: 0.86;
-}
-
 .metaItem,
-.transferButton {
+.manageButton {
   align-items: center;
   display: inline-flex;
   font-size: 0.86rem;
@@ -37,7 +43,7 @@
   color: #535a69;
 }
 
-.transferButton {
+.manageButton {
   background: #eef4ff;
   border: 1px solid #dfe9f8;
   border-radius: 999px;
@@ -46,17 +52,58 @@
   padding: 7px 12px;
 }
 
-.historySection {
+.maintenanceSection {
   margin: 0 auto;
   max-width: 760px;
-  padding: 0 0 16px;
+  padding: 18px 0 16px;
 }
 
-.historySection > h2 {
+.viewControl {
+  margin-bottom: 24px;
+}
+
+.sectionHeading {
+  align-items: center;
+  color: var(--app-blue);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sectionHeading span,
+.alertEyebrow {
+  color: #737b8c;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.sectionHeading h2 {
   color: #242630;
   font-size: 1.25rem;
   letter-spacing: -0.03em;
-  margin: 14px 0 22px;
+}
+
+.loadingState {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  color: #596172;
+  display: flex;
+  font-size: 0.86rem;
+  font-weight: 680;
+  gap: 10px;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.loadingIcon {
+  animation: spin 700ms linear infinite;
+  color: var(--app-blue);
 }
 
 .timeline {
@@ -94,19 +141,9 @@
   z-index: 1;
 }
 
-.timelineMarker.pending {
-  background: #ffe897;
-  color: #9a6500;
-}
-
 .timelineMarker.done {
   background: #d7f8e3;
   color: #157347;
-}
-
-.timelineMarker.overdue {
-  background: #ffdede;
-  color: #b60000;
 }
 
 .timelineMarker.readonly {
@@ -115,13 +152,12 @@
 }
 
 .historyCard {
-  background: #fff;
-  border: 1px solid #e5e7f0;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(34, 46, 78, 0.055);
+  --app-card-border: #e5e7f0;
+  --app-card-padding: 18px 19px;
+  --app-card-radius: 14px;
+  --app-card-shadow: 0 6px 18px rgba(34, 46, 78, 0.055);
   display: grid;
   gap: 12px;
-  padding: 18px 19px;
 }
 
 .historyItemReadonly .historyCard {
@@ -222,6 +258,69 @@
   gap: 7px;
 }
 
+.alertList {
+  display: grid;
+  gap: 14px;
+}
+
+.alertCard {
+  --app-card-border: #e5e7f0;
+  --app-card-padding: 18px 19px;
+  --app-card-radius: 14px;
+  --app-card-shadow: 0 6px 18px rgba(34, 46, 78, 0.055);
+  display: grid;
+  gap: 14px;
+}
+
+.alertDescription {
+  color: #596172;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.alertFooter {
+  align-items: center;
+  border-top: 1px solid #edf0f6;
+  color: #596172;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  font-weight: 680;
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.alertFooter > span {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.inlineEmptyState {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px dashed #cbd3e4;
+  border-radius: 14px;
+  color: var(--app-blue);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.inlineEmptyState h3 {
+  color: #2a2d36;
+  font-size: 1rem;
+}
+
+.inlineEmptyState p {
+  color: var(--app-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 .attachmentLink {
   border-top: 1px solid #edf0f6;
   color: #074793;
@@ -231,62 +330,23 @@
 }
 
 .addMaintenanceButton {
-  align-items: center;
-  background: #074793;
-  border-radius: 50%;
-  bottom: calc(90px + env(safe-area-inset-bottom));
-  box-shadow: 0 12px 24px rgba(7, 71, 147, 0.26);
-  color: #fff;
-  display: flex;
-  height: 58px;
-  justify-content: center;
-  position: fixed;
-  right: max(14px, calc((100vw - 1040px) / 2 + 28px));
-  width: 58px;
-  z-index: 19;
+  --app-floating-action-size: 58px;
 }
 
-.addMaintenanceButton:hover,
-.emptyLink:hover,
-.transferButton:hover {
+.manageButton:hover {
   background: #053a79;
   color: #fff;
 }
 
-.emptyState {
-  background: #fff;
-  border: 1px solid #e1e4ec;
-  border-radius: 18px;
-  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
-  display: grid;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 22px;
+.manageButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
 }
 
-.emptyState h2 {
-  color: #242630;
-  font-size: 1.25rem;
-}
-
-.emptyState p {
-  color: #697181;
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-.emptyLink {
-  align-items: center;
-  background: #074793;
-  border-radius: 12px;
-  color: #fff;
-  display: inline-flex;
-  font-size: 0.9rem;
-  font-weight: 720;
-  justify-content: center;
-  margin-top: 6px;
-  min-height: 46px;
-  padding: 10px 16px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 760px) {
@@ -299,5 +359,11 @@
 
   .vehicleHero h2 {
     font-size: 2.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
   }
 }

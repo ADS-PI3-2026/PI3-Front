@@ -1,12 +1,7 @@
 .field {
-  display: grid;
-  gap: 7px;
-}
-
-.label {
-  color: #344056;
-  font-size: 0.79rem;
-  font-weight: 690;
+  --app-error-size: 0.76rem;
+  --app-field-label-size: 0.79rem;
+  --app-field-label-weight: 690;
 }
 
 .inputShell {
@@ -74,11 +69,6 @@
 .visibilityButton:focus-visible {
   outline: 3px solid rgba(7, 71, 147, 0.2);
   outline-offset: -3px;
-}
-
-.fieldError {
-  color: #b42318;
-  font-size: 0.76rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

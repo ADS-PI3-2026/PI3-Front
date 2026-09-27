@@ -1,6 +1,22 @@
 :root {
   --background: #f5f3fb;
   --foreground: #13233a;
+  --app-blue: #074793;
+  --app-blue-hover: #053a79;
+  --app-blue-soft: #eef4ff;
+  --app-control-background: #fbfcff;
+  --app-danger: #b42318;
+  --app-danger-border: #d92d20;
+  --app-danger-soft: #fff0ee;
+  --app-focus-ring: rgba(7, 71, 147, 0.18);
+  --app-ink: #20222c;
+  --app-line: #e1e4ec;
+  --app-muted: #697181;
+  --app-success: #12663b;
+  --app-success-soft: #e9f7ef;
+  --app-surface: #fff;
+  --app-card-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+  --app-content-width: 1040px;
 }
 
 html,
@@ -47,4 +63,460 @@ a {
 ::selection {
   background: #c8dbf1;
   color: #062e67;
+}
+
+.app-page-header {
+  align-items: center;
+  border-bottom: 1px solid var(--app-line);
+  display: flex;
+  margin: 0 -14px var(--app-page-header-margin, 20px);
+  min-height: 68px;
+  padding: 12px 15px;
+}
+
+.app-page-title {
+  color: var(--app-blue);
+  font-size: var(--app-page-title-size, 1.35rem);
+  letter-spacing: -0.035em;
+}
+
+.app-card {
+  background: var(--app-card-background, var(--app-surface));
+  border: 1px solid var(--app-card-border, var(--app-line));
+  border-radius: var(--app-card-radius, 18px);
+  box-shadow: var(--app-card-shadow);
+  padding: var(--app-card-padding, 20px);
+}
+
+.app-form-screen {
+  margin: 0 auto;
+  max-width: var(--app-form-width, 460px);
+  padding: var(--app-form-padding, 24px 0 10px);
+}
+
+.app-form-heading {
+  margin-bottom: var(--app-form-heading-margin, 18px);
+}
+
+.app-form-heading h2 {
+  color: var(--app-ink);
+  font-size: var(--app-form-heading-size, 1.8rem);
+  letter-spacing: var(--app-form-heading-spacing, -0.05em);
+  line-height: var(--app-form-heading-line-height, 1.05);
+  max-width: var(--app-form-heading-width, none);
+}
+
+.app-form-heading p {
+  color: var(--app-muted);
+  font-size: var(--app-form-intro-size, 0.83rem);
+  line-height: 1.45;
+  margin-top: 9px;
+}
+
+.app-form-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-form-radius, 12px);
+  box-shadow: var(--app-card-shadow);
+  display: grid;
+  gap: var(--app-form-gap, 14px);
+  padding: var(--app-form-card-padding, 18px);
+}
+
+.app-field {
+  display: grid;
+  gap: 7px;
+}
+
+.app-field > span:first-child,
+.app-field-label {
+  color: #344056;
+  font-size: var(--app-field-label-size, 0.75rem);
+  font-weight: var(--app-field-label-weight, 780);
+}
+
+.app-field--uppercase > span:first-child,
+.app-field-label--uppercase {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-field :where(small:not(.app-error-text)) {
+  color: #687083;
+  font-size: 0.72rem;
+}
+
+.app-control-shell {
+  align-items: center;
+  background: var(--app-control-background);
+  border: 1px solid var(--app-control-border, #d4d9e7);
+  border-radius: var(--app-control-radius, 8px);
+  color: #80899b;
+  display: flex;
+  min-height: var(--app-control-height, 48px);
+  overflow: hidden;
+}
+
+.app-control-shell[data-error="true"],
+.app-control[data-error="true"] {
+  border-color: var(--app-danger-border);
+}
+
+.app-control-shell:focus-within,
+.app-control:focus {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.app-control-shell input,
+.app-control-shell select,
+.app-control {
+  background: transparent;
+  border: 0;
+  color: #292d39;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  outline: none;
+}
+
+.app-control-shell input,
+.app-control-shell select {
+  height: var(--app-control-height, 48px);
+}
+
+.app-control-shell select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.app-control-shell input::placeholder,
+.app-control::placeholder {
+  color: var(--app-placeholder, #8f97aa);
+}
+
+.app-error-text {
+  color: var(--app-danger);
+  font-size: var(--app-error-size, 0.72rem);
+}
+
+.app-feedback {
+  align-items: flex-start;
+  border-radius: 10px;
+  display: flex;
+  font-size: var(--app-feedback-size, 0.78rem);
+  gap: 8px;
+  line-height: 1.45;
+  padding: var(--app-feedback-padding, 10px 12px);
+}
+
+.app-feedback--error {
+  background: var(--app-danger-soft);
+  color: var(--app-danger);
+}
+
+.app-feedback--success {
+  background: var(--app-success-soft);
+  color: var(--app-success);
+}
+
+.app-empty-state {
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: 18px;
+  box-shadow: var(--app-card-shadow);
+  display: grid;
+  gap: 10px;
+  margin: 20px auto 0;
+  max-width: var(--app-empty-state-width, none);
+  padding: 22px;
+}
+
+.app-empty-state h2 {
+  color: #242630;
+  font-size: 1.25rem;
+}
+
+.app-empty-state p {
+  color: var(--app-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.app-empty-state--narrow {
+  --app-empty-state-width: 500px;
+}
+
+.app-empty-link {
+  align-items: center;
+  background: var(--app-blue);
+  border-radius: 12px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 720;
+  justify-content: center;
+  margin-top: 6px;
+  min-height: 46px;
+  padding: 10px 16px;
+}
+
+.app-empty-link:hover {
+  background: var(--app-blue-hover);
+}
+
+.app-empty-link:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
+}
+
+.app-floating-action {
+  align-items: center;
+  background: var(--app-blue);
+  border-radius: 50%;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  box-shadow: 0 12px 24px rgba(7, 71, 147, 0.25);
+  color: #fff;
+  display: flex;
+  height: var(--app-floating-action-size, 60px);
+  justify-content: center;
+  position: fixed;
+  right: max(14px, calc((100vw - var(--app-content-width)) / 2 + 28px));
+  width: var(--app-floating-action-size, 60px);
+  z-index: 19;
+}
+
+.app-floating-action:hover {
+  background: var(--app-blue-hover);
+}
+
+.app-action-list {
+  display: grid;
+  gap: 12px;
+}
+
+.app-action-item {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  box-shadow: var(--app-card-shadow);
+  color: var(--app-ink);
+  display: grid;
+  gap: 13px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 78px;
+  padding: 14px 16px;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.app-action-item:hover:not(:disabled),
+.app-action-item--active {
+  border-color: #b9c9df;
+  box-shadow: 0 8px 20px rgba(34, 46, 78, 0.08);
+}
+
+.app-action-item:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.app-action-item:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.app-action-item:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.app-action-icon {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border-radius: 10px;
+  color: var(--app-blue);
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.app-action-copy {
+  min-width: 0;
+}
+
+.app-action-copy strong {
+  display: block;
+  font-size: 0.94rem;
+  line-height: 1.25;
+}
+
+.app-action-copy span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.app-action-status {
+  align-items: center;
+  color: var(--app-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 4px;
+}
+
+.app-feedback--info {
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+}
+
+.app-notice {
+  align-items: flex-start;
+  border: 1px solid;
+  border-radius: 12px;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 16px;
+}
+
+.app-notice--danger {
+  background: #fff0ee;
+  border-color: #f5b7b0;
+  color: var(--app-danger);
+}
+
+.app-notice--info {
+  background: var(--app-blue-soft);
+  border-color: #ccdcef;
+  color: var(--app-blue);
+}
+
+.app-notice h2 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.app-notice p {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.app-checkbox-field {
+  align-items: flex-start;
+  color: #343945;
+  cursor: pointer;
+  display: grid;
+  font-size: 0.82rem;
+  gap: 10px;
+  grid-template-columns: 21px minmax(0, 1fr);
+  line-height: 1.5;
+}
+
+.app-checkbox-field input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.app-checkbox-control {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #9ca8bb;
+  border-radius: 5px;
+  color: transparent;
+  display: flex;
+  height: 21px;
+  justify-content: center;
+  margin-top: 1px;
+  width: 21px;
+}
+
+.app-checkbox-field input:checked + .app-checkbox-control {
+  background: var(--app-blue);
+  border-color: var(--app-blue);
+  color: #fff;
+}
+
+.app-checkbox-field input:focus-visible + .app-checkbox-control {
+  box-shadow: 0 0 0 3px var(--app-focus-ring);
+}
+
+.app-process-status {
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.app-process-status-row {
+  align-items: center;
+  background: var(--app-surface);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 11px 13px;
+}
+
+.app-process-status-row + .app-process-status-row {
+  border-top: 1px solid var(--app-line);
+}
+
+.app-process-status-copy strong,
+.app-process-status-copy span {
+  display: block;
+}
+
+.app-process-status-copy strong {
+  color: var(--app-ink);
+  font-size: 0.82rem;
+}
+
+.app-process-status-copy span {
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.app-process-status-value {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.app-process-status-value--pending {
+  color: #8a5c00;
+}
+
+.app-process-status-value--confirmed {
+  color: var(--app-success);
+}
+
+@media (min-width: 760px) {
+  .app-page-header {
+    margin-bottom: 28px;
+    margin-left: -28px;
+    margin-right: -28px;
+    padding: 15px 28px;
+  }
+
+  .app-form-screen {
+    max-width: var(--app-form-desktop-width, var(--app-form-width, 500px));
+    padding-top: 30px;
+  }
+
+  .app-form-card {
+    padding: var(--app-form-card-desktop-padding, 22px);
+  }
 }

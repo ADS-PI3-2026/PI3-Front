@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
 import styles from "./searchable-select.module.css";
 
@@ -12,10 +13,31 @@ function normalizeText(value) {
     .trim();
 }
 
+function OptionImage({ src }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return null;
+  }
+
+  return (
+    <Image
+      alt=""
+      aria-hidden
+      className={styles.optionImage}
+      height={28}
+      onError={() => setHasError(true)}
+      src={src}
+      width={28}
+    />
+  );
+}
+
 export default function SearchableSelect({
   disabled = false,
   emptyMessage = "Nenhuma opção encontrada.",
   error,
+  getOptionImage,
   label,
   loading = false,
   onChange,
@@ -27,6 +49,7 @@ export default function SearchableSelect({
   const errorId = useId();
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -37,23 +60,64 @@ export default function SearchableSelect({
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = normalizeText(query);
-    if (!normalizedQuery) return options;
 
-    return options.filter((option) => normalizeText(option.name).includes(normalizedQuery));
+    if (!normalizedQuery) {
+      return options;
+    }
+
+    return options.filter((option) =>
+      normalizeText(option.name).includes(normalizedQuery),
+    );
   }, [options, query]);
 
   const buttonText = selectedOption?.name ?? placeholder;
   const isDisabled = disabled || loading;
+
+  const selectedImage =
+    selectedOption && getOptionImage
+      ? getOptionImage(selectedOption)
+      : null;
 
   const close = () => {
     setOpen(false);
     setQuery("");
   };
 
+  const revealOnMobile = (behavior = "smooth") => {
+    const isMobile = window.matchMedia(
+      "(max-width: 759px), (pointer: coarse)",
+    ).matches;
+
+    if (!isMobile) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    containerRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : behavior,
+      block: "start",
+      inline: "nearest",
+    });
+  };
+
   const openList = () => {
-    if (isDisabled) return;
+    if (isDisabled) {
+      return;
+    }
+
     setOpen(true);
-    window.setTimeout(() => searchInputRef.current?.focus(), 0);
+
+    window.requestAnimationFrame(() => {
+      revealOnMobile();
+      searchInputRef.current?.focus({ preventScroll: true });
+
+      window.setTimeout(() => {
+        revealOnMobile("auto");
+      }, 350);
+    });
   };
 
   const selectOption = (option) => {
@@ -75,8 +139,14 @@ export default function SearchableSelect({
   };
 
   return (
-    <div className={styles.field} onBlur={handleBlur} onKeyDown={handleKeyDown} ref={containerRef}>
-      <span className={styles.label}>{label}</span>
+    <div
+      className={`app-field app-field--uppercase ${styles.field}`}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      ref={containerRef}
+    >
+      <span>{label}</span>
+
       <button
         aria-describedby={error ? errorId : undefined}
         aria-expanded={open}
@@ -88,40 +158,89 @@ export default function SearchableSelect({
         onClick={() => (open ? close() : openList())}
         type="button"
       >
-        <span className={selectedOption ? styles.triggerValue : styles.placeholder}>{buttonText}</span>
+        <span className={styles.triggerContent}>
+          {selectedImage && (
+            <OptionImage src={selectedImage} />
+          )}
+
+          <span
+            className={
+              selectedOption
+                ? styles.triggerValue
+                : styles.placeholder
+            }
+          >
+            {buttonText}
+          </span>
+        </span>
+
         <CaretDown aria-hidden size={18} weight="bold" />
       </button>
 
-      {error && <small className={styles.errorText} id={errorId}>{error}</small>}
+      {error && (
+        <small className="app-error-text" id={errorId}>
+          {error}
+        </small>
+      )}
 
       {open && (
         <div className={styles.dropdown}>
           <label className={styles.searchShell}>
-            <MagnifyingGlass aria-hidden size={18} weight="bold" />
+            <MagnifyingGlass
+              aria-hidden
+              size={18}
+              weight="bold"
+            />
+
             <input
               autoComplete="off"
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) =>
+                setQuery(event.target.value)
+              }
               placeholder={searchPlaceholder}
               ref={searchInputRef}
               value={query}
             />
           </label>
 
-          <div className={styles.options} role="listbox">
-            {filteredOptions.map((option) => (
-              <button
-                aria-selected={option.code === value}
-                className={option.code === value ? styles.optionSelected : styles.option}
-                key={option.code}
-                onClick={() => selectOption(option)}
-                role="option"
-                type="button"
-              >
-                {option.name}
-              </button>
-            ))}
+          <div
+            className={styles.options}
+            role="listbox"
+          >
+            {filteredOptions.map((option) => {
+              const imageSrc = getOptionImage
+                ? getOptionImage(option)
+                : null;
 
-            {filteredOptions.length === 0 && <p className={styles.emptyMessage}>{emptyMessage}</p>}
+              return (
+                <button
+                  aria-selected={option.code === value}
+                  className={
+                    option.code === value
+                      ? styles.optionSelected
+                      : styles.option
+                  }
+                  key={option.code}
+                  onClick={() => selectOption(option)}
+                  role="option"
+                  type="button"
+                >
+                  <span className={styles.optionContent}>
+                    {imageSrc && (
+                      <OptionImage src={imageSrc} />
+                    )}
+
+                    <span>{option.name}</span>
+                  </span>
+                </button>
+              );
+            })}
+
+            {filteredOptions.length === 0 && (
+              <p className={styles.emptyMessage}>
+                {emptyMessage}
+              </p>
+            )}
           </div>
         </div>
       )}

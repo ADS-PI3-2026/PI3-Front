@@ -223,16 +223,16 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <header className={styles.pageHeader}>
+      <header className={`app-page-header ${styles.pageHeader}`}>
         <div>
           <p>Conta e privacidade</p>
-          <h1>Configurações do perfil</h1>
+          <h1 className="app-page-title">Configurações do perfil</h1>
         </div>
         <UserCircle aria-hidden size={36} weight="fill" />
       </header>
 
       <div className={styles.profileLayout}>
-        <section className={styles.profileSummary}>
+        <section className={`app-card ${styles.profileSummary}`}>
           <div className={styles.avatar}>
             <UserCircle aria-hidden size={58} weight="duotone" />
           </div>
@@ -270,7 +270,7 @@ export default function ProfilePage() {
           tabIndex={0}
         >
           {activeTab === "settings" && (
-            <section className={styles.card}>
+            <section className={`app-card ${styles.card}`}>
               <div className={styles.cardHeading}>
                 <div>
                   <p>Dados cadastrais</p>
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                 />
 
                 {message && (
-                  <p className={message.includes("Não foi") ? styles.errorMessage : styles.successMessage}>
+                  <p className={`app-feedback ${message.includes("Não foi") ? "app-feedback--error" : "app-feedback--success"}`}>
                     {message.includes("Não foi")
                       ? <WarningCircle aria-hidden size={20} weight="fill" />
                       : <CheckCircle aria-hidden size={20} weight="fill" />}
@@ -309,7 +309,7 @@ export default function ProfilePage() {
           )}
 
           {activeTab === "privacy" && (
-            <section className={styles.card}>
+            <section className={`app-card ${styles.card}`}>
               <div className={styles.cardHeading}>
                 <div>
                   <p>Transparência</p>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
           )}
 
           {activeTab === "access" && (
-            <section className={styles.card}>
+            <section className={`app-card ${styles.card}`}>
               <div className={styles.cardHeading}>
                 <div>
                   <p>Sessão</p>
@@ -343,7 +343,7 @@ export default function ProfilePage() {
           )}
 
           {activeTab === "deletion" && (
-            <section className={`${styles.card} ${styles.dangerCard}`}>
+            <section className={`app-card ${styles.card} ${styles.dangerCard}`}>
               <div className={`${styles.cardHeading} ${styles.dangerHeading}`}>
                 <div>
                   <h2>Excluir minha conta</h2>

@@ -1,12 +1,7 @@
 .pageHeader {
-  align-items: center;
-  border-bottom: 1px solid #e4e6ed;
+  --app-page-title-size: 1.32rem;
   color: #074793;
-  display: flex;
   justify-content: space-between;
-  margin: 0 -14px 20px;
-  min-height: 68px;
-  padding: 12px 15px;
 }
 
 .pageHeader p {
@@ -16,12 +11,6 @@
   margin-bottom: 2px;
 }
 
-.pageHeader h1 {
-  color: #074793;
-  font-size: 1.32rem;
-  letter-spacing: -0.035em;
-}
-
 .profileLayout {
   display: grid;
   gap: 16px;
@@ -29,17 +18,13 @@
 
 .profileSummary,
 .card {
-  background: #fff;
-  border: 1px solid #e1e4ec;
-  border-radius: 18px;
-  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.055);
+  --app-card-padding: 20px;
 }
 
 .profileSummary {
   align-items: center;
   display: flex;
   gap: 15px;
-  padding: 20px;
 }
 
 .avatar {
@@ -109,10 +94,6 @@
   min-width: 0;
 }
 
-.card {
-  padding: 20px;
-}
-
 .cardHeading {
   align-items: center;
   color: #074793;
@@ -141,27 +122,6 @@
 .deletionForm {
   display: grid;
   gap: 16px;
-}
-
-.successMessage,
-.errorMessage {
-  align-items: flex-start;
-  border-radius: 10px;
-  display: flex;
-  font-size: 0.76rem;
-  gap: 8px;
-  line-height: 1.45;
-  padding: 10px 11px;
-}
-
-.successMessage {
-  background: #e9f7ef;
-  color: #12663b;
-}
-
-.errorMessage {
-  background: #fff0ee;
-  color: #b42318;
 }
 
 .linkList {
@@ -271,11 +231,6 @@
 }
 
 @media (min-width: 760px) {
-  .pageHeader {
-    margin: 0 -28px 28px;
-    padding: 15px 28px;
-  }
-
   .profileLayout {
     align-items: start;
     grid-template-areas:

@@ -1,9 +1,6 @@
 .shell {
-  --app-blue: #074793;
   --app-navy: #062e67;
   --app-canvas: #f7f6fc;
-  --app-ink: #20222c;
-  --app-muted: #5d6575;
   background: var(--app-canvas);
   color: var(--app-ink);
   min-height: 100svh;

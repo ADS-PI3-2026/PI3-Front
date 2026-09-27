@@ -13,20 +13,20 @@
 }
 
 .primary {
-  background: #074793;
+  background: var(--app-blue);
   box-shadow: 0 9px 18px rgba(7, 71, 147, 0.2);
   color: #fff;
 }
 
 .primary:hover:not(:disabled) {
-  background: #053a79;
+  background: var(--app-blue-hover);
   box-shadow: 0 11px 23px rgba(7, 71, 147, 0.25);
   transform: translateY(-1px);
 }
 
 .secondary {
   background: #eef2f8;
-  color: #074793;
+  color: var(--app-blue);
 }
 
 .secondary:hover:not(:disabled) {
@@ -34,7 +34,7 @@
 }
 
 .danger {
-  background: #b42318;
+  background: var(--app-danger);
   color: #fff;
 }
 

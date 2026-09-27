@@ -4,6 +4,7 @@ import { Gauge, Plus } from "@phosphor-icons/react";
 import Link from "next/link";
 import AppShell from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
+import VehicleBrandLogo from "../components/vehicle-brand-logo";
 import VehiclePlate from "../components/vehicle-plate";
 import { formatMileage, mockUser, mockVehicles } from "../mock-data";
 import styles from "./page.module.css";
@@ -13,8 +14,8 @@ export default function GaragePage() {
 
   return (
     <AppShell>
-      <header className={styles.pageHeader}>
-        <h1>Olá, {firstName}</h1>
+      <header className={`app-page-header ${styles.pageHeader}`}>
+        <h1 className="app-page-title">Olá, {firstName}</h1>
       </header>
 
       <div className={styles.dashboardGrid}>
@@ -29,16 +30,23 @@ export default function GaragePage() {
             {mockVehicles.map((vehicle) => (
               <Link
                 aria-label={"Abrir histórico de " + vehicle.name}
-                className={styles.vehicleCard}
+                className={`app-card ${styles.vehicleCard}`}
                 href={"/garagem/" + vehicle.id}
                 key={vehicle.id}
               >
                 <div className={styles.vehicleHeading}>
-                  <div>
-                    <h3>{vehicle.name}</h3>
-                    <p>{vehicle.version}</p>
+                  <div className={styles.vehicleIdentity}>
+                    <VehicleBrandLogo
+                      brandId={vehicle.brandId}
+                      className={styles.brandLogo}
+                      type={vehicle.type}
+                    />
+                    <div>
+                      <h3>{vehicle.name}</h3>
+                      <p>{vehicle.version}</p>
+                    </div>
                   </div>
-                  <VehiclePlate className={styles.vehiclePlate} plate={vehicle.plate} />
+                  <VehiclePlate plate={vehicle.plate} />
                 </div>
 
                 <div className={styles.mileage}>
@@ -64,7 +72,7 @@ export default function GaragePage() {
 
           <Link
             aria-label="Adicionar veículo"
-            className={styles.addVehicleButton}
+            className={`app-floating-action ${styles.addVehicleButton}`}
             href="/garagem/novo"
           >
             <Plus aria-hidden size={28} weight="regular" />

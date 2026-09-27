@@ -12,7 +12,7 @@ export default function PageTopBar({ title }) {
       <button aria-label="Voltar" className={styles.backButton} onClick={() => router.back()} type="button">
         <ArrowLeft aria-hidden size={24} weight="bold" />
       </button>
-      <h1>{title}</h1>
+      <h1 className="app-page-title">{title}</h1>
       <span />
     </header>
   );

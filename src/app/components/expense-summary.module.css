@@ -1,9 +1,7 @@
 .card {
-  background: #fff;
-  border: 1px solid #e2e4ec;
-  border-radius: 18px;
-  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.06);
-  padding: 21px 22px 18px;
+  --app-card-border: #e2e4ec;
+  --app-card-padding: 21px 22px 18px;
+  --app-card-shadow: 0 5px 18px rgba(34, 46, 78, 0.06);
 }
 
 .cardHeader {

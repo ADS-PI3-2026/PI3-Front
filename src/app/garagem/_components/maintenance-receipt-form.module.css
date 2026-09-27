@@ -1,0 +1,53 @@
+.formScreen {
+  --app-form-desktop-width: 540px;
+  --app-form-heading-width: 380px;
+  --app-form-width: 480px;
+}
+
+.receiptForm {
+  --app-form-card-desktop-padding: 24px;
+  --app-form-card-padding: 20px;
+}
+
+.lockNotice {
+  align-items: center;
+  background: #eef4ff;
+  border: 1px solid #dfe9f8;
+  border-radius: 9px;
+  color: var(--app-blue);
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 720;
+  gap: 8px;
+  padding: 11px 12px;
+}
+
+.details {
+  display: grid;
+  gap: 0;
+}
+
+.detailItem {
+  border-bottom: 1px solid #e8eaf0;
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.detailItem:last-child {
+  border-bottom: 0;
+}
+
+.detailItem dt {
+  color: #737b8c;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detailItem dd {
+  color: #292d39;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
