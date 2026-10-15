@@ -52,8 +52,8 @@ export default function NewVehiclePage() {
   );
 
   const brandLogoSrc = selectedBrand
-  ? `/brandLogos/${form.type}/${selectedBrand.code}.webp`
-  : "";
+    ? `/brandLogos/${form.type}/${selectedBrand.code}.webp`
+    : "";
 
   const selectedYear = useMemo(
     () => years.find((year) => year.code === form.year),
@@ -363,15 +363,12 @@ export default function NewVehiclePage() {
           {fipeError && (
             <p className="app-feedback app-feedback--error">{fipeError}</p>
           )}
+          <ActionButton form="new-vehicle-form" type="submit">
+            <Car aria-hidden size={21} weight="bold" />
+            Adicionar veículo à garagem
+          </ActionButton>
         </form>
       </main>
-
-      <div className={styles.submitBar}>
-        <ActionButton form="new-vehicle-form" type="submit">
-          <Car aria-hidden size={21} weight="bold" />
-          Adicionar veículo à garagem
-        </ActionButton>
-      </div>
     </AppShell>
   );
 }

@@ -5,16 +5,23 @@ import {
   ArrowsLeftRight,
   CaretRight,
   CheckCircle,
+  EnvelopeSimple,
   IdentificationCard,
   Info,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import ActionButton from "../../../components/action-button";
 import AppShell from "../../../components/app-shell";
+import VerificationCodeFields from "../../../components/verification-code-fields";
 import VehicleBrandLogo from "../../../components/vehicle-brand-logo";
 import VehiclePlate from "../../../components/vehicle-plate";
+import {
+  createEmptyCode,
+  VERIFICATION_CODE_LENGTH,
+} from "../../../lib/form-validation";
 import {
   convertLegacyPlateToMercosul,
   getVehiclePlateType,
@@ -27,6 +34,9 @@ export default function ManageVehiclePage() {
   const params = useParams();
   const vehicle = getVehicleById(params.id);
   const [activeAction, setActiveAction] = useState("");
+  const [plateCode, setPlateCode] = useState(createEmptyCode);
+  const [plateCodeError, setPlateCodeError] = useState("");
+  const [plateStep, setPlateStep] = useState("review");
   const [plateUpdated, setPlateUpdated] = useState(false);
 
   if (!vehicle) {
@@ -47,9 +57,32 @@ export default function ManageVehiclePage() {
   const plateAlreadyMercosul = originalPlateType === "mercosul" || plateUpdated;
   const plateCanBeConverted = Boolean(convertedPlate) && !plateUpdated;
 
-  const confirmPlateChange = () => {
+  const openPlateAction = () => {
+    setActiveAction("plate");
+    setPlateCode(createEmptyCode());
+    setPlateCodeError("");
+    setPlateStep("review");
+  };
+
+  const requestPlateChangeCode = () => {
+    // Substituir pelo endpoint de solicitação do OTP da alteração de placa.
+    setPlateCode(createEmptyCode());
+    setPlateCodeError("");
+    setPlateStep("code");
+  };
+
+  const confirmPlateChange = (event) => {
+    event.preventDefault();
+
+    if (plateCode.join("").length !== VERIFICATION_CODE_LENGTH) {
+      setPlateCodeError("Digite os seis números enviados para o seu e-mail cadastrado.");
+      return;
+    }
+
+    // Substituir pela validação do OTP e atualização da placa no backend.
     setPlateUpdated(true);
     setActiveAction("");
+    setPlateStep("completed");
   };
 
   return (
@@ -95,7 +128,7 @@ export default function ManageVehiclePage() {
               aria-expanded={activeAction === "plate"}
               className={`app-action-item ${activeAction === "plate" ? "app-action-item--active" : ""}`}
               disabled={!plateCanBeConverted}
-              onClick={() => setActiveAction("plate")}
+              onClick={openPlateAction}
               type="button"
             >
               <span className="app-action-icon">
@@ -152,9 +185,50 @@ export default function ManageVehiclePage() {
               Apenas o segundo número do bloco numérico é convertido para a letra oficial correspondente.
             </p>
 
-            <ActionButton onClick={confirmPlateChange} type="button">
-              Confirmar alteração de placa
-            </ActionButton>
+            {plateStep === "review" ? (
+              <div className={styles.confirmationStep}>
+                <div className={styles.securityNotice}>
+                  <ShieldCheck aria-hidden size={22} weight="duotone" />
+                  <div>
+                    <strong>Confirmação de segurança</strong>
+                    <p>Enviaremos um código OTP para o e-mail cadastrado antes de alterar a placa.</p>
+                  </div>
+                </div>
+                <ActionButton onClick={requestPlateChangeCode} type="button">
+                  <EnvelopeSimple aria-hidden size={20} weight="bold" />
+                  Enviar código de confirmação
+                </ActionButton>
+              </div>
+            ) : (
+              <form className={styles.verificationForm} noValidate onSubmit={confirmPlateChange}>
+                <div className={styles.verificationHeading}>
+                  <h3>Confirme a alteração</h3>
+                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado.</p>
+                </div>
+                <VerificationCodeFields
+                  code={plateCode}
+                  error={plateCodeError}
+                  onChange={(nextCode) => {
+                    setPlateCode(nextCode);
+                    setPlateCodeError("");
+                  }}
+                />
+                {plateCodeError && <p className="app-error-text">{plateCodeError}</p>}
+                <div className={styles.verificationActions}>
+                  <button
+                    className={styles.resendButton}
+                    onClick={requestPlateChangeCode}
+                    type="button"
+                  >
+                    Reenviar código
+                  </button>
+                  <ActionButton type="submit">
+                    <ShieldCheck aria-hidden size={20} weight="bold" />
+                    Confirmar e converter placa
+                  </ActionButton>
+                </div>
+              </form>
+            )}
           </section>
         )}
 
