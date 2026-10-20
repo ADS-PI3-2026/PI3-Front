@@ -2,18 +2,23 @@
 
 import { Gauge, Plus } from "@phosphor-icons/react";
 import Link from "next/link";
-import AppShell from "../components/app-shell";
+import AppShell, { useAuthUser } from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
 import VehicleBrandLogo from "../components/vehicle-brand-logo";
 import VehiclePlate from "../components/vehicle-plate";
-import { formatMileage, mockUser, mockVehicles } from "../mock-data";
+import { formatMileage, mockVehicles } from "../mock-data";
 import styles from "./page.module.css";
 
 export default function GaragePage() {
-  const firstName = mockUser.name.split(" ")[0];
+  return <AppShell><GarageContent /></AppShell>;
+}
+
+function GarageContent() {
+  const user = useAuthUser();
+  const firstName = user.name.trim().split(/\s+/)[0];
 
   return (
-    <AppShell>
+    <>
       <header className={`app-page-header ${styles.pageHeader}`}>
         <h1 className="app-page-title">Olá, {firstName}</h1>
       </header>
@@ -79,6 +84,6 @@ export default function GaragePage() {
           </Link>
         </section>
       </div>
-    </AppShell>
+    </>
   );
 }

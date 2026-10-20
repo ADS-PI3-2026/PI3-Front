@@ -1,11 +1,12 @@
 export const VERIFICATION_CODE_LENGTH = 6;
-// Controle temporário de UX. O backend deverá aplicar o limite real de reenvio.
+// Mesmo intervalo aplicado por VerificationEmailService::MINUTES_RESEND.
 export const CODE_RESEND_WAIT_SECONDS = 120;
+export const REGISTRATION_TEXT_MAX_LENGTH = 255;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PERSON_NAME_PATTERN = /^[\p{L}\s'-]+$/u;
-const PASSWORD_NUMBER_PATTERN = /\d/;
-const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[^\p{L}\p{N}\s]/u;
+const PASSWORD_NUMBER_PATTERN = /\p{N}/u;
+const PASSWORD_SPECIAL_CHARACTER_PATTERN = /[\p{Z}\p{S}\p{P}]/u;
 
 export function createEmptyCode() {
   return Array.from({ length: VERIFICATION_CODE_LENGTH }, () => "");
@@ -13,6 +14,28 @@ export function createEmptyCode() {
 
 export function isValidEmail(value) {
   return EMAIL_PATTERN.test(value.trim());
+}
+
+export function getEmailValidationError(value) {
+  const email = value.trim();
+  if (!email) return "Informe seu e-mail.";
+  if ([...email].length > REGISTRATION_TEXT_MAX_LENGTH) return "O e-mail deve ter no máximo 255 caracteres.";
+  if (!isValidEmail(email)) return "Digite um endereço de e-mail válido.";
+  return "";
+}
+
+// Regras de PreRegisterRequest e RegisterRequest, sem exigir sobrenome.
+export function getRegistrationNameValidationError(value) {
+  const name = value.trim().replace(/\s+/g, " ");
+  if (!name) return "Informe seu nome ou nome fantasia.";
+  if ([...name].length > REGISTRATION_TEXT_MAX_LENGTH) return "O nome deve ter no máximo 255 caracteres.";
+  return "";
+}
+
+export function normalizeDocument(value, accountType) {
+  return accountType === "business"
+    ? value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+    : onlyDigits(value);
 }
 
 export function onlyDigits(value) {
@@ -28,12 +51,12 @@ export function formatCpf(value) {
 }
 
 export function formatCnpj(value) {
-  return onlyDigits(value)
+  return normalizeDocument(value, "business")
     .slice(0, 14)
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
+    .replace(/^([A-Z0-9]{2})([A-Z0-9])/, "$1.$2")
+    .replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})([A-Z0-9])/, "$1.$2.$3")
+    .replace(/\.([A-Z0-9]{3})([A-Z0-9])/, ".$1/$2")
+    .replace(/([A-Z0-9]{4})([A-Z0-9])/, "$1-$2");
 }
 
 function hasRepeatedDigits(value) {
@@ -60,14 +83,14 @@ function isValidCpf(value) {
 function calculateCnpjDigit(base, weights) {
   const sum = base
     .split("")
-    .reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+    .reduce((total, digit, index) => total + (digit.charCodeAt(0) - 48) * weights[index], 0);
   const remainder = sum % 11;
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
 function isValidCnpj(value) {
-  const cnpj = onlyDigits(value);
-  if (cnpj.length !== 14 || hasRepeatedDigits(cnpj)) return false;
+  const cnpj = normalizeDocument(value, "business");
+  if (!/^[A-Z0-9]{12}\d{2}$/.test(cnpj) || /^(.)\1{13}$/.test(cnpj)) return false;
 
   const firstDigit = calculateCnpjDigit(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
   const secondDigit = calculateCnpjDigit(`${cnpj.slice(0, 12)}${firstDigit}`, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
@@ -129,11 +152,12 @@ export function getPersonNameValidationError(name) {
 }
 
 export function getDocumentValidationError(document, accountType) {
-  const digits = onlyDigits(document);
+  if (!["person", "business"].includes(accountType)) return "Escolha pessoa física ou pessoa jurídica.";
+  const digits = normalizeDocument(document, accountType);
 
   if (accountType === "business") {
     if (!digits) return "Informe o CNPJ.";
-    if (digits.length !== 14) return "Digite os 14 dígitos do CNPJ.";
+    if (digits.length !== 14) return "Digite os 14 caracteres do CNPJ; os dois últimos devem ser números.";
     if (!isValidCnpj(digits)) return "Digite um CNPJ válido.";
     return "";
   }
@@ -146,7 +170,8 @@ export function getDocumentValidationError(document, accountType) {
 
 export function getPasswordValidationError(password) {
   if (!password) return "Crie uma senha.";
-  if (password.length < 8) return "A senha precisa ter pelo menos 8 caracteres.";
+  if ([...password].length < 8) return "A senha precisa ter pelo menos 8 caracteres.";
+  if (!/\p{L}/u.test(password)) return "Inclua pelo menos uma letra.";
 
   const hasNumber = PASSWORD_NUMBER_PATTERN.test(password);
   const hasSpecialCharacter = PASSWORD_SPECIAL_CHARACTER_PATTERN.test(password);
