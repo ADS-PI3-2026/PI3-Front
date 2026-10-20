@@ -76,3 +76,7 @@
 - Revisão independente identificou 401 chegando antes do refresh; cenário reproduzido em teste que falhou e corrigido aguardando a renovação da mesma sessão. Suite passou com 49 testes.
 - Manter separados os commits de frontend e infraestrutura Docker; não publicar as alterações locais de composer.lock/config/cors.php da API.
 - A branch de William recebeu commits ainda fora da main. Esses commits não integram esta publicação.
+
+## Escopo final de publicação — 20/10
+- Publicar somente PI3-Front na branch feat/integracao-cadastro-email.
+- PR de infraestrutura fechado e branch remota do Docker removida; ajustes e commit Docker preservados exclusivamente no checkout local para testes.

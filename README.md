@@ -198,6 +198,6 @@ responsável antes da publicação. A revisão também cobriu recuperação de s
 consulta do perfil e exclusão com OTP. Um caso adicional de 401 recebido antes
 do término do refresh foi reproduzido e corrigido com teste de regressão.
 
-Alterações do ambiente são publicadas separadamente em PI3-Docker. O backend
-não faz parte do commit desta integração. As dependências de edição do perfil
+Os ajustes de Docker são apoio somente local para testes e não fazem parte
+da publicação desta integração. O backend também fica fora deste commit. As dependências de edição do perfil
 e conteúdo legal continuam indicadas nas seções anteriores.
