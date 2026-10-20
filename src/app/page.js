@@ -3,24 +3,26 @@
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { submitAuthRequest } from "./auth-api";
+import { getAuthErrorMessage, getAuthFieldErrors, loginWithCredentials, submitAuthRequest } from "./auth-api";
 import { getAuthSession, saveAuthSession } from "./auth-session";
 import ActionButton from "./components/action-button";
 import FormField from "./components/form-field";
 import VerificationCodeFields from "./components/verification-code-fields";
 import {
   CODE_RESEND_WAIT_SECONDS,
+  REGISTRATION_TEXT_MAX_LENGTH,
   VERIFICATION_CODE_LENGTH,
   createEmptyCode,
   formatCnpj,
   formatCpf,
-  getAccountNameValidationError,
   getDocumentValidationError,
+  getEmailValidationError,
   getPasswordValidationError,
-  getPersonNameValidationError,
+  getRegistrationNameValidationError,
   isValidEmail,
-  onlyDigits,
+  normalizeDocument,
 } from "./lib/form-validation";
+import { getRecoveryStep } from "./lib/recovery-flow";
 import styles from "./page.module.css";
 
 const legalContent = {
@@ -164,9 +166,9 @@ function LegalDialog({ type, onClose }) {
   );
 }
 
-function RecoveryDialog({ onClose }) {
-  const [step, setStep] = useState("email");
-  const [email, setEmail] = useState("");
+function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
+  const [step, setStep] = useState(() => getRecoveryStep(lastRequest, Date.now()));
+  const [email, setEmail] = useState(lastRequest.email);
   const [code, setCode] = useState(createEmptyCode);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -174,122 +176,114 @@ function RecoveryDialog({ onClose }) {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, CODE_RESEND_WAIT_SECONDS - Math.floor((Date.now() - lastRequest.sentAt) / 1000)));
 
   useEffect(() => {
-    if (step !== "code" || timeLeft <= 0) return;
+    if (step !== "code") return;
     const timer = window.setInterval(() => {
-      setTimeLeft((current) => Math.max(current - 1, 0));
+      setTimeLeft(Math.max(0, CODE_RESEND_WAIT_SECONDS - Math.floor((Date.now() - lastRequest.sentAt) / 1000)));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [step, timeLeft]);
+  }, [step, lastRequest.sentAt]);
 
   const seconds = String(timeLeft % 60).padStart(2, "0");
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const showRequestError = (error) => {
+    const fields = getAuthFieldErrors(error);
+    setErrors({ ...fields, confirmPassword: fields.confirm });
+    setMessage(getAuthErrorMessage(error, "Não foi possível concluir a solicitação. Tente novamente."));
+  };
 
   const submitEmail = async (event) => {
     event.preventDefault();
+    if (pending) return;
     const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedEmail) {
-      setErrors({ email: "Informe o e-mail da sua conta." });
-      return;
-    }
-    if (!isValidEmail(normalizedEmail)) {
-      setErrors({ email: "Digite um endereço de e-mail válido." });
-      return;
-    }
-
+    const error = getEmailValidationError(normalizedEmail);
+    if (error) { setErrors({ email: error }); return; }
     setErrors({});
     setMessage("");
-    setPending(true);
-    try {
-      await submitAuthRequest("requestPasswordReset", {
-        email: normalizedEmail,
-      });
+    if (normalizedEmail === lastRequest.email && Date.now() - lastRequest.sentAt < CODE_RESEND_WAIT_SECONDS * 1000) {
       setEmail(normalizedEmail);
       setStep("code");
-      setTimeLeft(CODE_RESEND_WAIT_SECONDS);
-    } catch {
-      setMessage("Não foi possível solicitar o código. Tente novamente.");
-    } finally {
-      setPending(false);
+      return;
     }
+    setPending(true);
+    try {
+      await submitAuthRequest("requestPasswordReset", { email: normalizedEmail });
+      setEmail(normalizedEmail);
+      setCode(createEmptyCode());
+      onCodeSent({ email: normalizedEmail, sentAt: Date.now() });
+      setStep("code");
+      setTimeLeft(CODE_RESEND_WAIT_SECONDS);
+    } catch (error) { showRequestError(error); }
+    finally { setPending(false); }
   };
 
   const submitCode = async (event) => {
     event.preventDefault();
-    if (code.join("").length !== VERIFICATION_CODE_LENGTH) {
+    if (pending) return;
+    if (!/^\d{6}$/.test(code.join(""))) {
       setMessage("Digite os seis números enviados para o seu e-mail.");
       return;
     }
+    setMessage("");
     setPending(true);
     try {
-      await submitAuthRequest("verifyPasswordCode", {
-        email,
-        code: code.join(""),
-      });
-      setMessage("");
+      await submitAuthRequest("verifyPasswordCode", { email, code: code.join("") });
+      onCodeSent({ ...lastRequest, email, verifiedAt: Date.now() });
+      setErrors({});
+      setCode(createEmptyCode());
       setStep("password");
-    } catch {
-      setMessage("O código não pôde ser validado. Confira e tente novamente.");
-    } finally {
-      setPending(false);
-    }
+    } catch (error) { showRequestError(error); }
+    finally { setPending(false); }
   };
 
   const submitPassword = async (event) => {
     event.preventDefault();
+    if (pending) return;
     const nextErrors = {};
-    const passwordError = getPasswordValidationError(password);
-    if (passwordError) nextErrors.password = passwordError;
-    if (!confirmPassword) {
-      nextErrors.confirmPassword = "Repita a nova senha.";
-    } else if (password !== confirmPassword) {
-      nextErrors.confirmPassword = "As senhas não coincidem.";
-    }
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
+    const error = getPasswordValidationError(password);
+    if (error) nextErrors.password = error;
+    if (!confirmPassword) nextErrors.confirmPassword = "Repita a nova senha.";
+    else if (password !== confirmPassword) nextErrors.confirmPassword = "As senhas não coincidem.";
+    if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
     setErrors({});
     setMessage("");
     setPending(true);
     try {
-      await submitAuthRequest("resetPassword", {
-        email,
-        code: code.join(""),
-        password,
-        passwordConfirmation: confirmPassword,
-      });
-      setMessage("");
+      await submitAuthRequest("resetPassword", { email, password, password_confirmation: confirmPassword });
+      setPassword("");
+      setConfirmPassword("");
+      onCodeSent({ email: "", sentAt: 0 });
       setStep("success");
-    } catch {
-      setMessage("Não foi possível redefinir a senha. Tente novamente.");
-    } finally {
-      setPending(false);
-    }
+    } catch (error) {
+      showRequestError(error);
+      if (error.status === 403) {
+        onCodeSent({ ...lastRequest, verifiedAt: 0 });
+        setStep("code");
+        setCode(createEmptyCode());
+      }
+    } finally { setPending(false); }
   };
 
   const resendCode = async () => {
+    if (pending || (email === lastRequest.email && Date.now() - lastRequest.sentAt < CODE_RESEND_WAIT_SECONDS * 1000)) return;
     setMessage("");
+    setErrors({});
     setPending(true);
     try {
       await submitAuthRequest("requestPasswordReset", { email });
       setCode(createEmptyCode());
+      onCodeSent({ email, sentAt: Date.now() });
       setTimeLeft(CODE_RESEND_WAIT_SECONDS);
-    } catch {
-      setMessage("Não foi possível reenviar o código. Tente novamente.");
-    } finally {
-      setPending(false);
-    }
+    } catch (error) { showRequestError(error); }
+    finally { setPending(false); }
   };
 
   const stepIndex = { email: 1, code: 2, password: 3, success: 3 }[step];
 
   return (
-    <Dialog label="Recuperação de senha" onClose={onClose}>
+    <Dialog label="Recuperação de senha" onClose={() => { if (!pending) onClose(); }}>
       {step !== "success" && (
         <div className={styles.progress} aria-label={`Etapa ${stepIndex} de 3`}>
           {[1, 2, 3].map((item) => (
@@ -311,7 +305,6 @@ function RecoveryDialog({ onClose }) {
             icon="envelope"
             label="E-mail"
             error={errors.email}
-            maxLength={254}
             name="recovery-email"
             onChange={(event) => {
               setEmail(event.target.value);
@@ -321,11 +314,11 @@ function RecoveryDialog({ onClose }) {
             type="email"
             value={email}
           />
-          {message && <p className="app-feedback app-feedback--error">{message}</p>}
+          {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
           <ActionButton disabled={pending} type="submit">
             {pending ? "Enviando..." : "Enviar código"}
           </ActionButton>
-          <ActionButton onClick={onClose} type="button" variant="secondary">Voltar para o login</ActionButton>
+          <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar para o login</ActionButton>
         </form>
       )}
 
@@ -345,7 +338,7 @@ function RecoveryDialog({ onClose }) {
               setMessage("");
             }}
           />
-          {message && <p className="app-feedback app-feedback--error">{message}</p>}
+          {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
           <div className={styles.resendRow}>
             <span>Seu e-mail não chegou?</span>
             {timeLeft > 0 ? (
@@ -363,7 +356,7 @@ function RecoveryDialog({ onClose }) {
           <ActionButton disabled={pending} type="submit">
             {pending ? "Validando..." : "Validar código"}
           </ActionButton>
-          <ActionButton onClick={() => setStep("email")} type="button" variant="secondary">Alterar e-mail</ActionButton>
+          <ActionButton disabled={pending} onClick={() => { setStep("email"); setMessage(""); setErrors({}); }} type="button" variant="secondary">Alterar e-mail</ActionButton>
         </form>
       )}
 
@@ -373,15 +366,13 @@ function RecoveryDialog({ onClose }) {
             <span className={styles.dialogIcon}><Icon name="shield" size={24} /></span>
             <p className={styles.eyebrow}>Última etapa</p>
             <h2>Crie uma nova senha</h2>
-            <p>Use pelo menos 8 caracteres, incluindo um número e um caractere especial.</p>
-            {/* TODO: Junto com o backend, conferir se a senha inserida não é idêntica à antiga. */}
+            <p>Use pelo menos 8 caracteres, incluindo letra, número e símbolo.</p>
           </div>
           <FormField
             autoComplete="new-password"
             icon="lock"
             label="Nova senha"
             error={errors.password}
-            maxLength={72}
             minLength={8}
             name="new-password"
             onChange={(event) => {
@@ -399,7 +390,6 @@ function RecoveryDialog({ onClose }) {
             icon="lock"
             label="Confirmar nova senha"
             error={errors.confirmPassword}
-            maxLength={72}
             minLength={8}
             name="confirm-new-password"
             onChange={(event) => {
@@ -410,7 +400,7 @@ function RecoveryDialog({ onClose }) {
             type={showPassword ? "text" : "password"}
             value={confirmPassword}
           />
-          {message && <p className="app-feedback app-feedback--error">{message}</p>}
+          {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
           <ActionButton disabled={pending} type="submit">
             {pending ? "Salvando..." : "Redefinir senha"}
           </ActionButton>
@@ -430,13 +420,14 @@ function RecoveryDialog({ onClose }) {
   );
 }
 
-function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
+function EmailConfirmationDialog({ email, name, sentAt, onCodeSent, onClose, onConfirmed }) {
   const [step, setStep] = useState("code");
   const [code, setCode] = useState(createEmptyCode);
-  const [verificationResult, setVerificationResult] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [pending, setPending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(CODE_RESEND_WAIT_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0,
+    Math.ceil((sentAt + CODE_RESEND_WAIT_SECONDS * 1000 - Date.now()) / 1000),
+  ));
 
   useEffect(() => {
     if (step !== "code" || timeLeft <= 0) return;
@@ -451,9 +442,10 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
 
   const submitCode = async (event) => {
     event.preventDefault();
+    if (pending) return;
     const verificationCode = code.join("");
 
-    if (verificationCode.length !== VERIFICATION_CODE_LENGTH) {
+    if (!/^\d{6}$/.test(verificationCode)) {
       setFeedback({ type: "error", text: "Digite os seis números enviados para o seu e-mail." });
       return;
     }
@@ -461,38 +453,44 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
     setFeedback(null);
     setPending(true);
     try {
-      const result = await submitAuthRequest("verifyEmail", {
+      await submitAuthRequest("verifyEmail", {
         email,
         code: verificationCode,
       });
-      setVerificationResult(result);
       setStep("success");
-    } catch {
-      setFeedback({ type: "error", text: "O código não pôde ser validado. Confira e tente novamente." });
+    } catch (error) {
+      const fieldErrors = getAuthFieldErrors(error);
+      setFeedback({ type: "error", text: fieldErrors.code ?? fieldErrors.email
+        ?? getAuthErrorMessage(error, "O código não pôde ser validado. Confira e tente novamente.") });
     } finally {
       setPending(false);
     }
   };
 
   const resendCode = async () => {
-    if (timeLeft > 0) return;
+    if (timeLeft > 0 || pending) return;
 
     setFeedback(null);
     setPending(true);
     try {
-      await submitAuthRequest("requestEmailVerification", { email });
+      await submitAuthRequest("requestEmailVerification", { name, email });
+      onCodeSent();
       setCode(createEmptyCode());
       setTimeLeft(CODE_RESEND_WAIT_SECONDS);
       setFeedback({ type: "success", text: "Um novo código foi enviado para o seu e-mail." });
-    } catch {
-      setFeedback({ type: "error", text: "Não foi possível reenviar o código. Tente novamente." });
+    } catch (error) {
+      const fieldErrors = getAuthFieldErrors(error);
+      setFeedback({ type: "error", text: fieldErrors.email ?? fieldErrors.name
+        ?? getAuthErrorMessage(error, "Não foi possível reenviar o código. Tente novamente.") });
     } finally {
       setPending(false);
     }
   };
 
   return (
-    <Dialog label="Confirmação de e-mail" onClose={onClose}>
+    <Dialog label="Confirmação de e-mail" onClose={() => {
+      if (!pending) (step === "success" ? onConfirmed : onClose)();
+    }}>
       {step === "code" && (
         <form className={styles.dialogForm} noValidate onSubmit={submitCode}>
           <div className={styles.dialogIntro}>
@@ -530,7 +528,7 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
           <ActionButton disabled={pending} type="submit">
             {pending ? "Validando..." : "Confirmar e-mail"}
           </ActionButton>
-          <ActionButton onClick={onClose} type="button" variant="secondary">Voltar ao cadastro</ActionButton>
+          <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar ao cadastro</ActionButton>
         </form>
       )}
 
@@ -540,14 +538,14 @@ function EmailConfirmationDialog({ email, onClose, onConfirmed }) {
           <p className={styles.eyebrow}>Identidade confirmada</p>
           <h2>E-mail confirmado!</h2>
           <p>Agora você pode completar os dados necessários para criar sua conta.</p>
-          <ActionButton className={styles.successAction} onClick={() => onConfirmed(verificationResult)} type="button">Continuar cadastro</ActionButton>
+          <ActionButton className={styles.successAction} onClick={onConfirmed} type="button">Continuar cadastro</ActionButton>
         </div>
       )}
     </Dialog>
   );
 }
 
-function LoginScreen({ onRegister, onRecovery }) {
+function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed, accountDeleted }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -558,18 +556,14 @@ function LoginScreen({ onRegister, onRecovery }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (pending) return;
     const normalizedEmail = email.trim().toLowerCase();
     const nextErrors = {};
 
-    if (!normalizedEmail) {
-      nextErrors.email = "Informe seu e-mail.";
-    } else if (!isValidEmail(normalizedEmail)) {
-      nextErrors.email = "Digite um endereço de e-mail válido.";
-    }
+    const emailError = getEmailValidationError(normalizedEmail);
+    if (emailError) nextErrors.email = emailError;
     if (!password) {
       nextErrors.password = "Informe sua senha.";
-    } else if (password.length < 8) {
-      nextErrors.password = "A senha precisa ter pelo menos 8 caracteres.";
     }
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -580,15 +574,17 @@ function LoginScreen({ onRegister, onRecovery }) {
     setMessage("");
     setPending(true);
     try {
-      const authResult = await submitAuthRequest("login", {
+      const authResult = await loginWithCredentials({
         email: normalizedEmail,
         password,
       });
-      saveAuthSession({ authResult, email: normalizedEmail });
+      saveAuthSession({ authResult });
       setEmail(normalizedEmail);
-      router.push("/garagem");
-    } catch {
-      setMessage("Não foi possível entrar. Confira os dados e tente novamente.");
+      setPassword("");
+      router.replace("/garagem");
+    } catch (error) {
+      setErrors(getAuthFieldErrors(error));
+      setMessage(getAuthErrorMessage(error, "Não foi possível entrar. Confira os dados e tente novamente."));
     } finally {
       setPending(false);
     }
@@ -604,6 +600,9 @@ function LoginScreen({ onRegister, onRecovery }) {
             <h1>Acesse sua conta</h1>
             <p>Entre para cuidar dos registros e histórias dos seus veículos.</p>
           </div>
+          {logoutUnconfirmed && <p className="app-feedback" role="status">Você saiu deste navegador. Não foi possível confirmar o encerramento no servidor. Entre novamente quando a conexão voltar.</p>}
+          {accountDeleted && <p className="app-feedback" role="status">Sua conta foi excluída.</p>}
+          {sessionExpired && <p className="app-feedback" role="status">Sua sessão expirou. Faça login novamente para continuar.</p>}
           <form
             className={styles.authForm}
             noValidate
@@ -614,7 +613,7 @@ function LoginScreen({ onRegister, onRecovery }) {
               error={errors.email}
               icon="envelope"
               label="E-mail"
-              maxLength={254}
+              maxLength={REGISTRATION_TEXT_MAX_LENGTH}
               name="email"
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -629,8 +628,6 @@ function LoginScreen({ onRegister, onRecovery }) {
               error={errors.password}
               icon="lock"
               label="Senha"
-              maxLength={72}
-              minLength={8}
               name="password"
               onChange={(event) => {
                 setPassword(event.target.value);
@@ -643,7 +640,7 @@ function LoginScreen({ onRegister, onRecovery }) {
               value={password}
             />
             <button className={styles.forgotButton} onClick={onRecovery} type="button">Esqueci minha senha</button>
-            {message && <p className="app-feedback app-feedback--error">{message}</p>}
+            {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
             <ActionButton disabled={pending} type="submit">
               {pending ? "Entrando..." : "Entrar"}
             </ActionButton>
@@ -661,7 +658,6 @@ function RegisterScreen({ onLogin, onLegal }) {
   const [step, setStep] = useState("identity");
   const [accountType, setAccountType] = useState("person");
   const [form, setForm] = useState({ name: "", document: "", email: "", password: "", confirm: "" });
-  const [emailVerificationToken, setEmailVerificationToken] = useState("");
   const [verifiedEmail, setVerifiedEmail] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -669,8 +665,12 @@ function RegisterScreen({ onLogin, onLegal }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [verificationRequest, setVerificationRequest] = useState(null);
 
   const update = (key) => (event) => {
+    if (key === "email" && event.target.value.trim().toLowerCase() !== verifiedEmail) {
+      setVerifiedEmail("");
+    }
     setForm((current) => ({ ...current, [key]: event.target.value }));
     setErrors((current) => ({ ...current, [key]: "" }));
   };
@@ -693,17 +693,15 @@ function RegisterScreen({ onLogin, onLegal }) {
 
   const submitIdentity = async (event) => {
     event.preventDefault();
+    if (pending) return;
     const normalizedName = form.name.trim().replace(/\s+/g, " ");
     const normalizedEmail = form.email.trim().toLowerCase();
     const nextErrors = {};
 
-    const nameError = getAccountNameValidationError(normalizedName);
+    const nameError = getRegistrationNameValidationError(normalizedName);
     if (nameError) nextErrors.name = nameError;
-    if (!normalizedEmail) {
-      nextErrors.email = "Informe seu e-mail.";
-    } else if (!isValidEmail(normalizedEmail)) {
-      nextErrors.email = "Digite um endereço de e-mail válido.";
-    }
+    const emailError = getEmailValidationError(normalizedEmail);
+    if (emailError) nextErrors.email = emailError;
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       setMessage("");
@@ -719,13 +717,21 @@ function RegisterScreen({ onLogin, onLegal }) {
       return;
     }
 
-    setPending(true);
-    try {
-      await submitAuthRequest("requestEmailVerification", { email: normalizedEmail });
+    if (normalizedEmail === verificationRequest?.email) {
       setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
       setConfirmationEmail(normalizedEmail);
-    } catch {
-      setMessage("Não foi possível enviar o código. Tente novamente.");
+      return;
+    }
+
+    setPending(true);
+    try {
+      await submitAuthRequest("requestEmailVerification", { name: normalizedName, email: normalizedEmail });
+      setVerificationRequest({ name: normalizedName, email: normalizedEmail, sentAt: Date.now() });
+      setForm((current) => ({ ...current, name: normalizedName, email: normalizedEmail }));
+      setConfirmationEmail(normalizedEmail);
+    } catch (error) {
+      setErrors(getAuthFieldErrors(error));
+      setMessage(getAuthErrorMessage(error, "Não foi possível enviar o código. Tente novamente."));
     } finally {
       setPending(false);
     }
@@ -733,10 +739,14 @@ function RegisterScreen({ onLogin, onLegal }) {
 
   const submitRegistration = async (event) => {
     event.preventDefault();
+    if (pending) return;
+    if (!verifiedEmail || verifiedEmail !== form.email) {
+      setStep("identity");
+      setMessage("Confirme seu e-mail antes de concluir o cadastro.");
+      return;
+    }
     const nextErrors = {};
-    const nameError = accountType === "person"
-      ? getPersonNameValidationError(form.name)
-      : getAccountNameValidationError(form.name);
+    const nameError = getRegistrationNameValidationError(form.name);
 
     if (nameError) {
       setErrors({ name: nameError });
@@ -769,20 +779,33 @@ function RegisterScreen({ onLogin, onLegal }) {
       password: form.password,
       password_confirmation: form.confirm,
       document_type: accountType === "business" ? "CNPJ" : "CPF",
-      document: onlyDigits(form.document),
+      document: normalizeDocument(form.document, accountType),
       terms_accepted: true,
-      ...(emailVerificationToken ? { email_verification_token: emailVerificationToken } : {}),
     };
 
     setErrors({});
     setMessage("");
     setPending(true);
     try {
-      const authResult = await submitAuthRequest("register", payload);
-      saveAuthSession({ authResult, email: form.email });
+      const result = await submitAuthRequest("register", payload);
+      if (result.status !== 201 || !result.data?.user) {
+        throw new Error("Não foi possível confirmar a criação da conta. Tente novamente mais tarde.");
+      }
+      if (typeof result.data.access_token !== "string" || !result.data.access_token.trim()) {
+        throw new Error("Sua conta foi criada, mas não foi possível iniciar a sessão. Acesse pelo login.");
+      }
+      saveAuthSession({ authResult: result });
+      setForm((current) => ({ ...current, password: "", confirm: "" }));
       router.replace("/garagem");
-    } catch {
-      setMessage("Não foi possível criar a conta. Tente novamente.");
+    } catch (error) {
+      const fieldErrors = getAuthFieldErrors(error);
+      setErrors(fieldErrors);
+      if (fieldErrors.name || fieldErrors.email) setStep("identity");
+      if (error.data?.message === "Esse e-mail não foi verificado.") {
+        setVerifiedEmail("");
+        setStep("identity");
+      }
+      setMessage(getAuthErrorMessage(error, "Não foi possível criar a conta. Tente novamente."));
     } finally {
       setPending(false);
     }
@@ -810,7 +833,7 @@ function RegisterScreen({ onLogin, onLegal }) {
               error={errors.name}
               icon="user"
               label="Nome"
-              maxLength={100}
+              maxLength={REGISTRATION_TEXT_MAX_LENGTH}
               name="name"
               onChange={update("name")}
               placeholder="Seu nome ou nome fantasia"
@@ -821,7 +844,7 @@ function RegisterScreen({ onLogin, onLegal }) {
               error={errors.email}
               icon="envelope"
               label="E-mail"
-              maxLength={254}
+              maxLength={REGISTRATION_TEXT_MAX_LENGTH}
               name="register-email"
               onChange={update("email")}
               placeholder="seu@email.com"
@@ -832,7 +855,7 @@ function RegisterScreen({ onLogin, onLegal }) {
             <ActionButton disabled={pending} type="submit">
               {pending
                 ? "Enviando código..."
-                : form.email.trim().toLowerCase() === verifiedEmail
+                : verifiedEmail && form.email.trim().toLowerCase() === verifiedEmail
                   ? "Salvar e continuar"
                   : "Confirmar e avançar"}
             </ActionButton>
@@ -872,7 +895,7 @@ function RegisterScreen({ onLogin, onLegal }) {
               autoComplete="off"
               error={errors.document}
               icon="idCard"
-              inputMode="numeric"
+              inputMode={accountType === "business" ? "text" : "numeric"}
               label={accountType === "business" ? "CNPJ" : "CPF"}
               maxLength={accountType === "business" ? 18 : 14}
               name={accountType === "business" ? "cnpj" : "cpf"}
@@ -885,12 +908,11 @@ function RegisterScreen({ onLogin, onLegal }) {
               error={errors.password}
               icon="lock"
               label="Senha"
-              maxLength={72}
               minLength={8}
               name="register-password"
               onChange={update("password")}
               onToggle={() => setShowPassword((current) => !current)}
-              placeholder="8+ caracteres, número e símbolo"
+              placeholder="8+ caracteres, letra, número e símbolo"
               toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
               type={showPassword ? "text" : "password"}
               value={form.password}
@@ -900,7 +922,6 @@ function RegisterScreen({ onLogin, onLegal }) {
               error={errors.confirm}
               icon="lock"
               label="Confirmar senha"
-              maxLength={72}
               minLength={8}
               name="register-confirm"
               onChange={update("confirm")}
@@ -944,15 +965,13 @@ function RegisterScreen({ onLogin, onLegal }) {
       {confirmationEmail && (
         <EmailConfirmationDialog
           email={confirmationEmail}
+          name={verificationRequest.name}
+          sentAt={verificationRequest.sentAt}
+          onCodeSent={() => setVerificationRequest((current) => ({ ...current, sentAt: Date.now() }))}
           onClose={() => setConfirmationEmail("")}
-          onConfirmed={(verificationResult) => {
+          onConfirmed={() => {
             setVerifiedEmail(confirmationEmail);
             setConfirmationEmail("");
-            setEmailVerificationToken(
-              verificationResult?.data?.verification_token
-              ?? verificationResult?.data?.token
-              ?? "",
-            );
             setStep("details");
           }}
         />
@@ -966,6 +985,7 @@ function AuthHome() {
   const searchParams = useSearchParams();
   const [screen, setScreen] = useState("login");
   const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryRequest, setRecoveryRequest] = useState({ email: "", sentAt: 0 });
   const [legalOpen, setLegalOpen] = useState(null);
   const requestedLegalType = searchParams.get("legal");
   const legalReturnPath = searchParams.get("returnTo") === "/perfil" ? "/perfil" : "/";
@@ -973,7 +993,8 @@ function AuthHome() {
     ?? (["terms", "privacy"].includes(requestedLegalType) ? requestedLegalType : null);
 
   useEffect(() => {
-    if (!requestedLegalType && getAuthSession()) {
+    const session = getAuthSession();
+    if (!requestedLegalType && session?.mode === "api" && session.accessToken) {
       router.replace("/garagem");
     }
   }, [requestedLegalType, router]);
@@ -981,11 +1002,11 @@ function AuthHome() {
   return (
     <div className={styles.page}>
       {screen === "login" ? (
-        <LoginScreen onRecovery={() => setRecoveryOpen(true)} onRegister={() => setScreen("register")} />
+        <LoginScreen onRecovery={() => setRecoveryOpen(true)} onRegister={() => setScreen("register")} sessionExpired={searchParams.get("session") === "expired"} logoutUnconfirmed={searchParams.get("session") === "logout-unconfirmed"} accountDeleted={searchParams.get("account") === "deleted"} />
       ) : (
         <RegisterScreen onLegal={setLegalOpen} onLogin={() => setScreen("login")} />
       )}
-      {recoveryOpen && <RecoveryDialog onClose={() => setRecoveryOpen(false)} />}
+      {recoveryOpen && <RecoveryDialog lastRequest={recoveryRequest} onCodeSent={setRecoveryRequest} onClose={() => setRecoveryOpen(false)} />}
       {legalType && (
         <LegalDialog
           onClose={() => {

@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle,
-  FloppyDisk,
   GearSix,
   ShieldCheck,
   SignOut,
@@ -14,54 +12,47 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import ActionButton from "../components/action-button";
-import AppShell from "../components/app-shell";
+import AppShell, { useAuthUser } from "../components/app-shell";
 import FormField from "../components/form-field";
 import VerificationCodeFields from "../components/verification-code-fields";
-import { submitJsonRequest } from "../app-api";
-import { clearAuthSession, getAuthSession } from "../auth-session";
-import {
-  CODE_RESEND_WAIT_SECONDS,
-  VERIFICATION_CODE_LENGTH,
-  createEmptyCode,
-  getAccountNameValidationError,
-} from "../lib/form-validation";
-import { mockUser } from "../mock-data";
+import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
+import { deleteAccount, requestAccountDeletionCode, validateAccountDeletionCode } from "../account-api";
+import { logoutAuthSession } from "../session-api";
+import { CODE_RESEND_WAIT_SECONDS, createEmptyCode } from "../lib/form-validation";
 import styles from "./page.module.css";
 
 const PROFILE_TABS = [
-  { id: "settings", label: "Alterar dados pessoais", Icon: GearSix },
+  { id: "settings", label: "Dados pessoais", Icon: GearSix },
   { id: "privacy", label: "Privacidade e termos", Icon: ShieldCheck },
   { id: "access", label: "Acesso à conta", Icon: SignOut },
   { id: "deletion", label: "Excluir conta", Icon: Trash },
 ];
 
 export default function ProfilePage() {
+  return <AppShell><ProfileContent /></AppShell>;
+}
+
+function ProfileContent() {
+  const user = useAuthUser();
   const router = useRouter();
-  const [form, setForm] = useState({
-    name: mockUser.name,
-  });
-  const [errors, setErrors] = useState({});
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState("");
-  const [submittedJson, setSubmittedJson] = useState(null);
-  const [submittedFrom, setSubmittedFrom] = useState("");
   const [activeTab, setActiveTab] = useState("settings");
   const [deletionStep, setDeletionStep] = useState("request");
   const [deletionCode, setDeletionCode] = useState(createEmptyCode);
-  const [verifiedDeletionCode, setVerifiedDeletionCode] = useState("");
-  const [deletionVerificationToken, setDeletionVerificationToken] = useState("");
+  const [actionToken, setActionToken] = useState("");
   const [deletionConfirmation, setDeletionConfirmation] = useState("");
   const [deletionMessage, setDeletionMessage] = useState("");
   const [deletionTimeLeft, setDeletionTimeLeft] = useState(0);
+  const [sentAt, setSentAt] = useState(0);
   const tabRefs = useRef([]);
 
   useEffect(() => {
-    if (deletionStep !== "code" || deletionTimeLeft <= 0) return;
+    if (!sentAt) return;
     const timer = window.setInterval(() => {
-      setDeletionTimeLeft((current) => Math.max(current - 1, 0));
+      setDeletionTimeLeft(Math.max(0, CODE_RESEND_WAIT_SECONDS - Math.floor((Date.now() - sentAt) / 1000)));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [deletionStep, deletionTimeLeft]);
+  }, [sentAt]);
 
   const deletionSeconds = String(deletionTimeLeft % 60).padStart(2, "0");
   const deletionMinutes = String(Math.floor(deletionTimeLeft / 60)).padStart(2, "0");
@@ -81,148 +72,70 @@ export default function ProfilePage() {
     tabRefs.current[nextIndex]?.focus();
   };
 
-  const updateName = (event) => {
-    setForm({ name: event.target.value });
-    setErrors({});
-    setMessage("");
-  };
-
-  const submitProfile = async (event) => {
-    event.preventDefault();
-    const name = form.name.trim().replace(/\s+/g, " ");
-    const nextErrors = {};
-
-    const nameError = getAccountNameValidationError(name);
-    if (nameError) nextErrors.name = nameError;
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
-    const payload = { name };
-
-    setPending(true);
-    setMessage("");
-    try {
-      const result = await submitJsonRequest("/users/me", {
-        accessToken: getAuthSession()?.accessToken,
-        method: "PATCH",
-        payload,
-      });
-      setSubmittedJson(payload);
-      setSubmittedFrom("settings");
-      setForm({ name });
-      setMessage(result.mode === "preview"
-        ? "Dados validados. O JSON está pronto para a futura API."
-        : "Perfil atualizado com sucesso.");
-    } catch {
-      setMessage("Não foi possível atualizar o perfil. Tente novamente.");
-    } finally {
-      setPending(false);
-    }
-  };
-
   const requestDeletionCode = async () => {
+    if (pending || Date.now() - sentAt < CODE_RESEND_WAIT_SECONDS * 1000) return;
     setPending(true);
     setDeletionMessage("");
     try {
-      await submitJsonRequest("/users/me/deletion-otp", {
-        accessToken: getAuthSession()?.accessToken,
-        method: "POST",
-        payload: { purpose: "account_deletion" },
-      });
+      await requestAccountDeletionCode();
       setDeletionCode(createEmptyCode());
+      setActionToken("");
+      setSentAt(Date.now());
       setDeletionTimeLeft(CODE_RESEND_WAIT_SECONDS);
       setDeletionStep("code");
-    } catch {
-      setDeletionMessage("Não foi possível enviar o código. Tente novamente.");
-    } finally {
-      setPending(false);
-    }
+    } catch (error) {
+      setDeletionMessage(getAuthErrorMessage(error, "Não foi possível enviar o código. Tente novamente."));
+    } finally { setPending(false); }
   };
 
   const verifyDeletionCode = async (event) => {
     event.preventDefault();
-    const otpCode = deletionCode.join("");
-    if (otpCode.length !== VERIFICATION_CODE_LENGTH) {
-      setDeletionMessage("Digite os seis números enviados para o seu e-mail cadastrado.");
-      return;
-    }
-
+    if (pending) return;
     setPending(true);
     setDeletionMessage("");
     try {
-      const result = await submitJsonRequest("/users/me/deletion-otp/verify", {
-        accessToken: getAuthSession()?.accessToken,
-        method: "POST",
-        payload: { code: otpCode, purpose: "account_deletion" },
-      });
-      setVerifiedDeletionCode(otpCode);
-      setDeletionVerificationToken(
-        result?.data?.verification_token
-        ?? result?.data?.token
-        ?? "",
-      );
+      const token = await validateAccountDeletionCode(deletionCode.join(""));
+      setActionToken(token);
+      setDeletionCode(createEmptyCode());
       setDeletionStep("confirm");
-    } catch {
-      setDeletionMessage("O código não pôde ser validado. Confira e tente novamente.");
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const resendDeletionCode = async () => {
-    if (deletionTimeLeft > 0) return;
-    await requestDeletionCode();
+    } catch (error) {
+      setDeletionMessage(getAuthFieldErrors(error).code ?? getAuthErrorMessage(error, "O código não pôde ser validado. Tente novamente."));
+    } finally { setPending(false); }
   };
 
   const submitDeletionRequest = async (event) => {
     event.preventDefault();
+    if (pending) return;
     if (deletionConfirmation !== "DELETAR") {
       setDeletionMessage("Digite DELETAR para confirmar a exclusão.");
       return;
     }
-
-    const payload = {
-      confirmation: "DELETAR",
-      otp_code: verifiedDeletionCode,
-      anonymize_personal_data: true,
-      ...(deletionVerificationToken ? { verification_token: deletionVerificationToken } : {}),
-    };
-
     setPending(true);
     setDeletionMessage("");
     try {
-      const result = await submitJsonRequest("/users/me", {
-        accessToken: getAuthSession()?.accessToken,
-        method: "DELETE",
-        payload,
-      });
-      setSubmittedJson(payload);
-      setSubmittedFrom("deletion");
+      await deleteAccount(actionToken);
+      router.replace("/?account=deleted");
+    } catch (error) {
+      setActionToken("");
       setDeletionConfirmation("");
-      if (result.mode === "preview") {
-        setDeletionMessage("Exclusão validada em modo de pré-visualização. Nenhum dado foi removido.");
-        setDeletionStep("success");
-      } else {
-        clearAuthSession();
-        router.replace("/");
-      }
-    } catch {
-      setDeletionMessage("Não foi possível excluir a conta. Tente novamente.");
-    } finally {
-      setPending(false);
-    }
+      setDeletionStep("request");
+      setDeletionMessage(`${getAuthErrorMessage(error, "Não foi possível excluir a conta.")} Solicite um novo código para confirmar outra tentativa.`);
+    } finally { setPending(false); }
   };
 
-  const logout = () => {
-    clearAuthSession();
-    router.replace("/");
+  const logout = async () => {
+    if (pending) return;
+    setPending(true);
+    try {
+      await logoutAuthSession();
+      router.replace("/");
+    } catch {
+      router.replace("/?session=logout-unconfirmed");
+    } finally { setPending(false); }
   };
 
   return (
-    <AppShell>
+    <>
       <header className={`app-page-header ${styles.pageHeader}`}>
         <div>
           <p>Conta e privacidade</p>
@@ -237,7 +150,7 @@ export default function ProfilePage() {
             <UserCircle aria-hidden size={58} weight="duotone" />
           </div>
           <div>
-            <h2>{form.name || mockUser.name}</h2>
+            <h2>{user.name}</h2>
           </div>
         </section>
 
@@ -274,37 +187,17 @@ export default function ProfilePage() {
               <div className={styles.cardHeading}>
                 <div>
                   <p>Dados cadastrais</p>
-                  <h2>Alterar dados pessoais</h2>
+                  <h2>Meus dados pessoais</h2>
                 </div>
                 <GearSix aria-hidden size={27} weight="duotone" />
               </div>
 
-              <form className={styles.form} noValidate onSubmit={submitProfile}>
-                <FormField
-                  autoComplete="name"
-                  error={errors.name}
-                  Icon={UserCircle}
-                  label="Nome"
-                  maxLength={100}
-                  name="name"
-                  onChange={updateName}
-                  value={form.name}
-                />
-
-                {message && (
-                  <p className={`app-feedback ${message.includes("Não foi") ? "app-feedback--error" : "app-feedback--success"}`}>
-                    {message.includes("Não foi")
-                      ? <WarningCircle aria-hidden size={20} weight="fill" />
-                      : <CheckCircle aria-hidden size={20} weight="fill" />}
-                    {message}
-                  </p>
-                )}
-
-                <ActionButton disabled={pending} type="submit">
-                  <FloppyDisk aria-hidden size={21} weight="bold" />
-                  {pending ? "Preparando JSON..." : "Salvar alterações"}
-                </ActionButton>
-              </form>
+              <div className={styles.form}>
+                <FormField autoComplete="name" Icon={UserCircle} label="Nome" name="name" readOnly value={user.name} />
+                <FormField autoComplete="email" icon="envelope" label="E-mail" name="email" readOnly value={user.email} />
+                <FormField icon="idCard" label={user.document_type || "Documento"} name="document" readOnly value={user.document || ""} />
+                <p className={styles.panelDescription}>A edição dos dados pessoais ainda não está disponível.</p>
+              </div>
             </section>
           )}
 
@@ -335,9 +228,9 @@ export default function ProfilePage() {
                 <SignOut aria-hidden size={27} weight="duotone" />
               </div>
               <p className={styles.panelDescription}>Encerre com segurança a sessão atual neste dispositivo.</p>
-              <ActionButton onClick={logout} type="button" variant="secondary">
+              <ActionButton disabled={pending} onClick={logout} type="button" variant="secondary">
                 <SignOut aria-hidden size={20} weight="bold" />
-                Sair da conta
+                {pending ? "Saindo..." : "Sair da conta"}
               </ActionButton>
             </section>
           )}
@@ -353,10 +246,10 @@ export default function ProfilePage() {
 
               {deletionStep === "request" && (
                 <div className={styles.deletionForm}>
-                  <p>Antes da exclusão, enviaremos um código OTP para o e-mail cadastrado da conta.</p>
-                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
-                  <ActionButton disabled={pending} onClick={requestDeletionCode} type="button" variant="danger">
-                    {pending ? "Enviando código..." : "Enviar código de confirmação"}
+                  <p>Antes da exclusão, enviaremos um código de confirmação para o e-mail cadastrado da conta.</p>
+                  {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
+                  <ActionButton disabled={pending || deletionTimeLeft > 0} onClick={requestDeletionCode} type="button" variant="danger">
+                    {pending ? "Enviando código..." : deletionTimeLeft > 0 ? `Aguarde ${deletionMinutes}:${deletionSeconds}` : "Enviar código de confirmação"}
                   </ActionButton>
                 </div>
               )}
@@ -372,12 +265,12 @@ export default function ProfilePage() {
                       setDeletionMessage("");
                     }}
                   />
-                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
+                  {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
                   <div className={styles.resendRow}>
                     {deletionTimeLeft > 0 ? (
                       <span>Reenvie em {deletionMinutes}:{deletionSeconds}</span>
                     ) : (
-                      <button disabled={pending} onClick={resendDeletionCode} type="button">Reenviar código</button>
+                      <button disabled={pending} onClick={requestDeletionCode} type="button">Reenviar código</button>
                     )}
                   </div>
                   <ActionButton disabled={pending} type="submit" variant="danger">
@@ -388,7 +281,7 @@ export default function ProfilePage() {
 
               {deletionStep === "confirm" && (
                 <form className={styles.deletionForm} onSubmit={submitDeletionRequest}>
-                  <p>Código confirmado. Para concluir, digite DELETAR. Essa ação será definitiva quando conectada à API.</p>
+                  <p>Código confirmado. Para concluir a exclusão da sua conta, digite DELETAR. Seus dados pessoais serão removidos e você perderá o acesso à conta.</p>
                   <FormField
                     autoComplete="off"
                     Icon={WarningCircle}
@@ -400,7 +293,7 @@ export default function ProfilePage() {
                     }}
                     value={deletionConfirmation}
                   />
-                  {deletionMessage && <p className={styles.deletionMessage}>{deletionMessage}</p>}
+                  {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
                   <ActionButton disabled={pending} type="submit" variant="danger">
                     <Trash aria-hidden size={20} weight="bold" />
                     {pending ? "Excluindo..." : "Confirmar exclusão"}
@@ -408,26 +301,10 @@ export default function ProfilePage() {
                 </form>
               )}
 
-              {deletionStep === "success" && (
-                <div className={styles.deletionSuccess}>
-                  <CheckCircle aria-hidden size={38} weight="duotone" />
-                  <p>{deletionMessage}</p>
-                  <ActionButton
-                    onClick={() => {
-                      setDeletionMessage("");
-                      setDeletionStep("request");
-                    }}
-                    type="button"
-                    variant="secondary"
-                  >
-                    Voltar
-                  </ActionButton>
-                </div>
-              )}
             </section>
           )}
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }
