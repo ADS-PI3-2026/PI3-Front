@@ -90,22 +90,16 @@
   cursor: not-allowed;
 }
 
-.submitBar {
-  background: rgba(247, 246, 252, 0.92);
-  border-top: 1px solid #e1e4ec;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  left: 50%;
-  max-width: 1040px;
-  padding: 12px 14px;
-  position: fixed;
-  transform: translateX(-50%);
-  width: 100%;
-  z-index: 18;
+.submitIcon {
+  animation: submit-spin 850ms linear infinite;
+}
+
+@keyframes submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 760px) {
-  .submitBar {
-    padding-left: 28px;
-    padding-right: 28px;
-  }
+  
 }

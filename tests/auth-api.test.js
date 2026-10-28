@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { getAuthErrorMessage, getAuthFieldErrors, loginWithCredentials, submitAuthRequest } from "../src/app/auth-api.js";
+import {
+  getAuthErrorMessage,
+  getAuthFieldErrors,
+  loginWithCredentials,
+  submitApiRequest,
+  submitAuthRequest,
+} from "../src/app/auth-api.js";
 import { getPasswordValidationError } from "../src/app/lib/form-validation.js";
 
 const originalFetch = globalThis.fetch;
@@ -192,6 +198,67 @@ test("HTTP 200 com status error não confirma o e-mail", async () => {
   process.env.NEXT_PUBLIC_API_URL = apiUrl;
   globalThis.fetch = async () => jsonResponse({ status: "error", message: "Código inválido." });
   await assert.rejects(submitAuthRequest("verifyEmail", {}), (error) => error.data.status === "error");
+});
+
+test("upload multipart deixa o navegador definir o Content-Type", async () => {
+  process.env.NEXT_PUBLIC_API_URL = apiUrl;
+  const formData = new FormData();
+  formData.append("files[]", new Blob(["comprovante"], { type: "application/pdf" }), "nota.pdf");
+
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, `${apiUrl}/maintenances/10/attachments`);
+    assert.equal(options.method, "POST");
+    assert.equal(options.headers.Accept, "application/json");
+    assert.equal(options.headers["Content-Type"], undefined);
+    assert.equal(options.body, formData);
+    return jsonResponse({ status: "success", message: "OK", data: [] }, 201);
+  };
+
+  const result = await submitApiRequest("/maintenances/10/attachments", {
+    formData,
+    method: "POST",
+  });
+
+  assert.equal(result.status, 201);
+});
+
+test("download autenticado aceita uma resposta binária", async () => {
+  process.env.NEXT_PUBLIC_API_URL = apiUrl;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, `${apiUrl}/maintenances/attachments/4/download`);
+    assert.equal(options.method, "GET");
+    assert.equal(options.headers.Authorization, "Bearer token-download");
+    return new Response("conteúdo do comprovante", {
+      headers: { "Content-Type": "application/pdf" },
+    });
+  };
+
+  const result = await submitApiRequest("/maintenances/attachments/4/download", {
+    accessToken: "token-download",
+    method: "GET",
+    responseType: "blob",
+  });
+
+  assert.equal(result.status, 200);
+  assert.ok(result.data instanceof Blob);
+  assert.equal(await result.data.text(), "conteúdo do comprovante");
+});
+
+test("download binário ainda interpreta erros JSON da API", async () => {
+  process.env.NEXT_PUBLIC_API_URL = apiUrl;
+  globalThis.fetch = async () => jsonResponse({
+    status: "error",
+    message: "Comprovante não encontrado.",
+    errors: [],
+  }, 404);
+
+  await assert.rejects(
+    submitApiRequest("/maintenances/attachments/99/download", {
+      method: "GET",
+      responseType: "blob",
+    }),
+    (error) => error.status === 404 && error.data.message === "Comprovante não encontrado.",
+  );
 });
 
 test("senha exige letras, números e símbolos como a API", () => {

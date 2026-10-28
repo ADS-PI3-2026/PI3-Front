@@ -23,18 +23,19 @@ import {
   normalizeDocument,
 } from "./lib/form-validation";
 import { getRecoveryStep } from "./lib/recovery-flow";
+import { getAuthenticatedHomePath } from "./lib/user-access";
 import styles from "./page.module.css";
 
 const legalContent = {
   terms: {
     eyebrow: "Documento legal",
     title: "Termos de Uso",
-    intro: "Estes termos apresentam as condições gerais para utilizar o Legado Car.",
+    intro: "Estes termos apresentam as condições gerais para utilizar o LegadoCar.",
   },
   privacy: {
     eyebrow: "Seus dados",
     title: "Política de Privacidade",
-    intro: "Esta política explica como o Legado Car tratará os dados fornecidos por você.",
+    intro: "Esta política explica como o LegadoCar tratará os dados fornecidos por você.",
   },
 };
 
@@ -83,7 +84,7 @@ function Brand({ compact = false }) {
   return (
     <div className={`${styles.brand} ${compact ? styles.brandCompact : ""}`}>
       <Image
-        alt="Símbolo do Legado Car"
+        alt="Símbolo do LegadoCar"
         className={styles.brandMark}
         height={compact ? 48 : 66}
         preload
@@ -92,7 +93,7 @@ function Brand({ compact = false }) {
         width={compact ? 48 : 66}
       />
       <div>
-        <p className={styles.brandName}>Legado Car</p>
+        <p className={styles.brandName}>LegadoCar</p>
         {!compact && <p className={styles.brandTagline}>Seu carro. Sua história.</p>}
       </div>
     </div>
@@ -412,7 +413,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
           <span className={styles.successIcon}><Icon name="check" size={34} /></span>
           <p className={styles.eyebrow}>Tudo certo</p>
           <h2>Senha redefinida!</h2>
-          <p>Sua nova senha foi salva. Você já pode acessar o Legado Car.</p>
+          <p>Sua nova senha foi salva. Você já pode acessar o LegadoCar.</p>
           <ActionButton className={styles.successAction} onClick={onClose} type="button">Voltar para o login</ActionButton>
         </div>
       )}
@@ -578,10 +579,10 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
         email: normalizedEmail,
         password,
       });
-      saveAuthSession({ authResult });
+      const session = saveAuthSession({ authResult });
       setEmail(normalizedEmail);
       setPassword("");
-      router.replace("/garagem");
+      router.replace(getAuthenticatedHomePath(session.user));
     } catch (error) {
       setErrors(getAuthFieldErrors(error));
       setMessage(getAuthErrorMessage(error, "Não foi possível entrar. Confira os dados e tente novamente."));
@@ -648,7 +649,7 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
         </section>
         <p className={styles.authSwitch}>Não tem uma conta? <button onClick={onRegister} type="button">Cadastre-se</button></p>
       </div>
-      <p className={styles.copyright}>© 2026 Legado Car</p>
+      <p className={styles.copyright}>© 2026 LegadoCar</p>
     </main>
   );
 }
@@ -794,9 +795,9 @@ function RegisterScreen({ onLogin, onLegal }) {
       if (typeof result.data.access_token !== "string" || !result.data.access_token.trim()) {
         throw new Error("Sua conta foi criada, mas não foi possível iniciar a sessão. Acesse pelo login.");
       }
-      saveAuthSession({ authResult: result });
+      const session = saveAuthSession({ authResult: result });
       setForm((current) => ({ ...current, password: "", confirm: "" }));
-      router.replace("/garagem");
+      router.replace(getAuthenticatedHomePath(session.user));
     } catch (error) {
       const fieldErrors = getAuthFieldErrors(error);
       setErrors(fieldErrors);
@@ -995,7 +996,7 @@ function AuthHome() {
   useEffect(() => {
     const session = getAuthSession();
     if (!requestedLegalType && session?.mode === "api" && session.accessToken) {
-      router.replace("/garagem");
+      router.replace(getAuthenticatedHomePath(session.user));
     }
   }, [requestedLegalType, router]);
 

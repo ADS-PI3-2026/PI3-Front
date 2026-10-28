@@ -1,7 +1,7 @@
 .formScreen {
-  --app-form-desktop-width: 540px;
-  --app-form-heading-width: 380px;
-  --app-form-width: 480px;
+  --app-form-desktop-width: 620px;
+  --app-form-heading-width: 440px;
+  --app-form-width: 560px;
 }
 
 .receiptForm {
@@ -25,6 +25,7 @@
 .details {
   display: grid;
   gap: 0;
+  margin: 0;
 }
 
 .detailItem {
@@ -50,4 +51,207 @@
   color: #292d39;
   font-size: 0.9rem;
   line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.additionalDetails,
+.attachmentsSection {
+  border-top: 1px solid #e8eaf0;
+  padding-top: 18px;
+}
+
+.additionalDetails h3,
+.sectionHeading h3 {
+  color: #292d39;
+  font-size: 0.95rem;
+  letter-spacing: -0.015em;
+}
+
+.sectionHeading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sectionHeading span {
+  align-items: center;
+  background: #eef4ff;
+  border-radius: 999px;
+  color: var(--app-blue);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 25px;
+  justify-content: center;
+  min-width: 25px;
+  padding: 0 7px;
+}
+
+.emptyAttachments {
+  background: #f7f8fb;
+  border: 1px dashed #d9deea;
+  border-radius: 9px;
+  color: #697183;
+  font-size: 0.82rem;
+  margin: 12px 0 0;
+  padding: 15px;
+  text-align: center;
+}
+
+.attachmentList {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.attachmentItem {
+  align-items: center;
+  background: #f7f8fb;
+  border: 1px solid #e2e6ef;
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.fileIcon {
+  align-items: center;
+  background: #eaf1fc;
+  border-radius: 8px;
+  color: var(--app-blue);
+  display: inline-flex;
+  flex: 0 0 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+.fileInfo {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fileInfo strong {
+  color: #303440;
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileInfo small {
+  color: #747c8c;
+  font-size: 0.7rem;
+}
+
+.fileActions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.fileActionButton {
+  align-items: center;
+  background: #eaf1fc;
+  border-radius: 8px;
+  color: var(--app-blue);
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.fileActionButton:hover:not(:disabled) {
+  background: #dce9fa;
+}
+
+.deleteButton {
+  background: #fff0ef;
+  color: #b42318;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: #ffe2df;
+}
+
+.fileActionButton:focus-visible,
+.cancelDeleteButton:focus-visible,
+.confirmDeleteButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline-offset: 2px;
+}
+
+.fileActionButton:disabled,
+.cancelDeleteButton:disabled,
+.confirmDeleteButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.cancelDeleteButton,
+.confirmDeleteButton {
+  border-radius: 7px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  min-height: 34px;
+  padding: 7px 9px;
+}
+
+.cancelDeleteButton {
+  background: #e9ecf2;
+  color: #4e5666;
+}
+
+.confirmDeleteButton {
+  align-items: center;
+  background: #b42318;
+  color: #fff;
+  display: inline-flex;
+  gap: 5px;
+}
+
+.uploadForm {
+  border-top: 1px solid #e8eaf0;
+  display: grid;
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.loadingIcon {
+  animation: receipt-spin 800ms linear infinite;
+}
+
+@keyframes receipt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .attachmentItem {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .fileInfo {
+    width: calc(100% - 50px);
+  }
+
+  .fileActions {
+    justify-content: flex-end;
+    margin-left: 50px;
+    width: calc(100% - 50px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
+  }
 }

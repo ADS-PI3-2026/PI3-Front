@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Legado Car",
+  title: "LegadoCar",
   description: "Seu carro. Sua história.",
 };
 

@@ -1,0 +1,131 @@
+.page {
+  display: grid;
+  gap: 26px;
+}
+
+.heading {
+  align-items: center;
+  color: var(--app-blue);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.heading p,
+.sectionHeading p {
+  color: var(--app-blue);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heading h1 {
+  color: #172033;
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  letter-spacing: -0.045em;
+  margin-top: 4px;
+}
+
+.heading span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+
+.documentsSection {
+  background: #fff;
+  border: 1px solid #dfe3eb;
+  border-radius: 14px;
+  box-shadow: var(--app-card-shadow);
+  padding: 22px;
+}
+
+.sectionHeading {
+  align-items: center;
+  color: var(--app-blue);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.sectionHeading h2,
+.information h2 {
+  color: #20283a;
+  font-size: 1.1rem;
+  margin-top: 3px;
+}
+
+.documentList {
+  display: grid;
+  gap: 12px;
+}
+
+.documentCard {
+  align-items: center;
+  background: #f8f9fc;
+  border: 1px solid #e2e6ee;
+  border-radius: 11px;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 16px;
+}
+
+.documentIcon {
+  background: #e9f1fc;
+  border-radius: 9px;
+  color: var(--app-blue);
+  display: grid;
+  height: 42px;
+  place-items: center;
+  width: 42px;
+}
+
+.documentCard h3 {
+  color: #252c3b;
+  font-size: 0.91rem;
+}
+
+.documentCard p,
+.information p {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+.status {
+  background: #eef1f6;
+  border-radius: 999px;
+  color: #697181;
+  font-size: 0.64rem;
+  font-weight: 760;
+  padding: 6px 9px;
+}
+
+.information {
+  align-items: start;
+  background: var(--app-blue-soft);
+  border: 1px solid #d3e1f5;
+  border-radius: 12px;
+  color: var(--app-blue);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 18px;
+}
+
+@media (max-width: 560px) {
+  .documentCard {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Car,
   CaretDown,
+  CircleNotch,
   Gauge,
   IdentificationCard,
+  Palette,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
@@ -18,21 +21,28 @@ import {
   getModelsByYear,
   vehicleTypes,
 } from "../_lib/fipe-api";
+import {
+  buildVehiclePayload,
+  createVehicle,
+  getVehicleErrorMessage,
+  getVehicleFieldErrors,
+} from "../_lib/garage-api";
 import { onlyDigits, validateVehicleForm } from "../_lib/garage-validation";
 import styles from "./page.module.css";
 
 const initialForm = {
   type: "cars",
+  color: "",
   plate: "",
   renavam: "",
   brand: "",
-  brandId: "",
   model: "",
   year: "",
   mileage: "",
 };
 
 export default function NewVehiclePage() {
+  const router = useRouter();
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [brands, setBrands] = useState([]);
@@ -44,6 +54,8 @@ export default function NewVehiclePage() {
     years: false,
   });
   const [fipeError, setFipeError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [failedBrandLogoSrc, setFailedBrandLogoSrc] = useState("");
 
   const selectedBrand = useMemo(
@@ -52,12 +64,17 @@ export default function NewVehiclePage() {
   );
 
   const brandLogoSrc = selectedBrand
-  ? `/brandLogos/${form.type}/${selectedBrand.code}.webp`
-  : "";
+    ? `/brandLogos/${form.type}/${selectedBrand.code}.webp`
+    : "";
 
   const selectedYear = useMemo(
     () => years.find((year) => year.code === form.year),
     [years, form.year],
+  );
+
+  const selectedModel = useMemo(
+    () => models.find((model) => model.code === form.model),
+    [models, form.model],
   );
 
   const loadBrands = useCallback(async (vehicleType) => {
@@ -118,11 +135,13 @@ export default function NewVehiclePage() {
   };
 
   const updateField = (field, value) => {
+    setSubmitError("");
     clearError(field);
     setForm((current) => ({ ...current, [field]: value }));
   };
 
   const updateVehicleType = (value) => {
+    setSubmitError("");
     setErrors({});
     setForm((current) => ({
       ...current,
@@ -135,6 +154,7 @@ export default function NewVehiclePage() {
   };
 
   const updateBrand = (value) => {
+    setSubmitError("");
     setErrors((current) => ({ ...current, brand: "", model: "", year: "" }));
     setForm((current) => ({ ...current, brand: value, model: "", year: "" }));
     setModels([]);
@@ -143,6 +163,7 @@ export default function NewVehiclePage() {
   };
 
   const updateYear = (value) => {
+    setSubmitError("");
     setErrors((current) => ({ ...current, model: "", year: "" }));
     setForm((current) => ({ ...current, model: "", year: value }));
     setModels([]);
@@ -150,13 +171,39 @@ export default function NewVehiclePage() {
   };
 
   const updateModel = (value) => {
+    setSubmitError("");
     setErrors((current) => ({ ...current, model: "" }));
     setForm((current) => ({ ...current, model: value }));
   };
 
-  const submitVehicle = (event) => {
+  const submitVehicle = async (event) => {
     event.preventDefault();
-    setErrors(validateVehicleForm(form));
+    if (submitting) return;
+
+    const validationErrors = validateVehicleForm(form);
+    setErrors(validationErrors);
+    setSubmitError("");
+    if (Object.keys(validationErrors).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      const payload = buildVehiclePayload({
+        form,
+        brand: selectedBrand,
+        model: selectedModel,
+        year: selectedYear,
+      });
+      await createVehicle(payload);
+      router.push("/garagem");
+    } catch (error) {
+      setErrors(getVehicleFieldErrors(error));
+      setSubmitError(getVehicleErrorMessage(
+        error,
+        "Não foi possível cadastrar o veículo. Tente novamente.",
+      ));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const brandPlaceholder = loading.brands
@@ -210,8 +257,9 @@ export default function NewVehiclePage() {
               data-error={Boolean(errors.type)}
             >
               <select
-                value={form.type}
+                disabled={submitting}
                 onChange={(event) => updateVehicleType(event.target.value)}
+                value={form.type}
               >
                 {vehicleTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -227,7 +275,7 @@ export default function NewVehiclePage() {
           </label>
 
           <SearchableSelect
-            disabled={loading.brands}
+            disabled={loading.brands || submitting}
             emptyMessage="Nenhuma marca encontrada."
             error={errors.brand}
             getOptionImage={(brand) =>
@@ -246,11 +294,11 @@ export default function NewVehiclePage() {
             <span>Ano / Modelo</span>
             <span
               className={`app-control-shell ${styles.selectShell}`}
-              data-disabled={!selectedBrand || loading.years}
+              data-disabled={!selectedBrand || loading.years || submitting}
               data-error={Boolean(errors.year)}
             >
               <select
-                disabled={!selectedBrand || loading.years}
+                disabled={!selectedBrand || loading.years || submitting}
                 value={form.year}
                 onChange={(event) => updateYear(event.target.value)}
               >
@@ -273,7 +321,7 @@ export default function NewVehiclePage() {
           </label>
 
           <SearchableSelect
-            disabled={!selectedYear || loading.models}
+            disabled={!selectedYear || loading.models || submitting}
             emptyMessage="Nenhum modelo encontrado para o ano selecionado."
             error={errors.model}
             label="Modelo"
@@ -286,6 +334,28 @@ export default function NewVehiclePage() {
           />
 
           <label className="app-field app-field--uppercase">
+            <span>Cor do veículo</span>
+            <span
+              className={`app-control-shell ${styles.inputShell}`}
+              data-error={Boolean(errors.color)}
+            >
+              <Palette aria-hidden size={20} weight="regular" />
+              <input
+                autoComplete="off"
+                disabled={submitting}
+                maxLength={255}
+                name="color"
+                onChange={(event) => updateField("color", event.target.value)}
+                placeholder="Ex: Prata"
+                value={form.color}
+              />
+            </span>
+            {errors.color && (
+              <small className="app-error-text">{errors.color}</small>
+            )}
+          </label>
+
+          <label className="app-field app-field--uppercase">
             <span>Placa do veículo</span>
             <span
               className={`app-control-shell ${styles.inputShell}`}
@@ -294,6 +364,7 @@ export default function NewVehiclePage() {
               <IdentificationCard aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
+                disabled={submitting}
                 maxLength={9}
                 name="plate"
                 onChange={(event) =>
@@ -319,6 +390,7 @@ export default function NewVehiclePage() {
               <IdentificationCard aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
+                disabled={submitting}
                 inputMode="numeric"
                 maxLength={11}
                 name="renavam"
@@ -333,7 +405,7 @@ export default function NewVehiclePage() {
             {errors.renavam ? (
               <small className="app-error-text">{errors.renavam}</small>
             ) : (
-              <small>O RENAVAM possui 9 ou 11 dígitos.</small>
+              <small>O RENAVAM pode possuir 9 ou 11 dígitos.</small>
             )}
           </label>
 
@@ -345,6 +417,7 @@ export default function NewVehiclePage() {
             >
               <Gauge aria-hidden size={20} weight="regular" />
               <input
+                disabled={submitting}
                 inputMode="numeric"
                 name="mileage"
                 onChange={(event) =>
@@ -361,17 +434,19 @@ export default function NewVehiclePage() {
           </label>
 
           {fipeError && (
-            <p className="app-feedback app-feedback--error">{fipeError}</p>
+            <p className="app-feedback app-feedback--error" role="alert">{fipeError}</p>
           )}
+          {submitError && (
+            <p className="app-feedback app-feedback--error" role="alert">{submitError}</p>
+          )}
+          <ActionButton disabled={submitting} form="new-vehicle-form" type="submit">
+            {submitting
+              ? <CircleNotch aria-hidden className={styles.submitIcon} size={21} weight="bold" />
+              : <Car aria-hidden size={21} weight="bold" />}
+            {submitting ? "Adicionando veículo..." : "Adicionar veículo à garagem"}
+          </ActionButton>
         </form>
       </main>
-
-      <div className={styles.submitBar}>
-        <ActionButton form="new-vehicle-form" type="submit">
-          <Car aria-hidden size={21} weight="bold" />
-          Adicionar veículo à garagem
-        </ActionButton>
-      </div>
     </AppShell>
   );
 }

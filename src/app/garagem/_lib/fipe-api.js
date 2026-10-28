@@ -17,6 +17,11 @@ function isZeroKmYearOption(option) {
   return option.code === "32000" || option.name.trim().startsWith("32000");
 }
 
+function getYearNumber(option) {
+  const match = `${option.name} ${option.code}`.match(/\b\d{4}\b/);
+  return match ? Number(match[0]) : 0;
+}
+
 async function fetchFipeOptions(path) {
   const response = await fetch(FIPE_API_BASE_URL + path);
 
@@ -37,7 +42,9 @@ export async function getBrandYears(vehicleType, brandId) {
     "/" + vehicleType + "/brands/" + brandId + "/years",
   );
 
-  return years.filter((year) => !isZeroKmYearOption(year));
+  return years
+    .filter((year) => !isZeroKmYearOption(year))
+    .sort((firstYear, secondYear) => getYearNumber(secondYear) - getYearNumber(firstYear));
 }
 
 export function getModelsByYear(vehicleType, brandId, yearId) {
