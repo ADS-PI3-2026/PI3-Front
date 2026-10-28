@@ -8,6 +8,7 @@ import { AUTH_SESSION_EVENT, getAuthSession } from "../auth-session";
 import { getAuthErrorMessage } from "../auth-api";
 import { getCurrentUser } from "../account-api";
 import { ensureAuthSession } from "../session-api";
+import { isAdminUser } from "../lib/user-access";
 import styles from "./app-shell.module.css";
 
 const navigationItems = [
@@ -46,6 +47,11 @@ export default function AppShell({ children }) {
         const currentUser = loadedProfile ? session.user : await getCurrentUser();
         if (disposed) return;
         loadedProfile = true;
+        if (isAdminUser(currentUser)) {
+          setUser(null);
+          router.replace("/admin");
+          return;
+        }
         setUser(currentUser);
         setWarning("");
       } catch (error) {

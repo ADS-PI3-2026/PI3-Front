@@ -85,7 +85,14 @@ export async function submitAuthRequest(action, payload, options = {}) {
   return submitApiRequest(request.endpoint, { ...options, payload });
 }
 
-export async function submitApiRequest(endpoint, { method = "POST", payload, accessToken, actionToken } = {}) {
+export async function submitApiRequest(endpoint, {
+  method = "POST",
+  payload,
+  formData,
+  accessToken,
+  actionToken,
+  responseType = "json",
+} = {}) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
   if (!apiUrl) {
@@ -94,15 +101,19 @@ export async function submitApiRequest(endpoint, { method = "POST", payload, acc
 
   let response;
   try {
+    const hasBody = !["GET", "HEAD"].includes(method);
     response = await fetch(`${apiUrl}${endpoint}`, {
       method,
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
+        ...(formData === undefined ? { "Content-Type": "application/json" } : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(actionToken ? { "X-Action-Token": actionToken } : {}),
       },
-      ...(payload !== undefined && !["GET", "HEAD"].includes(method) ? { body: JSON.stringify(payload) } : {}),
+      ...(hasBody && formData !== undefined ? { body: formData } : {}),
+      ...(hasBody && formData === undefined && payload !== undefined
+        ? { body: JSON.stringify(payload) }
+        : {}),
       signal: AbortSignal.timeout(15000),
     });
   } catch (error) {
@@ -110,6 +121,16 @@ export async function submitApiRequest(endpoint, { method = "POST", payload, acc
       throw new Error("O serviço demorou para responder. Tente novamente em alguns instantes.");
     }
     throw new Error("Não foi possível conectar ao serviço. Confira sua conexão e tente novamente.");
+  }
+
+  if (response.ok && responseType === "blob") {
+    return {
+      ok: true,
+      mode: "api",
+      status: response.status,
+      data: await response.blob(),
+      message: "",
+    };
   }
 
   const contentType = response.headers.get("content-type") ?? "";

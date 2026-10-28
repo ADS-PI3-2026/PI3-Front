@@ -48,3 +48,70 @@
   padding: 13px;
   resize: vertical;
 }
+
+.loadingFields {
+  align-items: center;
+  color: var(--app-muted);
+  display: flex;
+  font-size: 0.78rem;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.loadingFields svg,
+.loadingIcon {
+  animation: spin 800ms linear infinite;
+}
+
+.dynamicChoiceField {
+  border: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dynamicChoiceField legend {
+  color: #344056;
+  font-size: 0.74rem;
+  font-weight: 780;
+  margin-bottom: 7px;
+}
+
+.dynamicChoiceField > small {
+  color: #687083;
+  font-size: 0.72rem;
+}
+
+.choiceList {
+  display: grid;
+  gap: 8px;
+}
+
+.choiceList label {
+  align-items: center;
+  background: var(--app-control-background);
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-control-radius);
+  color: #343945;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8rem;
+  gap: 9px;
+  min-height: 40px;
+  padding: 9px 11px;
+}
+
+.choiceList input {
+  accent-color: var(--app-blue);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingFields svg,
+  .loadingIcon {
+    animation-duration: 1600ms;
+  }
+}

@@ -90,6 +90,16 @@
   cursor: not-allowed;
 }
 
+.submitIcon {
+  animation: submit-spin 850ms linear infinite;
+}
+
+@keyframes submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (min-width: 760px) {
   
 }

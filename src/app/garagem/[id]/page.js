@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BellRinging,
   CalendarBlank,
@@ -11,11 +11,14 @@ import {
   FilePdf,
   Gauge,
   LockKey,
+  Eye,
   PencilSimple,
   Plus,
   GearSix,
   WarningCircle,
   Wrench,
+  ClockCounterClockwiseIcon,
+  CardsIcon,
 } from "@phosphor-icons/react";
 import AppShell from "../../components/app-shell";
 import SegmentedControl from "../../components/segmented-control";
@@ -23,14 +26,18 @@ import VehicleBrandLogo from "../../components/vehicle-brand-logo";
 import VehiclePlate from "../../components/vehicle-plate";
 import PageTopBar from "../_components/page-top-bar";
 import {
-  formatMileage,
-  getVehicleAlerts,
-  getVehicleById,
-  getVehicleMaintenance,
-} from "../../mock-data";
+  getVehicle,
+  listVehicleAlerts,
+  listVehicleMaintenances,
+} from "../_lib/garage-api";
+import { getAuthErrorMessage } from "../../auth-api";
 import styles from "./page.module.css";
 
-const VIEW_LOAD_DELAY = 450;
+const mileageFormatter = new Intl.NumberFormat("pt-BR");
+
+function formatMileage(value) {
+  return mileageFormatter.format(value);
+}
 
 function getAlertTone(item) {
   return item.status === "Atrasada" ? styles.overdue : styles.pending;
@@ -38,43 +45,110 @@ function getAlertTone(item) {
 
 export default function VehicleHistoryPage() {
   const params = useParams();
-  const vehicle = getVehicleById(params.id);
-  const maintenanceItems = getVehicleMaintenance(params.id);
-  const alertItems = getVehicleAlerts(params.id);
-  const loadTimerRef = useRef(null);
+  const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [selectedView, setSelectedView] = useState("history");
-  const [contentView, setContentView] = useState("history");
-  const [isLoading, setIsLoading] = useState(false);
+  const [retryRevision, setRetryRevision] = useState(0);
+  const [requestState, setRequestState] = useState({
+    alerts: [],
+    error: "",
+    loading: true,
+    maintenances: [],
+    notFound: false,
+    vehicle: null,
+  });
 
-  useEffect(() => () => {
-    window.clearTimeout(loadTimerRef.current);
-  }, []);
+  useEffect(() => {
+    let active = true;
 
-  const changeView = (nextView) => {
-    if (nextView === selectedView || isLoading) {
-      return;
+    async function loadVehicleHistory() {
+      setRequestState((current) => ({
+        ...current,
+        error: "",
+        loading: true,
+        notFound: false,
+      }));
+
+      try {
+        const loadedVehicle = await getVehicle(vehicleId);
+        const [maintenances, alerts] = await Promise.all([
+          listVehicleMaintenances(vehicleId),
+          listVehicleAlerts(vehicleId, loadedVehicle.mileage),
+        ]);
+
+        if (active) {
+          setRequestState({
+            alerts,
+            error: "",
+            loading: false,
+            maintenances,
+            notFound: false,
+            vehicle: loadedVehicle,
+          });
+        }
+      } catch (error) {
+        if (!active) return;
+        setRequestState({
+          alerts: [],
+          error: getAuthErrorMessage(
+            error,
+            "Não foi possível carregar os dados do veículo. Tente novamente.",
+          ),
+          loading: false,
+          maintenances: [],
+          notFound: error?.status === 404,
+          vehicle: null,
+        });
+      }
     }
 
+    void loadVehicleHistory();
+    return () => { active = false; };
+  }, [retryRevision, vehicleId]);
+
+  const changeView = (nextView) => {
     setSelectedView(nextView);
-    setIsLoading(true);
-    loadTimerRef.current = window.setTimeout(() => {
-      setContentView(nextView);
-      setIsLoading(false);
-    }, VIEW_LOAD_DELAY);
   };
 
-  if (!vehicle) {
+  if (requestState.loading) {
     return (
       <AppShell>
         <PageTopBar title="Manutenções" />
-        <section className="app-empty-state">
-          <h2>Veículo não encontrado</h2>
-          <p>Volte para a garagem e selecione um automóvel cadastrado.</p>
-          <Link className="app-empty-link" href="/garagem">Ir para garagem</Link>
+        <section className={styles.loadingState} role="status">
+          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <span>Carregando dados do veículo...</span>
         </section>
       </AppShell>
     );
   }
+
+  if (!requestState.vehicle) {
+    return (
+      <AppShell>
+        <PageTopBar title="Manutenções" />
+        <section className="app-empty-state app-empty-state--narrow" role="alert">
+          <h2>{requestState.notFound ? "Veículo não encontrado" : "Não foi possível carregar o veículo"}</h2>
+          <p>
+            {requestState.notFound
+              ? "Volte para a garagem e selecione um veículo cadastrado."
+              : requestState.error}
+          </p>
+          {requestState.notFound ? (
+            <Link className="app-empty-link" href="/garagem">Ir para garagem</Link>
+          ) : (
+            <button
+              className="app-empty-link"
+              onClick={() => setRetryRevision((revision) => revision + 1)}
+              type="button"
+            >
+              Tentar novamente
+            </button>
+          )}
+        </section>
+      </AppShell>
+    );
+  }
+
+  const { alerts: alertItems, maintenances: maintenanceItems, vehicle } = requestState;
 
   const viewOptions = [
     {
@@ -82,7 +156,7 @@ export default function VehicleHistoryPage() {
       value: "history",
     },
     {
-      label: `Alertas (${alertItems.length})`,
+      label: `Manutenções (${alertItems.length})`,
       value: "alerts",
     },
   ];
@@ -98,7 +172,13 @@ export default function VehicleHistoryPage() {
             className={styles.brandLogo}
             type={vehicle.type}
           />
-          <h2>{vehicle.name}</h2>
+          <div className={styles.vehicleTitleCopy}>
+            <h2>{vehicle.model}</h2>
+            <div className={styles.vehicleDetails}>
+              <span>{vehicle.brand}</span>
+              <span>{vehicle.version}</span>
+            </div>
+          </div>
         </div>
         <div className={styles.vehicleMeta}>
           <VehiclePlate plate={vehicle.plate} />
@@ -111,7 +191,7 @@ export default function VehicleHistoryPage() {
             href={`/garagem/${vehicle.id}/gerenciar`}
           >
             <GearSix aria-hidden size={18} weight="bold" />
-            Gerenciar veículo
+            Gerenciar
           </Link>
         </div>
       </section>
@@ -120,31 +200,21 @@ export default function VehicleHistoryPage() {
         <div className={styles.viewControl}>
           <SegmentedControl
             ariaLabel="Visualização das manutenções"
-            disabled={isLoading}
             onChange={changeView}
             options={viewOptions}
             value={selectedView}
           />
         </div>
 
-        <div aria-live="polite" aria-busy={isLoading}>
-          {isLoading ? (
-            <div className={styles.loadingState}>
-              <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
-              <span>
-                {selectedView === "history"
-                  ? "Carregando histórico..."
-                  : "Carregando alertas..."}
-              </span>
-            </div>
-          ) : contentView === "history" ? (
+        <div aria-live="polite">
+          {selectedView === "history" ? (
             <>
               <header className={styles.sectionHeading}>
                 <div>
                   <span>Serviços concluídos</span>
                   <h2>Histórico de manutenção</h2>
                 </div>
-                <CheckCircle aria-hidden size={27} weight="duotone" />
+                <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
               </header>
 
               {maintenanceItems.length > 0 ? (
@@ -189,15 +259,15 @@ export default function VehicleHistoryPage() {
                               <Gauge aria-hidden size={18} weight="regular" />
                               {formatMileage(item.mileage)} km
                             </span>
-                            {!item.readonly && (
-                              <Link
-                                className={styles.editLink}
-                                href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
-                              >
-                                <PencilSimple aria-hidden size={14} weight="bold" />
-                                Comprovante
-                              </Link>
-                            )}
+                            <Link
+                              className={styles.editLink}
+                              href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
+                            >
+                              {item.readonly
+                                ? <Eye aria-hidden size={14} weight="bold" />
+                                : <PencilSimple aria-hidden size={14} weight="bold" />}
+                              {item.readonly ? "Detalhes" : "Comprovantes"}
+                            </Link>
                           </div>
 
                           {item.attachment && (
@@ -213,7 +283,7 @@ export default function VehicleHistoryPage() {
                 </div>
               ) : (
                 <div className={styles.inlineEmptyState}>
-                  <CheckCircle aria-hidden size={30} weight="duotone" />
+                  <CardsIcon  aria-hidden size={30} weight="duotone" />
                   <h3>Nenhuma manutenção concluída</h3>
                   <p>Os serviços aparecerão aqui depois que forem marcados como realizados.</p>
                 </div>
@@ -256,7 +326,7 @@ export default function VehicleHistoryPage() {
                           </span>
                           <Link
                             className={styles.editLink}
-                            href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
+                            href={`/garagem/${vehicle.id}/alerta/${item.id}`}
                           >
                             <PencilSimple aria-hidden size={14} weight="bold" />
                             Abrir alerta
@@ -269,7 +339,7 @@ export default function VehicleHistoryPage() {
               ) : (
                 <div className={styles.inlineEmptyState}>
                   <BellRinging aria-hidden size={30} weight="duotone" />
-                  <h3>Nenhum alerta pendente</h3>
+                  <h3>Nenhuma manutenção pendente</h3>
                   <p>Novos lembretes de manutenção aparecerão nesta visualização.</p>
                 </div>
               )}

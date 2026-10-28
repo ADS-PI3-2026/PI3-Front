@@ -61,6 +61,7 @@
   --app-card-radius: 12px;
   display: grid;
   gap: 18px;
+  scroll-margin-top: 24px;
 }
 
 .panelHeading {
@@ -106,6 +107,49 @@
   gap: 16px;
 }
 
+.mileageForm {
+  display: grid;
+  gap: 16px;
+}
+
+.mileageInput input {
+  padding: 0 13px;
+}
+
+.mileageInput svg {
+  color: #6f7788;
+  flex: 0 0 auto;
+  margin-left: 12px;
+}
+
+.dangerAction {
+  border-color: #f1d2ce;
+}
+
+.dangerAction strong {
+  color: var(--app-danger);
+}
+
+.dangerIcon {
+  background: var(--app-danger-soft);
+  color: var(--app-danger);
+}
+
+.dangerPanel {
+  border-color: #f1d2ce;
+}
+
+.deleteForm {
+  display: grid;
+  gap: 16px;
+}
+
+.deleteInput input {
+  letter-spacing: 0.08em;
+  padding: 0 13px;
+  text-transform: uppercase;
+}
+
 .securityNotice {
   align-items: flex-start;
   background: var(--app-blue-soft);
@@ -149,10 +193,25 @@
   text-decoration: underline;
 }
 
+.resendButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .resendButton:focus-visible {
   border-radius: 4px;
   outline: 3px solid rgba(7, 71, 147, 0.18);
   outline-offset: 2px;
+}
+
+.loadingIcon {
+  animation: management-spin 800ms linear infinite;
+}
+
+@keyframes management-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 390px) {
@@ -162,5 +221,11 @@
 
   .vehicleSummary > :last-child {
     grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
   }
 }

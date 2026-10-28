@@ -1,7 +1,7 @@
 export default function manifest() {
   return {
-    name: "Legado Car",
-    short_name: "Legado Car",
+    name: "LegadoCar",
+    short_name: "LegadoCar",
     description: "Seu carro. Sua história.",
     start_url: "/",
     display: "standalone",

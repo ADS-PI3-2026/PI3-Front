@@ -7,6 +7,7 @@
   gap: 26px;
 }
 
+.expenseSection,
 .vehiclesSection {
   min-width: 0;
 }
@@ -25,6 +26,61 @@
 .vehicleList {
   display: grid;
   gap: 14px;
+}
+
+.loadingState,
+.requestState {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2e4ec;
+  border-radius: 17px;
+  color: #5f6675;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-height: 150px;
+  padding: 24px;
+  text-align: center;
+}
+
+.loadingState {
+  grid-template-columns: auto auto;
+  justify-content: center;
+  min-height: 110px;
+}
+
+.loadingIcon {
+  animation: garage-spin 850ms linear infinite;
+  color: #074793;
+}
+
+.requestState h3 {
+  color: #252830;
+  font-size: 1.08rem;
+}
+
+.requestState p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 420px;
+}
+
+.requestState button {
+  background: #074793;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+.requestState button:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
 }
 
 .vehicleCard {
@@ -50,8 +106,6 @@
 .vehicleHeading {
   align-items: flex-start;
   display: flex;
-  gap: 16px;
-  justify-content: space-between;
 }
 
 .vehicleIdentity {
@@ -59,14 +113,16 @@
   display: flex;
   gap: 11px;
   min-width: 0;
+  width: 100%;
 }
 
-.vehicleIdentity > div {
+.vehicleCopy {
+  flex: 1;
   min-width: 0;
 }
 
 .brandLogo {
-  --vehicle-brand-logo-size: 36px;
+  --vehicle-brand-logo-size: 50px;
 }
 
 .vehicleHeading h3 {
@@ -75,10 +131,28 @@
   letter-spacing: -0.02em;
 }
 
-.vehicleHeading p {
+.vehicleDetails {
+  align-items: center;
   color: #5f6675;
+  display: flex;
   font-size: 0.88rem;
+  gap: 12px;
+  justify-content: space-between;
   margin-top: 2px;
+}
+
+.vehicleDetails span {
+  min-width: 0;
+}
+
+.vehicleDetails span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicleDetails span:last-child {
+  flex: 0 0 auto;
 }
 
 .mileage {
@@ -86,8 +160,15 @@
   color: #4d5565;
   display: flex;
   font-size: 0.88rem;
-  gap: 8px;
+  gap: 16px;
+  justify-content: space-between;
   margin: 22px 0;
+}
+
+.mileageValue {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
 }
 
 .maintenanceHeader {
@@ -136,6 +217,12 @@
 
 .addVehicleButton {
   --app-floating-action-size: 62px;
+}
+
+@keyframes garage-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 760px) {

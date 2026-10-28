@@ -1,0 +1,164 @@
+.dashboard {
+  display: grid;
+  gap: 28px;
+}
+
+.introduction {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.introduction p,
+.modulesSection header p {
+  color: var(--app-blue);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.introduction h1 {
+  color: #172033;
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  letter-spacing: -0.045em;
+  margin-top: 4px;
+}
+
+.introduction > div > span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+
+.restrictedBadge {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border: 1px solid #d3e1f5;
+  border-radius: 10px;
+  color: var(--app-blue);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 780;
+  gap: 8px;
+  padding: 10px 13px;
+}
+
+.modulesSection {
+  background: #fff;
+  border: 1px solid #dfe3eb;
+  border-radius: 14px;
+  box-shadow: var(--app-card-shadow);
+  padding: 22px;
+}
+
+.modulesSection > header {
+  align-items: center;
+  color: var(--app-blue);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.modulesSection h2,
+.nextSteps h2 {
+  color: #20283a;
+  font-size: 1.15rem;
+  margin-top: 3px;
+}
+
+.moduleGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.moduleCard {
+  align-items: start;
+  background: #f8f9fc;
+  border: 1px solid #e2e6ee;
+  border-radius: 11px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 126px;
+  padding: 16px;
+}
+
+.moduleIcon {
+  background: #e9f1fc;
+  border-radius: 9px;
+  color: var(--app-blue);
+  display: grid;
+  height: 43px;
+  place-items: center;
+  width: 43px;
+}
+
+.moduleCard h3 {
+  color: #252c3b;
+  font-size: 0.92rem;
+}
+
+.moduleCard p,
+.nextSteps p {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.moduleCard small {
+  background: #eef1f6;
+  border-radius: 999px;
+  color: #697181;
+  font-size: 0.62rem;
+  font-weight: 750;
+  padding: 5px 8px;
+}
+
+.nextSteps {
+  align-items: center;
+  background: #062e67;
+  border-radius: 14px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  padding: 22px;
+}
+
+.nextSteps h2,
+.nextSteps p {
+  color: #fff;
+}
+
+.nextSteps p {
+  max-width: 720px;
+  opacity: 0.78;
+}
+
+@media (max-width: 800px) {
+  .introduction {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .moduleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .moduleCard {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .moduleCard small {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

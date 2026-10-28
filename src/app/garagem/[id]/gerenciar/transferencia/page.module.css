@@ -65,6 +65,16 @@
   min-height: 180px;
 }
 
+.loadingIcon {
+  animation: transfer-spin 800ms linear infinite;
+}
+
+@keyframes transfer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .pendingCard {
   --app-card-padding: 18px;
   --app-card-radius: 12px;
@@ -172,5 +182,11 @@
   .deadline em {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
   }
 }

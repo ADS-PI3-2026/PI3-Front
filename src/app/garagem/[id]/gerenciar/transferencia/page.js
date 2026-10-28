@@ -5,6 +5,7 @@ import {
   CalendarBlank,
   Check,
   CheckCircle,
+  CircleNotch,
   ClockCountdown,
   HourglassMedium,
   IdentificationCard,
@@ -14,6 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ActionButton from "../../../../components/action-button";
 import AppShell from "../../../../components/app-shell";
+import { getAuthErrorMessage } from "../../../../auth-api";
 import FormField from "../../../../components/form-field";
 import VehicleBrandLogo from "../../../../components/vehicle-brand-logo";
 import VehiclePlate from "../../../../components/vehicle-plate";
@@ -26,8 +28,8 @@ import {
   onlyDigits,
   VERIFICATION_CODE_LENGTH,
 } from "../../../../lib/form-validation";
-import { getVehicleById } from "../../../../mock-data";
 import PageTopBar from "../../../_components/page-top-bar";
+import { getVehicle } from "../../../_lib/garage-api";
 import {
   confirmPreviewTransferParticipant,
   createPreviewTransfer,
@@ -99,7 +101,14 @@ function ParticipantStatus({ confirmed, description, label }) {
 export default function VehicleTransferPage() {
   const params = useParams();
   const router = useRouter();
-  const vehicle = getVehicleById(params.id);
+  const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [retryRevision, setRetryRevision] = useState(0);
+  const [vehicleState, setVehicleState] = useState({
+    error: "",
+    loading: true,
+    notFound: false,
+    vehicle: null,
+  });
   const [recipient, setRecipient] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [errors, setErrors] = useState({});
@@ -108,36 +117,108 @@ export default function VehicleTransferPage() {
   const [code, setCode] = useState(createEmptyCode);
 
   useEffect(() => {
+    let active = true;
+
+    async function loadVehicle() {
+      setVehicleState((current) => ({
+        ...current,
+        error: "",
+        loading: true,
+        notFound: false,
+      }));
+
+      try {
+        const vehicle = await getVehicle(vehicleId);
+        if (active) {
+          setVehicleState({
+            error: "",
+            loading: false,
+            notFound: false,
+            vehicle,
+          });
+        }
+      } catch (error) {
+        if (active) {
+          setVehicleState({
+            error: getAuthErrorMessage(
+              error,
+              "Não foi possível carregar o veículo. Tente novamente.",
+            ),
+            loading: false,
+            notFound: error?.status === 404,
+            vehicle: null,
+          });
+        }
+      }
+    }
+
+    void loadVehicle();
+    return () => { active = false; };
+  }, [retryRevision, vehicleId]);
+
+  useEffect(() => {
     const readyTimer = window.setTimeout(() => {
-      setTransfer(getPreviewTransfer(params.id));
+      setTransfer(getPreviewTransfer(vehicleId));
       setReady(true);
     }, 0);
 
     return () => window.clearTimeout(readyTimer);
-  }, [params.id]);
+  }, [vehicleId]);
 
   useEffect(() => {
     if (!transfer || transfer.status !== "pending") return undefined;
 
     const expirationTimer = window.setInterval(() => {
-      const currentTransfer = getPreviewTransfer(params.id);
+      const currentTransfer = getPreviewTransfer(vehicleId);
       if (currentTransfer?.status === "expired") setTransfer(currentTransfer);
     }, 30000);
 
     return () => window.clearInterval(expirationTimer);
-  }, [params.id, transfer]);
+  }, [transfer, vehicleId]);
 
-  if (!vehicle) {
+  if (vehicleState.loading) {
     return (
       <AppShell>
         <PageTopBar title="Transferir veículo" />
-        <section className="app-empty-state app-empty-state--narrow">
-          <h2>Veículo não encontrado</h2>
-          <p>Volte para a garagem e selecione um veículo cadastrado.</p>
+        <section className="app-empty-state app-empty-state--narrow" role="status">
+          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <p>Carregando veículo...</p>
         </section>
       </AppShell>
     );
   }
+
+  if (!vehicleState.vehicle) {
+    return (
+      <AppShell>
+        <PageTopBar title="Transferir veículo" />
+        <section className="app-empty-state app-empty-state--narrow" role="alert">
+          <h2>
+            {vehicleState.notFound
+              ? "Veículo não encontrado"
+              : "Não foi possível carregar o veículo"}
+          </h2>
+          <p>
+            {vehicleState.notFound
+              ? "Volte para a garagem e selecione um veículo cadastrado."
+              : vehicleState.error}
+          </p>
+          <button
+            className="app-empty-link"
+            onClick={() => {
+              if (vehicleState.notFound) router.replace("/garagem");
+              else setRetryRevision((revision) => revision + 1);
+            }}
+            type="button"
+          >
+            {vehicleState.notFound ? "Ir para garagem" : "Tentar novamente"}
+          </button>
+        </section>
+      </AppShell>
+    );
+  }
+
+  const vehicle = vehicleState.vehicle;
 
   const startTransfer = (event) => {
     event.preventDefault();
