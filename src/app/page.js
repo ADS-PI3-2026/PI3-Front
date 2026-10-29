@@ -174,6 +174,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -397,8 +398,10 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
               setConfirmPassword(event.target.value);
               setErrors((current) => ({ ...current, confirmPassword: "" }));
             }}
+            onToggle={() => setShowConfirmPassword((current) => !current)}
             placeholder="Digite a senha novamente"
-            type={showPassword ? "text" : "password"}
+            toggleLabel={showConfirmPassword ? "Ocultar confirmação da nova senha" : "Mostrar confirmação da nova senha"}
+            type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
           />
           {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
@@ -662,6 +665,7 @@ function RegisterScreen({ onLogin, onLegal }) {
   const [verifiedEmail, setVerifiedEmail] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -926,8 +930,10 @@ function RegisterScreen({ onLogin, onLegal }) {
               minLength={8}
               name="register-confirm"
               onChange={update("confirm")}
+              onToggle={() => setShowConfirmPassword((current) => !current)}
               placeholder="Repita sua senha"
-              type={showPassword ? "text" : "password"}
+              toggleLabel={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
+              type={showConfirmPassword ? "text" : "password"}
               value={form.confirm}
             />
             <label className={styles.consentBox}>

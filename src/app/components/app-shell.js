@@ -1,14 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Car, UserCircle } from "@phosphor-icons/react";
-import { AUTH_SESSION_EVENT, getAuthSession } from "../auth-session";
-import { getAuthErrorMessage } from "../auth-api";
-import { getCurrentUser } from "../account-api";
-import { ensureAuthSession } from "../session-api";
+import { recheckSession, useSession } from "./session-provider";
 import { isAdminUser } from "../lib/user-access";
+import LoadingScreen from "./loading-screen";
 import styles from "./app-shell.module.css";
 
 const navigationItems = [
@@ -25,87 +23,24 @@ export function useAuthUser() {
 export default function AppShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [warning, setWarning] = useState("");
-  const [retryRevision, setRetryRevision] = useState(0);
+  const { ready, session, warning } = useSession();
+  const user = session?.user;
 
   useEffect(() => {
-    let disposed = false;
-    let checking = false;
-    let loadedProfile = false;
-    let timer;
-    if (!getAuthSession()) {
-      router.replace("/");
-      return;
-    }
-    const checkSession = async () => {
-      if (disposed || checking) return;
-      checking = true;
-      window.clearTimeout(timer);
-      try {
-        const session = await ensureAuthSession();
-        const currentUser = loadedProfile ? session.user : await getCurrentUser();
-        if (disposed) return;
-        loadedProfile = true;
-        if (isAdminUser(currentUser)) {
-          setUser(null);
-          router.replace("/admin");
-          return;
-        }
-        setUser(currentUser);
-        setWarning("");
-      } catch (error) {
-        if (disposed) return;
-        const session = getAuthSession();
-        if (!session || error.status === 401) {
-          setUser(null);
-          router.replace("/?session=expired");
-          return;
-        }
-        // Uma falha temporária de rede não encerra um JWT ainda válido.
-        setUser(session.user);
-        setWarning(getAuthErrorMessage(error, "Não foi possível atualizar sua conta. Tente novamente."));
-      } finally {
-        checking = false;
-        const session = getAuthSession();
-        if (!disposed && session) {
-          timer = window.setTimeout(checkSession, Math.min(30000, session.expiresAt - Date.now() + 50));
-        }
-      }
-    };
-    const onSessionChange = () => {
-      if (!getAuthSession()) { setUser(null); router.replace("/"); }
-      else if (!checking) void checkSession();
-    };
-    const onVisible = () => { if (!document.hidden) void checkSession(); };
-    void checkSession();
-    window.addEventListener(AUTH_SESSION_EVENT, onSessionChange);
-    window.addEventListener("focus", checkSession);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      disposed = true;
-      window.clearTimeout(timer);
-      window.removeEventListener(AUTH_SESSION_EVENT, onSessionChange);
-      window.removeEventListener("focus", checkSession);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [pathname, retryRevision, router]);
+    if (!ready) return;
+    if (!user) router.replace("/");
+    else if (isAdminUser(user)) router.replace("/admin");
+  }, [ready, router, user]);
 
-  if (!user) {
-    return (
-      <div aria-live="polite" className={styles.authLoading} role="status">
-        Validando acesso...
-      </div>
-    );
-  }
+  if (!ready || !user || isAdminUser(user)) return <LoadingScreen />;
 
   return (
     <div className={styles.shell}>
-      <AuthUserContext.Provider value={user}>
+      <AuthUserContext.Provider key={session.sessionId} value={user}>
         <div className={styles.content}>
           {warning && <div className="app-feedback app-feedback--error" role="status">
             <p>{warning}</p>
-            <button onClick={() => setRetryRevision((value) => value + 1)} type="button">Tentar novamente</button>
+            <button onClick={() => void recheckSession()} type="button">Tentar novamente</button>
           </div>}
           {children}
         </div>

@@ -1,0 +1,29 @@
+.screen {
+  align-items: center;
+  background: #f7f6fc;
+  color: #074793;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 14px;
+  justify-content: center;
+  min-height: 100svh;
+}
+
+.spinner {
+  animation: loading-spin 800ms linear infinite;
+  border: 3px solid #d5e2f3;
+  border-radius: 50%;
+  border-top-color: #074793;
+  height: 32px;
+  width: 32px;
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

@@ -20,6 +20,10 @@ const ICONS = {
 
 export default function FormField({
   error,
+  emphasized = false,
+  actionLabel,
+  ActionIcon,
+  onAction,
   icon,
   Icon,
   label,
@@ -36,7 +40,7 @@ export default function FormField({
   return (
     <label className={`app-field ${styles.field}`}>
       <span className="app-field-label">{label}</span>
-      <span className={`${styles.inputShell} ${error ? styles.inputError : ""}`}>
+      <span className={`${styles.inputShell} ${emphasized ? styles.emphasized : ""} ${error ? styles.inputError : ""}`}>
         {LeadingIcon && (
           <span className={styles.inputIcon}>
             <LeadingIcon aria-hidden size={20} weight="regular" />
@@ -48,9 +52,21 @@ export default function FormField({
           type={type}
           {...inputProps}
         />
+        {onAction && ActionIcon && (
+          <button
+            aria-label={actionLabel}
+            className={styles.actionButton}
+            onClick={(event) => { event.preventDefault(); onAction(); }}
+            title={actionLabel}
+            type="button"
+          >
+            <ActionIcon aria-hidden size={21} weight="bold" />
+          </button>
+        )}
         {onToggle && (
           <button
             aria-label={toggleLabel}
+            aria-pressed={type === "text"}
             className={styles.visibilityButton}
             onClick={onToggle}
             type="button"

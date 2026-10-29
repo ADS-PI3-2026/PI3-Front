@@ -5,16 +5,7 @@
   padding-top: 76px;
 }
 
-.loading {
-  align-items: center;
-  background: #f4f6fa;
-  color: var(--app-blue);
-  display: flex;
-  font-size: 0.9rem;
-  font-weight: 750;
-  justify-content: center;
-  min-height: 100svh;
-}
+
 
 .header {
   align-items: center;

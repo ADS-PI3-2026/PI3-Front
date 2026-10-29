@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  GearSix,
+  PencilSimple,
   ShieldCheck,
   SignOut,
   Trash,
@@ -18,11 +18,13 @@ import VerificationCodeFields from "../components/verification-code-fields";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
 import { deleteAccount, requestAccountDeletionCode, validateAccountDeletionCode } from "../account-api";
 import { logoutAuthSession } from "../session-api";
-import { CODE_RESEND_WAIT_SECONDS, createEmptyCode } from "../lib/form-validation";
+import { CODE_RESEND_WAIT_SECONDS, createEmptyCode, formatCpf, formatCnpj } from "../lib/form-validation";
+import EmailChangeDialog from "./email-change-dialog";
+import { startProfileSync } from "./profile-sync";
 import styles from "./page.module.css";
 
 const PROFILE_TABS = [
-  { id: "settings", label: "Dados pessoais", Icon: GearSix },
+  { id: "settings", label: "Dados pessoais", Icon: UserCircle },
   { id: "privacy", label: "Privacidade e termos", Icon: ShieldCheck },
   { id: "access", label: "Acesso à conta", Icon: SignOut },
   { id: "deletion", label: "Excluir conta", Icon: Trash },
@@ -36,6 +38,10 @@ function ProfileContent() {
   const user = useAuthUser();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const profileSync = useRef(null);
+  const [emailChangeOpen, setEmailChangeOpen] = useState(false);
+  const closeEmailChange = useCallback(() => setEmailChangeOpen(false), []);
   const [activeTab, setActiveTab] = useState("settings");
   const [deletionStep, setDeletionStep] = useState("request");
   const [deletionCode, setDeletionCode] = useState(createEmptyCode);
@@ -45,6 +51,18 @@ function ProfileContent() {
   const [deletionTimeLeft, setDeletionTimeLeft] = useState(0);
   const [sentAt, setSentAt] = useState(0);
   const tabRefs = useRef([]);
+  const formattedDocument = user.document_type === "CNPJ"
+    ? formatCnpj(String(user.document ?? ""))
+    : formatCpf(String(user.document ?? ""));
+
+  useEffect(() => {
+    const sync = startProfileSync(setProfileMessage);
+    profileSync.current = sync;
+    return () => {
+      profileSync.current = null;
+      sync.stop();
+    };
+  }, []);
 
   useEffect(() => {
     if (!sentAt) return;
@@ -144,12 +162,19 @@ function ProfileContent() {
         <UserCircle aria-hidden size={36} weight="fill" />
       </header>
 
+      {profileMessage && (
+        <div className="app-feedback app-feedback--error" role="status">
+          <p>{profileMessage}</p>
+          <button onClick={() => void profileSync.current?.refresh()} type="button">Tentar novamente</button>
+        </div>
+      )}
+
       <div className={styles.profileLayout}>
         <section className={`app-card ${styles.profileSummary}`}>
           <div className={styles.avatar}>
             <UserCircle aria-hidden size={58} weight="duotone" />
           </div>
-          <div>
+          <div className={styles.profileIdentity}>
             <h2>{user.name}</h2>
           </div>
         </section>
@@ -170,7 +195,7 @@ function ProfileContent() {
               type="button"
             >
               <Icon aria-hidden size={20} weight={activeTab === id ? "fill" : "regular"} />
-              {label}
+              <span className={styles.tabLabel}>{label}</span>
             </button>
           ))}
         </div>
@@ -189,14 +214,23 @@ function ProfileContent() {
                   <p>Dados cadastrais</p>
                   <h2>Meus dados pessoais</h2>
                 </div>
-                <GearSix aria-hidden size={27} weight="duotone" />
               </div>
 
               <div className={styles.form}>
                 <FormField autoComplete="name" Icon={UserCircle} label="Nome" name="name" readOnly value={user.name} />
-                <FormField autoComplete="email" icon="envelope" label="E-mail" name="email" readOnly value={user.email} />
-                <FormField icon="idCard" label={user.document_type || "Documento"} name="document" readOnly value={user.document || ""} />
-                <p className={styles.panelDescription}>A edição dos dados pessoais ainda não está disponível.</p>
+                <FormField
+                  actionLabel="Alterar e-mail"
+                  ActionIcon={PencilSimple}
+                  autoComplete="email"
+                  emphasized
+                  icon="envelope"
+                  label="E-mail"
+                  name="email"
+                  onAction={() => setEmailChangeOpen(true)}
+                  readOnly
+                  value={user.email}
+                />
+                <FormField icon="idCard" label={user.document_type || "Documento"} name="document" readOnly value={formattedDocument} />
               </div>
             </section>
           )}
@@ -305,6 +339,7 @@ function ProfileContent() {
           )}
         </div>
       </div>
+      {emailChangeOpen && <EmailChangeDialog onClose={closeEmailChange} user={user} />}
     </>
   );
 }

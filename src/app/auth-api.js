@@ -92,6 +92,7 @@ export async function submitApiRequest(endpoint, {
   accessToken,
   actionToken,
   responseType = "json",
+  cache,
 } = {}) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
@@ -104,6 +105,7 @@ export async function submitApiRequest(endpoint, {
     const hasBody = !["GET", "HEAD"].includes(method);
     response = await fetch(`${apiUrl}${endpoint}`, {
       method,
+      ...(cache ? { cache } : {}),
       headers: {
         Accept: "application/json",
         ...(formData === undefined ? { "Content-Type": "application/json" } : {}),

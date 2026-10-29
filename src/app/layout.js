@@ -1,4 +1,5 @@
 import "./globals.css";
+import SessionProvider from "./components/session-provider";
 
 export const metadata = {
   title: "LegadoCar",
@@ -8,7 +9,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body><SessionProvider>{children}</SessionProvider></body>
     </html>
   );
 }

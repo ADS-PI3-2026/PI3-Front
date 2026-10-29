@@ -103,5 +103,6 @@ export function updateAuthSessionUser(user, expectedSessionId) {
   if (!session || session.sessionId !== expectedSessionId || !isValidUser(user)) return;
   const next = { ...session, email: user.email, user };
   getSessionStorage().setItem(SESSION_STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent?.(new Event(AUTH_SESSION_EVENT));
   return next;
 }

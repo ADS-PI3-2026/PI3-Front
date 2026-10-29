@@ -7,16 +7,7 @@
   padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
-.authLoading {
-  align-items: center;
-  background: #f7f6fc;
-  color: #074793;
-  display: flex;
-  font-size: 0.88rem;
-  font-weight: 700;
-  justify-content: center;
-  min-height: 100svh;
-}
+
 
 .content {
   margin: 0 auto;

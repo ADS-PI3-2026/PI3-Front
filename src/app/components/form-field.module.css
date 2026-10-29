@@ -76,3 +76,42 @@
     transition: none;
   }
 }
+
+.emphasized {
+  background: #f1f6ff;
+  border-color: #85aee0;
+  box-shadow: 0 0 0 1px rgba(7, 71, 147, 0.04);
+}
+
+.emphasized .inputIcon,
+.emphasized input[readonly] {
+  color: #174f8c;
+}
+
+.emphasized input[readonly] {
+  cursor: text;
+}
+
+.actionButton {
+  align-self: stretch;
+  background: #e2edfc;
+  border-left: 1px solid #b7cfee;
+  color: #074793;
+  display: grid;
+  flex: 0 0 50px;
+  place-items: center;
+  transition: background 160ms ease;
+}
+
+.actionButton:hover {
+  background: #cee0f8;
+}
+
+.actionButton:focus-visible {
+  outline: 3px solid #074793;
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actionButton { transition: none; }
+}
