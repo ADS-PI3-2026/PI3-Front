@@ -45,3 +45,18 @@ test("senha acompanha categorias Unicode do Laravel e conta caracteres, não uni
   assert.notEqual(getPasswordValidationError("Ab1!😀😀😀"), "");
   assert.equal(getPasswordValidationError("Ab1!😀😀😀😀"), "");
 });
+
+test("troca de e-mail exige um endereço novo válido, diferente do atual", async () => {
+  const { getNewEmailValidationError } = await import("../src/app/lib/form-validation.js");
+  assert.match(getNewEmailValidationError("", "atual@example.test"), /e-mail/);
+  assert.notEqual(getNewEmailValidationError("endereco-invalido", "atual@example.test"), "");
+  assert.match(getNewEmailValidationError(" ATUAL@EXAMPLE.TEST ", "atual@example.test"), /diferente/);
+  assert.equal(getNewEmailValidationError(" novo@example.test ", "atual@example.test"), "");
+});
+
+test("troca de e-mail pede duas confirmações para CPF e somente a nova para CNPJ", async () => {
+  const { getEmailChangeVerificationTargets } = await import("../src/app/lib/form-validation.js");
+  assert.deepEqual(getEmailChangeVerificationTargets("CPF"), ["current", "new"]);
+  assert.deepEqual(getEmailChangeVerificationTargets("CNPJ"), ["new"]);
+  assert.equal(getEmailChangeVerificationTargets(undefined), null);
+});

@@ -83,8 +83,9 @@ validar a assinatura e autorizar cada requisição. Sessões demonstrativas,
 corrompidas ou vencidas são descartadas.
 
 Após salvar a sessão, `src/app/page.js` limpa a senha e usa `router.replace`
-para abrir `/garagem`. O `AppShell` consulta `/me`, compartilha o usuário real
-com as telas e verifica a sessão a cada 30 segundos e ao voltar à aba.
+para abrir `/garagem`. O `SessionProvider` do layout principal compartilha os
+dados já recebidos no login/cadastro, sem consultar `/me` a cada troca de tela.
+Um monitor único verifica a validade a cada 30 segundos e ao voltar à aba.
 `session-api.js` renova o JWT no último minuto de validade, compartilhando uma
 única requisição entre chamadas concorrentes. O identificador local de sessão
 é mantido no refresh e trocado no login/cadastro, para não confundir renovação
@@ -201,3 +202,29 @@ do término do refresh foi reproduzido e corrigido com teste de regressão.
 Os ajustes de Docker são apoio somente local para testes e não fazem parte
 da publicação desta integração. O backend também fica fora deste commit. As dependências de edição do perfil
 e conteúdo legal continuam indicadas nas seções anteriores.
+
+## Navegação e requisições
+
+A sessão é compartilhada por `SessionProvider`, instalado no layout principal.
+AppShell e AdminShell usam esse estado persistente, sem iniciar uma consulta de
+perfil nem uma tela de carregamento ao navegar com sessão válida. A hidratação
+inicial continua protegida por LoadingScreen, sem ler sessionStorage no servidor.
+
+Ao entrar no Perfil ou voltar o foco à sua aba, `GET /me` busca os dados atuais
+em segundo plano, sem cache HTTP nem bloqueio da tela. Isso permite refletir
+alterações feitas em outro dispositivo sem encerrar a sessão. Na garagem, os
+dados do usuário continuam vindo da sessão, sem essa consulta a cada entrada.
+Login, cadastro e refresh também fornecem os dados; eventos de alteração da
+sessão atualizam as telas. Se a revalidação falhar, o perfil avisa que os dados
+podem estar desatualizados e oferece uma nova tentativa.
+O monitor de validade continua renovando o JWT no último minuto e encerrando
+acesso local quando a sessão vence ou uma requisição recebe 401.
+
+GETs JSON simultâneos para a mesma URL e sessão compartilham uma requisição.
+Somente a lista da garagem tem cache de resposta configurado (30 segundos).
+Ao voltar à garagem, os dados existentes aparecem imediatamente; se o prazo
+venceu, a lista é atualizada sem apagar os veículos durante a espera. Alterações
+bem-sucedidas invalidam as leituras, e dados de uma autenticação anterior não são
+reutilizados. Respostas inválidas da lista e falhas de rede não ficam em cache.
+
+Esses ajustes ficam concentrados no frontend, sem mudanças no backend.

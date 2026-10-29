@@ -1,4 +1,4 @@
-import { requestAccount } from "../../account-api.js";
+import { getCachedAccountResponse, invalidateAccountReadCache, requestAccount } from "../../account-api.js";
 import { getAuthErrorMessage } from "../../auth-api.js";
 
 const vehicleTypeFolders = {
@@ -519,9 +519,25 @@ export function getMaintenanceAlertErrorMessage(error, fallback) {
   return getAuthErrorMessage(error, fallback);
 }
 
+export function getCachedVehicles() {
+  const result = getCachedAccountResponse("/vehicles", { allowStale: true });
+  if (!result) return null;
+  try {
+    return getVehicleList(result.data).map(normalizeVehicle);
+  } catch {
+    invalidateAccountReadCache();
+    return null;
+  }
+}
+
 export async function listVehicles() {
-  const result = await requestAccount("/vehicles", { method: "GET" });
-  return getVehicleList(result.data).map(normalizeVehicle);
+  const result = await requestAccount("/vehicles", { method: "GET", cacheForMs: 30000 });
+  try {
+    return getVehicleList(result.data).map(normalizeVehicle);
+  } catch (error) {
+    invalidateAccountReadCache();
+    throw error;
+  }
 }
 
 export async function getVehicle(vehicleId) {

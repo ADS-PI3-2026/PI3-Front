@@ -183,3 +183,18 @@ export function getPasswordValidationError(password) {
   if (!hasSpecialCharacter) return "Inclua pelo menos um caractere especial.";
   return "";
 }
+
+export function getNewEmailValidationError(value, currentEmail) {
+  const error = getEmailValidationError(value);
+  if (error) return error;
+  if (value.trim().toLowerCase() === currentEmail.trim().toLowerCase()) {
+    return "Informe um e-mail diferente do endereço atual.";
+  }
+  return "";
+}
+
+export function getEmailChangeVerificationTargets(documentType) {
+  if (documentType === "CPF") return ["current", "new"];
+  if (documentType === "CNPJ") return ["new"];
+  return null;
+}

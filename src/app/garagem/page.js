@@ -8,7 +8,7 @@ import AppShell, { useAuthUser } from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
 import VehicleBrandLogo from "../components/vehicle-brand-logo";
 import VehiclePlate from "../components/vehicle-plate";
-import { listVehicles } from "./_lib/garage-api";
+import { getCachedVehicles, listVehicles } from "./_lib/garage-api";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
@@ -24,10 +24,9 @@ export default function GaragePage() {
 function GarageContent() {
   const user = useAuthUser();
   const firstName = user.name.trim().split(/\s+/)[0];
-  const [requestState, setRequestState] = useState({
-    error: "",
-    loading: true,
-    vehicles: [],
+  const [requestState, setRequestState] = useState(() => {
+    const cached = getCachedVehicles();
+    return { error: "", loading: cached === null, vehicles: cached ?? [] };
   });
   const [retryRevision, setRetryRevision] = useState(0);
 

@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { VERIFICATION_CODE_LENGTH } from "../lib/form-validation";
 import styles from "./verification-code-fields.module.css";
 
-export default function VerificationCodeFields({ autoFocus = true, code, error, onChange }) {
+export default function VerificationCodeFields({ autoFocus = true, code, error, onChange, label = "Código de verificação", disabled = false }) {
   const inputRefs = useRef([]);
 
   const updateCode = (index, rawValue) => {
@@ -26,13 +26,13 @@ export default function VerificationCodeFields({ autoFocus = true, code, error, 
   };
 
   return (
-    <fieldset className={styles.fieldset}>
-      <legend className="app-field-label">Código de verificação</legend>
+    <fieldset className={styles.fieldset} disabled={disabled}>
+      <legend className="app-field-label">{label}</legend>
       <div className={styles.inputs}>
         {code.map((digit, index) => (
           <input
             aria-invalid={Boolean(error)}
-            aria-label={`Dígito ${index + 1}`}
+            aria-label={label === "Código de verificação" ? `Dígito ${index + 1}` : `${label}: dígito ${index + 1}`}
             autoComplete={index === 0 ? "one-time-code" : "off"}
             autoFocus={autoFocus && index === 0}
             inputMode="numeric"

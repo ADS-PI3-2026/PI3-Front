@@ -16,11 +16,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser } from "../account-api";
-import { getAuthErrorMessage } from "../auth-api";
-import { getAuthSession } from "../auth-session";
 import { isAdminUser } from "../lib/user-access";
-import { ensureAuthSession, logoutAuthSession } from "../session-api";
+import { logoutAuthSession } from "../session-api";
+import { useSession } from "./session-provider";
+import LoadingScreen from "./loading-screen";
 import styles from "./admin-shell.module.css";
 
 const plannedNavigation = [
@@ -44,53 +43,16 @@ export function useAdminUser() {
 export default function AdminShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [warning, setWarning] = useState("");
+  const { ready, session, warning } = useSession();
+  const user = session?.user;
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    let active = true;
-
-    async function validateAdminAccess() {
-      const storedSession = getAuthSession();
-      if (!storedSession) {
-        router.replace("/");
-        return;
-      }
-
-      try {
-        await ensureAuthSession();
-        const currentUser = await getCurrentUser();
-        if (!active) return;
-        if (!isAdminUser(currentUser)) {
-          router.replace("/garagem");
-          return;
-        }
-        setUser(currentUser);
-        setWarning("");
-      } catch (error) {
-        if (!active) return;
-        const session = getAuthSession();
-        if (!session || error.status === 401) {
-          router.replace("/?session=expired");
-          return;
-        }
-        if (!isAdminUser(session.user)) {
-          router.replace("/garagem");
-          return;
-        }
-        setUser(session.user);
-        setWarning(getAuthErrorMessage(
-          error,
-          "Não foi possível atualizar os dados da conta. Tente novamente.",
-        ));
-      }
-    }
-
-    void validateAdminAccess();
-    return () => { active = false; };
-  }, [router]);
+    if (!ready) return;
+    if (!user) router.replace("/");
+    else if (!isAdminUser(user)) router.replace("/garagem");
+  }, [ready, router, user]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -114,16 +76,10 @@ export default function AdminShell({ children }) {
     }
   };
 
-  if (!user) {
-    return (
-      <div aria-live="polite" className={styles.loading} role="status">
-        Validando acesso...
-      </div>
-    );
-  }
+  if (!ready || !user || !isAdminUser(user)) return <LoadingScreen />;
 
   return (
-    <AdminUserContext.Provider value={user}>
+    <AdminUserContext.Provider key={session.sessionId} value={user}>
       <div className={styles.shell}>
         <header className={styles.header}>
           <div className={styles.headerStart}>

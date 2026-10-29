@@ -15,7 +15,9 @@ async function api() { return import("../src/app/account-api.js"); }
 
 test("perfil consulta /me com Bearer e não envia corpo em GET", async () => {
   const session = startSession();
+  let requestOptions;
   globalThis.fetch = async (url, options) => {
+    requestOptions = options;
     assert.equal(url, "http://localhost:8000/api/me");
     assert.equal(options.method, "GET");
     assert.equal(options.body, undefined);
@@ -23,6 +25,7 @@ test("perfil consulta /me com Bearer e não envia corpo em GET", async () => {
     return success({ ...user, name: "Nome atualizado" });
   };
   assert.equal((await (await api()).getCurrentUser()).name, "Nome atualizado");
+  assert.equal(requestOptions.cache, "no-store");
   assert.equal(getAuthSession().user.name, "Nome atualizado");
 });
 

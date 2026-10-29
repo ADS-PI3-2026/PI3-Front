@@ -710,3 +710,16 @@ test("associa erros da manutenção aos campos fixos e dinâmicos", async () => 
   });
   assert.equal(api.getMaintenanceErrorMessage(error), "Confira os campos destacados e tente novamente.");
 });
+
+test("uma resposta inválida da lista não fica em cache impedindo nova tentativa", async () => {
+  startSession();
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return success(calls === 1 ? { items: [] } : []);
+  };
+  const { listVehicles } = await garageApi();
+  await assert.rejects(listVehicles(), /resposta inesperada/);
+  assert.deepEqual(await listVehicles(), []);
+  assert.equal(calls, 2);
+});

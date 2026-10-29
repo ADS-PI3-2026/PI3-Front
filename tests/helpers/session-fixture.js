@@ -11,6 +11,8 @@ export function installStorage() {
   globalThis.window = {
     sessionStorage: { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value), removeItem: (key) => stored.delete(key) },
     dispatchEvent: events.dispatchEvent.bind(events),
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
   };
   return stored;
 }
