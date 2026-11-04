@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   BellRinging,
   CalendarBlank,
+  CaretRight,
   CheckCircle,
   CircleNotch,
   FilePdf,
@@ -27,8 +28,9 @@ import VehiclePlate from "../../components/vehicle-plate";
 import PageTopBar from "../_components/page-top-bar";
 import {
   getVehicle,
-  listVehicleAlerts,
-  listVehicleMaintenances,
+  listVehicleMaintenanceDetails,
+  listVehicleAlertsPage,
+  listVehicleMaintenancesPage,
 } from "../_lib/garage-api";
 import { getAuthErrorMessage } from "../../auth-api";
 import styles from "./page.module.css";
@@ -37,6 +39,12 @@ const mileageFormatter = new Intl.NumberFormat("pt-BR");
 
 function formatMileage(value) {
   return mileageFormatter.format(value);
+}
+
+function formatRegistrationDate(value) {
+  const match = String(value ?? "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return "Não informada";
+  return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
 function getAlertTone(item) {
@@ -56,6 +64,12 @@ export default function VehicleHistoryPage() {
     notFound: false,
     vehicle: null,
   });
+  const [pagination, setPagination] = useState({
+    alerts: { hasMore: false, page: 1, total: 0 },
+    maintenances: { hasMore: false, page: 1, total: 0 },
+  });
+  const [loadMoreState, setLoadMoreState] = useState({ error: "", loading: "" });
+  const [pdfState, setPdfState] = useState({ error: "", loading: false });
 
   useEffect(() => {
     let active = true;
@@ -70,20 +84,33 @@ export default function VehicleHistoryPage() {
 
       try {
         const loadedVehicle = await getVehicle(vehicleId);
-        const [maintenances, alerts] = await Promise.all([
-          listVehicleMaintenances(vehicleId),
-          listVehicleAlerts(vehicleId, loadedVehicle.mileage),
+        const [maintenancePage, alertPage] = await Promise.all([
+          listVehicleMaintenancesPage(vehicleId, 1),
+          listVehicleAlertsPage(vehicleId, loadedVehicle.mileage, 1),
         ]);
 
         if (active) {
           setRequestState({
-            alerts,
+            alerts: alertPage.items,
             error: "",
             loading: false,
-            maintenances,
+            maintenances: maintenancePage.items,
             notFound: false,
             vehicle: loadedVehicle,
           });
+          setPagination({
+            alerts: {
+              hasMore: alertPage.hasMore,
+              page: alertPage.page,
+              total: alertPage.total,
+            },
+            maintenances: {
+              hasMore: maintenancePage.hasMore,
+              page: maintenancePage.page,
+              total: maintenancePage.total,
+            },
+          });
+          setLoadMoreState({ error: "", loading: "" });
         }
       } catch (error) {
         if (!active) return;
@@ -98,6 +125,11 @@ export default function VehicleHistoryPage() {
           notFound: error?.status === 404,
           vehicle: null,
         });
+        setPagination({
+          alerts: { hasMore: false, page: 1, total: 0 },
+          maintenances: { hasMore: false, page: 1, total: 0 },
+        });
+        setLoadMoreState({ error: "", loading: "" });
       }
     }
 
@@ -107,12 +139,69 @@ export default function VehicleHistoryPage() {
 
   const changeView = (nextView) => {
     setSelectedView(nextView);
+    setLoadMoreState({ error: "", loading: "" });
+  };
+
+  const loadMore = async (resource) => {
+    if (loadMoreState.loading || !pagination[resource].hasMore || !requestState.vehicle) return;
+    setLoadMoreState({ error: "", loading: resource });
+
+    try {
+      const nextPage = resource === "maintenances"
+        ? await listVehicleMaintenancesPage(vehicleId, pagination.maintenances.page + 1)
+        : await listVehicleAlertsPage(
+          vehicleId,
+          requestState.vehicle.mileage,
+          pagination.alerts.page + 1,
+        );
+
+      setRequestState((current) => {
+        const knownIds = new Set(current[resource].map((item) => item.id));
+        const newItems = nextPage.items.filter((item) => !knownIds.has(item.id));
+        return { ...current, [resource]: [...current[resource], ...newItems] };
+      });
+      setPagination((current) => ({
+        ...current,
+        [resource]: {
+          hasMore: nextPage.hasMore,
+          page: nextPage.page,
+          total: nextPage.total,
+        },
+      }));
+      setLoadMoreState({ error: "", loading: "" });
+    } catch (error) {
+      setLoadMoreState({
+        error: getAuthErrorMessage(error, "Não foi possível carregar mais registros. Tente novamente."),
+        loading: "",
+      });
+    }
+  };
+
+  const downloadHistory = async () => {
+    if (pdfState.loading || !requestState.vehicle) return;
+    setPdfState({ error: "", loading: true });
+
+    try {
+      const maintenances = await listVehicleMaintenanceDetails(vehicleId);
+      if (maintenances.length === 0) {
+        setPdfState({ error: "Ainda não há manutenções para incluir no PDF.", loading: false });
+        return;
+      }
+      const { downloadVehicleHistoryPdf } = await import("../_lib/vehicle-history-pdf");
+      downloadVehicleHistoryPdf({ maintenances, vehicle: requestState.vehicle });
+      setPdfState({ error: "", loading: false });
+    } catch {
+      setPdfState({
+        error: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
+        loading: false,
+      });
+    }
   };
 
   if (requestState.loading) {
     return (
       <AppShell>
-        <PageTopBar title="Manutenções" />
+        <PageTopBar backHref="/garagem" title="Manutenções" />
         <section className={styles.loadingState} role="status">
           <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <span>Carregando dados do veículo...</span>
@@ -124,7 +213,7 @@ export default function VehicleHistoryPage() {
   if (!requestState.vehicle) {
     return (
       <AppShell>
-        <PageTopBar title="Manutenções" />
+        <PageTopBar backHref="/garagem" title="Manutenções" />
         <section className="app-empty-state app-empty-state--narrow" role="alert">
           <h2>{requestState.notFound ? "Veículo não encontrado" : "Não foi possível carregar o veículo"}</h2>
           <p>
@@ -152,48 +241,63 @@ export default function VehicleHistoryPage() {
 
   const viewOptions = [
     {
-      label: `Histórico (${maintenanceItems.length})`,
+      label: `Histórico (${pagination.maintenances.total})`,
       value: "history",
     },
     {
-      label: `Manutenções (${alertItems.length})`,
+      label: `Manutenções (${pagination.alerts.total})`,
       value: "alerts",
     },
   ];
 
   return (
     <AppShell>
-      <PageTopBar title="Manutenções" />
+      <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
 
       <section className={styles.vehicleHero}>
-        <div className={styles.vehicleTitle}>
+        <div className={styles.vehicleIdentity}>
           <VehicleBrandLogo
             brandId={vehicle.brandId}
             className={styles.brandLogo}
             type={vehicle.type}
           />
-          <div className={styles.vehicleTitleCopy}>
-            <h2>{vehicle.model}</h2>
-            <div className={styles.vehicleDetails}>
-              <span>{vehicle.brand}</span>
-              <span>{vehicle.version}</span>
+          <span className={styles.vehicleBrand}>{vehicle.brand}</span>
+          <h2>{vehicle.model}</h2>
+        </div>
+
+        <div className={styles.vehicleTopDetails}>
+          <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsTop}`}>
+            <div>
+              <dt>Ano</dt>
+              <dd>{vehicle.year || "Não informado"}</dd>
             </div>
-          </div>
-        </div>
-        <div className={styles.vehicleMeta}>
+            <div>
+              <dt>Cor</dt>
+              <dd>{vehicle.color || "Não informada"}</dd>
+            </div>
+          </dl>
           <VehiclePlate plate={vehicle.plate} />
-          <span className={styles.metaItem}>
-            <Gauge aria-hidden size={18} weight="regular" />
-            {formatMileage(vehicle.mileage)} km
-          </span>
-          <Link
-            className={styles.manageButton}
-            href={`/garagem/${vehicle.id}/gerenciar`}
-          >
-            <GearSix aria-hidden size={18} weight="bold" />
-            Gerenciar
-          </Link>
         </div>
+
+        <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
+          <div>
+            <dt>Quilometragem</dt>
+            <dd>{formatMileage(vehicle.mileage)} km</dd>
+          </div>
+          <div>
+            <dt>Cadastro</dt>
+            <dd>{formatRegistrationDate(vehicle.createdAt)}</dd>
+          </div>
+        </dl>
+
+        <Link
+          className={styles.manageButton}
+          href={`/garagem/${vehicle.id}/gerenciar`}
+        >
+          <GearSix aria-hidden className={styles.manageIcon} size={19} weight="bold" />
+          <span>Gerenciar veículo</span>
+          <CaretRight aria-hidden className={styles.manageArrow} size={18} weight="bold" />
+        </Link>
       </section>
 
       <section className={styles.maintenanceSection}>
@@ -206,7 +310,7 @@ export default function VehicleHistoryPage() {
           />
         </div>
 
-        <div aria-live="polite">
+        <div aria-busy={Boolean(loadMoreState.loading)} aria-live="polite">
           {selectedView === "history" ? (
             <>
               <header className={styles.sectionHeading}>
@@ -214,12 +318,32 @@ export default function VehicleHistoryPage() {
                   <span>Serviços concluídos</span>
                   <h2>Histórico de manutenção</h2>
                 </div>
-                <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
+                <div className={styles.sectionHeadingActions}>
+                  {pagination.maintenances.total > 0 && (
+                    <button
+                      className={styles.pdfButton}
+                      disabled={pdfState.loading}
+                      onClick={() => void downloadHistory()}
+                      type="button"
+                    >
+                      {pdfState.loading
+                        ? <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                        : <FilePdf aria-hidden size={18} weight="bold" />}
+                      {pdfState.loading ? "Preparando..." : "Baixar PDF"}
+                    </button>
+                  )}
+                  <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
+                </div>
               </header>
 
+              {pdfState.error && (
+                <p className={styles.pdfError} role="alert">{pdfState.error}</p>
+              )}
+
               {maintenanceItems.length > 0 ? (
-                <div className={styles.timeline}>
-                  {maintenanceItems.map((item) => {
+                <>
+                  <div className={styles.timeline}>
+                    {maintenanceItems.map((item) => {
                     const toneClass = item.readonly ? styles.readonly : styles.done;
 
                     return (
@@ -279,8 +403,30 @@ export default function VehicleHistoryPage() {
                         </div>
                       </article>
                     );
-                  })}
-                </div>
+                    })}
+                  </div>
+                  {(pagination.maintenances.hasMore || loadMoreState.error) && (
+                    <div className={styles.paginationFooter}>
+                      {loadMoreState.error && selectedView === "history" && (
+                        <p role="alert">{loadMoreState.error}</p>
+                      )}
+                      {pagination.maintenances.hasMore && (
+                        <button
+                          disabled={loadMoreState.loading === "maintenances"}
+                          onClick={() => void loadMore("maintenances")}
+                          type="button"
+                        >
+                          {loadMoreState.loading === "maintenances" && (
+                            <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                          )}
+                          {loadMoreState.loading === "maintenances"
+                            ? "Carregando..."
+                            : "Carregar mais manutenções"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className={styles.inlineEmptyState}>
                   <CardsIcon  aria-hidden size={30} weight="duotone" />
@@ -300,8 +446,9 @@ export default function VehicleHistoryPage() {
               </header>
 
               {alertItems.length > 0 ? (
-                <div className={styles.alertList}>
-                  {alertItems.map((item) => {
+                <>
+                  <div className={styles.alertList}>
+                    {alertItems.map((item) => {
                     const toneClass = getAlertTone(item);
 
                     return (
@@ -334,8 +481,30 @@ export default function VehicleHistoryPage() {
                         </div>
                       </article>
                     );
-                  })}
-                </div>
+                    })}
+                  </div>
+                  {(pagination.alerts.hasMore || loadMoreState.error) && (
+                    <div className={styles.paginationFooter}>
+                      {loadMoreState.error && selectedView === "alerts" && (
+                        <p role="alert">{loadMoreState.error}</p>
+                      )}
+                      {pagination.alerts.hasMore && (
+                        <button
+                          disabled={loadMoreState.loading === "alerts"}
+                          onClick={() => void loadMore("alerts")}
+                          type="button"
+                        >
+                          {loadMoreState.loading === "alerts" && (
+                            <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                          )}
+                          {loadMoreState.loading === "alerts"
+                            ? "Carregando..."
+                            : "Carregar mais alertas"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className={styles.inlineEmptyState}>
                   <BellRinging aria-hidden size={30} weight="duotone" />

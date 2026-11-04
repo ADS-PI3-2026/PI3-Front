@@ -1,14 +1,33 @@
 "use client";
 
-import { CircleNotch, Gauge, Plus } from "@phosphor-icons/react";
+import {
+  ArrowsLeftRight,
+  CalendarBlank,
+  Car,
+  CaretRight,
+  CircleNotch,
+  Gauge,
+  Plus,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getAuthErrorMessage } from "../auth-api";
 import AppShell, { useAuthUser } from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
 import VehicleBrandLogo from "../components/vehicle-brand-logo";
 import VehiclePlate from "../components/vehicle-plate";
-import { getCachedVehicles, listVehicles } from "./_lib/garage-api";
+import VehicleRegistrationLimit from "./_components/vehicle-registration-limit";
+import {
+  getCachedVehiclePage,
+  getVehicleMaintenanceDateSummary,
+  listVehiclePage,
+} from "./_lib/garage-api";
+import {
+  getRemainingVehicleRegistrations,
+  hasReachedVehicleRegistrationLimit,
+  MAX_DIRECT_VEHICLE_REGISTRATIONS,
+} from "./_lib/vehicle-registration-limit";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
@@ -25,23 +44,68 @@ function GarageContent() {
   const user = useAuthUser();
   const firstName = user.name.trim().split(/\s+/)[0];
   const [requestState, setRequestState] = useState(() => {
-    const cached = getCachedVehicles();
-    return { error: "", loading: cached === null, vehicles: cached ?? [] };
+    const cached = getCachedVehiclePage();
+    return {
+      error: "",
+      hasMore: cached?.hasMore ?? false,
+      loadMoreError: "",
+      loading: cached === null,
+      loadingMore: false,
+      page: cached?.page ?? 1,
+      total: cached?.total ?? cached?.items.length ?? 0,
+      vehicles: cached?.items ?? [],
+    };
   });
   const [retryRevision, setRetryRevision] = useState(0);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [maintenanceSummaries, setMaintenanceSummaries] = useState({});
+  const requestedSummaryIds = useRef(new Set());
+  const mounted = useRef(true);
+  const remainingRegistrations = getRemainingVehicleRegistrations(requestState.total);
+  const registrationLimitReached = !requestState.loading
+    && !requestState.error
+    && hasReachedVehicleRegistrationLimit(requestState.total);
+  const showRemainingRegistrations = !requestState.loading
+    && !requestState.error
+    && remainingRegistrations > 0
+    && remainingRegistrations < MAX_DIRECT_VEHICLE_REGISTRATIONS;
+  const showAddVehicleButton = !requestState.loading
+    && !requestState.error
+    && !registrationLimitReached;
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
 
     async function loadVehicles() {
       try {
-        const vehicles = await listVehicles();
-        if (active) setRequestState({ error: "", loading: false, vehicles });
+        const vehiclePage = await listVehiclePage(1);
+        if (active) {
+          setRequestState({
+            error: "",
+            hasMore: vehiclePage.hasMore,
+            loadMoreError: "",
+            loading: false,
+            loadingMore: false,
+            page: vehiclePage.page,
+            total: vehiclePage.total,
+            vehicles: vehiclePage.items,
+          });
+        }
       } catch (error) {
         if (!active) return;
         setRequestState({
           error: getAuthErrorMessage(error, "Não foi possível carregar seus veículos. Tente novamente."),
+          hasMore: false,
+          loadMoreError: "",
           loading: false,
+          loadingMore: false,
+          page: 1,
+          total: 0,
           vehicles: [],
         });
       }
@@ -51,9 +115,71 @@ function GarageContent() {
     return () => { active = false; };
   }, [retryRevision]);
 
+  useEffect(() => {
+    const vehiclesToLoad = requestState.vehicles.filter(
+      (vehicle) => !requestedSummaryIds.current.has(vehicle.id),
+    );
+    if (vehiclesToLoad.length === 0) return;
+
+    for (const vehicle of vehiclesToLoad) requestedSummaryIds.current.add(vehicle.id);
+
+    void Promise.allSettled(
+      vehiclesToLoad.map((vehicle) => getVehicleMaintenanceDateSummary(vehicle.id)),
+    ).then((results) => {
+      if (!mounted.current) return;
+      setMaintenanceSummaries((current) => {
+        const next = { ...current };
+        results.forEach((result, index) => {
+          next[vehiclesToLoad[index].id] = result.status === "fulfilled" ? result.value : null;
+        });
+        return next;
+      });
+    });
+  }, [requestState.vehicles]);
+
+  useEffect(() => {
+    if (!addMenuOpen) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setAddMenuOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [addMenuOpen]);
+
   const retry = () => {
     setRequestState((current) => ({ ...current, error: "", loading: true }));
     setRetryRevision((revision) => revision + 1);
+  };
+
+  const loadMoreVehicles = async () => {
+    if (requestState.loadingMore || !requestState.hasMore) return;
+    setRequestState((current) => ({ ...current, loadMoreError: "", loadingMore: true }));
+
+    try {
+      const nextPage = await listVehiclePage(requestState.page + 1);
+      setRequestState((current) => {
+        const knownIds = new Set(current.vehicles.map((vehicle) => vehicle.id));
+        const newVehicles = nextPage.items.filter((vehicle) => !knownIds.has(vehicle.id));
+        return {
+          ...current,
+          hasMore: nextPage.hasMore,
+          loadingMore: false,
+          page: nextPage.page,
+          total: nextPage.total,
+          vehicles: [...current.vehicles, ...newVehicles],
+        };
+      });
+    } catch (error) {
+      setRequestState((current) => ({
+        ...current,
+        loadMoreError: getAuthErrorMessage(
+          error,
+          "Não foi possível carregar mais veículos. Tente novamente.",
+        ),
+        loadingMore: false,
+      }));
+    }
   };
 
   return (
@@ -72,10 +198,18 @@ function GarageContent() {
 
         <section aria-labelledby="vehicles-title" className={styles.vehiclesSection}>
           <div className={styles.sectionHeader}>
-            <h2 id="vehicles-title">Meus veículos</h2>
+            <div>
+              <h2 id="vehicles-title">Meus veículos</h2>
+              {showRemainingRegistrations && (
+                <p>
+                  Você ainda pode cadastrar {remainingRegistrations}{" "}
+                  {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
+                </p>
+              )}
+            </div>
           </div>
 
-          <div aria-busy={requestState.loading} aria-live="polite" className={styles.vehicleList}>
+          <div aria-busy={requestState.loading || requestState.loadingMore} aria-live="polite" className={styles.vehicleList}>
             {requestState.loading ? (
               <div className={styles.loadingState} role="status">
                 <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
@@ -92,56 +226,146 @@ function GarageContent() {
                 <h3>Sua garagem está vazia</h3>
                 <p>Cadastre seu primeiro veículo para começar a registrar manutenções e alertas.</p>
               </div>
-            ) : requestState.vehicles.map((vehicle) => (
-              <Link
-                aria-label={"Abrir histórico de " + vehicle.name}
-                className={`app-card ${styles.vehicleCard}`}
-                href={"/garagem/" + vehicle.id}
-                key={vehicle.id}
-              >
-                <div className={styles.vehicleHeading}>
-                  <div className={styles.vehicleIdentity}>
-                    <VehicleBrandLogo
-                      brandId={vehicle.brandId}
-                      className={styles.brandLogo}
-                      type={vehicle.type}
-                    />
-                    <div className={styles.vehicleCopy}>
-                      <h3>{vehicle.model}</h3>
-                      <div className={styles.vehicleDetails}>
-                        <span>{vehicle.brand}</span>
-                        <span>{vehicle.version}</span>
+            ) : (
+              <>
+                {requestState.vehicles.map((vehicle) => (
+                  <Link
+                    aria-label={"Abrir histórico de " + vehicle.name}
+                    className={`app-card ${styles.vehicleCard}`}
+                    href={"/garagem/" + vehicle.id}
+                    key={vehicle.id}
+                  >
+                    <div className={styles.vehicleHeading}>
+                      <div className={styles.vehicleIdentity}>
+                        <VehicleBrandLogo
+                          brandId={vehicle.brandId}
+                          className={styles.brandLogo}
+                          type={vehicle.type}
+                        />
+                        <div className={styles.vehicleCopy}>
+                          <h3>{vehicle.model}</h3>
+                          <div className={styles.vehicleDetails}>
+                            <span>{vehicle.brand}</span>
+                            <span>{vehicle.version}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className={styles.mileage}>
-                  <span className={styles.mileageValue}>
-                    <Gauge aria-hidden size={21} weight="regular" />
-                    <span>{formatMileage(vehicle.mileage)} km</span>
-                  </span>
-                  <VehiclePlate plate={vehicle.plate} />
-                </div>
+                    <div className={styles.mileage}>
+                      <span className={styles.mileageValue}>
+                        <Gauge aria-hidden size={21} weight="regular" />
+                        <span>{formatMileage(vehicle.mileage)} km</span>
+                      </span>
+                      <VehiclePlate plate={vehicle.plate} />
+                    </div>
 
-                <div className={styles.maintenanceHeader}>
-                  <span>Próxima manutenção</span>
-                  <strong className={styles.info}>Alertas em breve</strong>
-                </div>
-                <div aria-hidden className={styles.progressTrack}>
-                  <span className={styles.progressInfo} style={{ width: "0%" }} />
-                </div>
-              </Link>
-            ))}
+                    {(maintenanceSummaries[vehicle.id]?.nextDateLabel
+                      || maintenanceSummaries[vehicle.id]?.overdueCount > 0) && (
+                      <div className={styles.maintenanceSummary}>
+                        {maintenanceSummaries[vehicle.id].nextDateLabel && (
+                          <div className={styles.maintenanceRow}>
+                            <span>
+                              <CalendarBlank aria-hidden size={17} weight="duotone" />
+                              Próxima manutenção
+                            </span>
+                            <strong>{maintenanceSummaries[vehicle.id].nextDateLabel}</strong>
+                          </div>
+                        )}
+                        {maintenanceSummaries[vehicle.id].overdueCount > 0 && (
+                          <div className={`${styles.maintenanceRow} ${styles.overdueRow}`}>
+                            <span>
+                              <WarningCircle aria-hidden size={17} weight="fill" />
+                              Manutenções atrasadas
+                            </span>
+                            <strong>
+                              {maintenanceSummaries[vehicle.id].overdueCount}{" "}
+                              {maintenanceSummaries[vehicle.id].overdueCount === 1 ? "atrasada" : "atrasadas"}
+                            </strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Link>
+                ))}
+
+                {requestState.loadMoreError && (
+                  <p className={styles.loadMoreError} role="alert">{requestState.loadMoreError}</p>
+                )}
+
+                {requestState.hasMore && (
+                  <button
+                    className={styles.loadMoreButton}
+                    disabled={requestState.loadingMore}
+                    onClick={() => void loadMoreVehicles()}
+                    type="button"
+                  >
+                    {requestState.loadingMore && (
+                      <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                    )}
+                    {requestState.loadingMore ? "Carregando..." : "Carregar mais veículos"}
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
-          <Link
-            aria-label="Adicionar veículo"
-            className={`app-floating-action ${styles.addVehicleButton}`}
-            href="/garagem/novo"
-          >
-            <Plus aria-hidden size={28} weight="regular" />
-          </Link>
+          {registrationLimitReached && <VehicleRegistrationLimit />}
+
+          {addMenuOpen && showAddVehicleButton && (
+            <>
+              <button
+                aria-label="Fechar opções de veículo"
+                className={styles.addMenuBackdrop}
+                onClick={() => setAddMenuOpen(false)}
+                type="button"
+              />
+              <div
+                aria-label="Opções para adicionar veículo"
+                className={styles.addVehicleMenu}
+                id="add-vehicle-menu"
+                role="dialog"
+              >
+                <header>
+                  <strong>Adicionar veículo</strong>
+                  <span>Escolha como deseja continuar.</span>
+                </header>
+                <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
+                  <span className={styles.addMenuIcon}>
+                    <Car aria-hidden size={23} weight="duotone" />
+                  </span>
+                  <span>
+                    <strong>Cadastrar novo</strong>
+                    <small>Adicionar um veículo que ainda não possui histórico.</small>
+                  </span>
+                  <CaretRight aria-hidden size={18} weight="bold" />
+                </Link>
+                <Link href="/garagem/transferencia" onClick={() => setAddMenuOpen(false)}>
+                  <span className={styles.addMenuIcon}>
+                    <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
+                  </span>
+                  <span>
+                    <strong>Transferir existente</strong>
+                    <small>Solicitar ou confirmar a transferência de um veículo.</small>
+                  </span>
+                  <CaretRight aria-hidden size={18} weight="bold" />
+                </Link>
+              </div>
+            </>
+          )}
+
+          {showAddVehicleButton && (
+            <button
+              aria-label="Adicionar veículo"
+              aria-controls="add-vehicle-menu"
+              aria-expanded={addMenuOpen}
+              className={`app-floating-action ${styles.addVehicleButton} ${addMenuOpen ? styles.addVehicleButtonOpen : ""}`}
+              onClick={() => setAddMenuOpen((open) => !open)}
+              type="button"
+            >
+              <Plus aria-hidden size={28} weight="regular" />
+            </button>
+          )}
         </section>
       </div>
     </>

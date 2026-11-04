@@ -44,12 +44,72 @@
   --app-form-radius: 14px;
 }
 
-.fieldHint {
-  line-height: 1.4;
+.vehicleTypeField {
+  border: 0;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 0;
 }
 
-.inputShell,
-.selectShell {
+.vehicleTypeField legend {
+  color: #344056;
+  font-size: var(--app-field-label-size, 0.75rem);
+  font-weight: var(--app-field-label-weight, 780);
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.vehicleTypeOptions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vehicleTypeButton {
+  align-items: center;
+  background: var(--app-control-background);
+  border: 1px solid var(--app-control-border, #d4d9e7);
+  border-radius: 9px;
+  color: #596274;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  min-height: 78px;
+  padding: 10px 6px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.vehicleTypeButton strong {
+  font-size: 0.76rem;
+  line-height: 1.15;
+}
+
+.vehicleTypeButton:hover:not(:disabled) {
+  background: #f3f7fc;
+  border-color: #9db6d4;
+  color: var(--app-blue);
+}
+
+.vehicleTypeButton[data-selected="true"] {
+  background: var(--app-blue-soft);
+  border-color: var(--app-blue);
+  color: var(--app-blue);
+}
+
+.vehicleTypeButton:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.vehicleTypeButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.inputShell {
   --app-placeholder: #a1a8b8;
 }
 
@@ -69,29 +129,12 @@
   padding-right: 13px;
 }
 
-.selectShell select {
-  padding: 0 12px;
-}
-
-.selectShell svg {
-  color: #7d8494;
-  flex: 0 0 auto;
-  margin-right: 13px;
-  pointer-events: none;
-}
-
-.selectShell[data-disabled="true"] {
-  background: #ececf2;
-  color: #a0a6b4;
-}
-
-.selectShell select:disabled {
-  color: #9ca3b2;
-  cursor: not-allowed;
-}
-
 .submitIcon {
   animation: submit-spin 850ms linear infinite;
+}
+
+.limitScreen {
+  padding: 12px 18px 96px;
 }
 
 @keyframes submit-spin {
@@ -101,5 +144,13 @@
 }
 
 @media (min-width: 760px) {
-  
+  .vehicleTypeButton {
+    min-height: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vehicleTypeButton {
+    transition: none;
+  }
 }

@@ -223,6 +223,17 @@
   padding-top: 18px;
 }
 
+.attachmentLimit {
+  background: #f3f6fb;
+  border: 1px solid #dfe5ef;
+  border-radius: 9px;
+  color: #5f6878;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  padding: 10px 12px;
+  text-align: center;
+}
+
 .loadingIcon {
   animation: receipt-spin 800ms linear infinite;
 }

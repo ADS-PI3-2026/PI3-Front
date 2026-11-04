@@ -16,6 +16,38 @@
   padding: 0 14px 34px;
 }
 
+.navigationFeedback {
+  align-items: center;
+  background: var(--app-success-soft);
+  border: 1px solid #b7e2c8;
+  border-radius: 11px;
+  color: var(--app-success);
+  display: grid;
+  gap: 9px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 12px 0;
+  padding: 11px 12px;
+}
+
+.navigationFeedback p {
+  font-size: 0.79rem;
+  font-weight: 680;
+  line-height: 1.4;
+}
+
+.navigationFeedback button {
+  color: inherit;
+  display: grid;
+  height: 32px;
+  place-items: center;
+  width: 32px;
+}
+
+.navigationFeedback button:focus-visible {
+  outline: 3px solid rgba(18, 102, 59, 0.2);
+  outline-offset: 1px;
+}
+
 .bottomNavigation {
   align-items: stretch;
   background: rgba(248, 248, 253, 0.96);

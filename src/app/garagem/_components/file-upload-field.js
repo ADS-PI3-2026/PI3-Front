@@ -58,6 +58,7 @@ export default function FileUploadField({
   value,
 }) {
   const inputId = useId();
+  const canAddFiles = !Number.isInteger(maxFiles) || selectedFiles.length < maxFiles;
 
   const updateFiles = (files) => {
     onChange(getSelectionLabel(files), files);
@@ -76,32 +77,34 @@ export default function FileUploadField({
   return (
     <div className="app-field app-field--uppercase">
       <span id={`${inputId}-label`}>{label}</span>
-      <label
-        aria-labelledby={`${inputId}-label`}
-        className={styles.uploadBox}
-        data-compact={compact}
-        data-disabled={disabled}
-        data-error={Boolean(error)}
-        htmlFor={inputId}
-      >
-        <UploadSimple aria-hidden size={26} weight="bold" />
-        <strong>
-          {selectedFiles.length > 0 ? "Adicionar outros arquivos" : value || "Anexar arquivo"}
-        </strong>
-        <input
-          accept={accept}
-          disabled={disabled}
-          id={inputId}
-          multiple={multiple}
-          name={name}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            addFiles(files);
-            event.target.value = "";
-          }}
-          type="file"
-        />
-      </label>
+      {canAddFiles && (
+        <label
+          aria-labelledby={`${inputId}-label`}
+          className={styles.uploadBox}
+          data-compact={compact}
+          data-disabled={disabled}
+          data-error={Boolean(error)}
+          htmlFor={inputId}
+        >
+          <UploadSimple aria-hidden size={26} weight="bold" />
+          <strong>
+            {selectedFiles.length > 0 ? "Adicionar outros arquivos" : value || "Anexar arquivo"}
+          </strong>
+          <input
+            accept={accept}
+            disabled={disabled}
+            id={inputId}
+            multiple={multiple}
+            name={name}
+            onChange={(event) => {
+              const files = Array.from(event.target.files ?? []);
+              addFiles(files);
+              event.target.value = "";
+            }}
+            type="file"
+          />
+        </label>
+      )}
 
       {selectedFiles.length > 0 && (
         <section className={styles.pendingFiles} aria-label="Arquivos aguardando envio">

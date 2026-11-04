@@ -38,6 +38,7 @@ export default function SearchableSelect({
   emptyMessage = "Nenhuma opção encontrada.",
   error,
   getOptionImage,
+  hint,
   label,
   loading = false,
   onChange,
@@ -177,11 +178,13 @@ export default function SearchableSelect({
         <CaretDown aria-hidden size={18} weight="bold" />
       </button>
 
-      {error && (
+      {error ? (
         <small className="app-error-text" id={errorId}>
           {error}
         </small>
-      )}
+      ) : hint ? (
+        <small className={styles.hint}>{hint}</small>
+      ) : null}
 
       {open && (
         <div className={styles.dropdown}>

@@ -5,13 +5,13 @@
 
 .trigger {
   align-items: center;
-  background: #fbfcff;
-  border: 1px solid #d4d9e7;
-  border-radius: 8px;
+  background: var(--app-control-background);
+  border: 1px solid var(--app-control-border, #d4d9e7);
+  border-radius: var(--app-control-radius, 8px);
   color: #292d39;
   display: flex;
   justify-content: space-between;
-  min-height: 48px;
+  min-height: var(--app-control-height, 48px);
   padding: 0 13px;
   text-align: left;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
@@ -25,7 +25,7 @@
 }
 
 .trigger:focus-visible {
-  outline: 3px solid rgba(7, 71, 147, 0.18);
+  outline: 3px solid var(--app-focus-ring);
   outline-offset: 2px;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .trigger[data-error="true"] {
-  border-color: #d92d20;
+  border-color: var(--app-danger-border);
 }
 
 .trigger svg {
@@ -55,7 +55,11 @@
 }
 
 .placeholder {
-  color: #747c8d;
+  color: var(--app-placeholder, #8f97aa);
+}
+
+.hint {
+  line-height: 1.4;
 }
 
 .dropdown {

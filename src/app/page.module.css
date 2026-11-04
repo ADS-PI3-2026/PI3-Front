@@ -463,6 +463,10 @@
   margin: 19px 0 5px;
 }
 
+.legalCopy section p + p {
+  margin-top: 10px;
+}
+
 .legalUpdated {
   color: #7c8698;
   font-size: 0.76rem;

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CaretDown,
   CircleNotch,
+  CloudArrowUp,
   FloppyDisk,
   Gauge,
+  WifiSlash,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import SegmentedControl from "../../components/segmented-control";
@@ -17,10 +19,18 @@ import {
 } from "../_lib/garage-api";
 import {
   formatCurrencyInput,
+  getLocalDateInputValue,
+  getMaintenanceDateLimits,
   onlyDigits,
   toDateInputValue,
   validateMaintenanceForm,
 } from "../_lib/garage-validation";
+import {
+  clearMaintenanceDraft,
+  hasMaintenanceDraftContent,
+  readMaintenanceDraft,
+  saveMaintenanceDraft,
+} from "../_lib/maintenance-draft";
 import FileUploadField from "./file-upload-field";
 import styles from "./maintenance-form.module.css";
 
@@ -39,6 +49,19 @@ const emptyForm = {
   value: "",
   receiptName: "",
 };
+
+function createFormState({ alertOnly, initialValues = {}, restoredValues = {} }) {
+  const values = { ...initialValues, ...restoredValues };
+  return {
+    ...emptyForm,
+    ...values,
+    status: alertOnly ? "A realizar" : values.status ?? emptyForm.status,
+    date: toDateInputValue(values.date),
+    value: values.value === undefined || values.value === ""
+      ? ""
+      : formatCurrencyInput(values.value),
+  };
+}
 
 function DynamicField({ disabled, error, field, onChange, value }) {
   const errorId = `dynamic-${field.id}-error`;
@@ -211,6 +234,7 @@ export default function MaintenanceForm({
   completedOnly = false,
   alertSubmitLabel,
   completionSubmitLabel,
+  draftKey = "",
   fields = [],
   fieldsError = "",
   fieldsLoading = false,
@@ -222,25 +246,92 @@ export default function MaintenanceForm({
   serviceTypes = [],
   submitLabel,
   title,
+  vehicleYear,
 }) {
-  const [form, setForm] = useState(() => ({
-    ...emptyForm,
-    ...initialValues,
-    status: alertOnly ? "A realizar" : initialValues.status ?? emptyForm.status,
-    date: toDateInputValue(initialValues.date),
-    value: initialValues.value === undefined || initialValues.value === ""
-      ? ""
-      : formatCurrencyInput(initialValues.value),
+  const [initialDraft] = useState(() => readMaintenanceDraft(draftKey));
+  const [cleanFormState] = useState(() => createFormState({ alertOnly, initialValues }));
+  const [form, setForm] = useState(() => createFormState({
+    alertOnly,
+    initialValues,
+    restoredValues: initialDraft?.form,
   }));
-  const [fieldValues, setFieldValues] = useState({});
+  const [fieldValues, setFieldValues] = useState(() => initialDraft?.fieldValues ?? {});
   const [receiptFiles, setReceiptFiles] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
+  const [syncMessage, setSyncMessage] = useState(
+    initialDraft ? "Rascunho recuperado deste dispositivo." : "",
+  );
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [queuedForSync, setQueuedForSync] = useState(initialDraft?.queued === true);
+  const [isOnline, setIsOnline] = useState(() => (
+    typeof navigator === "undefined" ? true : navigator.onLine
+  ));
+  const [restoringDraftFields, setRestoringDraftFields] = useState(
+    Boolean(initialDraft?.form?.category),
+  );
+  const today = getLocalDateInputValue();
+  const dateLimits = getMaintenanceDateLimits({
+    status: form.status,
+    today,
+    vehicleYear,
+  });
+
+  useEffect(() => {
+    const restoredCategory = initialDraft?.form?.category;
+    if (!restoredCategory) return;
+
+    let active = true;
+    Promise.resolve(onCategoryChange?.(restoredCategory)).finally(() => {
+      if (active) setRestoringDraftFields(false);
+    });
+    return () => { active = false; };
+  }, [initialDraft, onCategoryChange]);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSyncMessage("Sem conexão. Seu preenchimento continuará salvo neste dispositivo.");
+    };
+    const handleOnline = () => {
+      setIsOnline(true);
+      setSyncMessage((current) => (
+        queuedForSync ? "Conexão recuperada. Enviando o registro salvo..." : current
+      ));
+      if (form.category) {
+        setRestoringDraftFields(true);
+        Promise.resolve(onCategoryChange?.(form.category)).finally(() => {
+          setRestoringDraftFields(false);
+        });
+      }
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [draftKey, form.category, onCategoryChange, queuedForSync]);
+
+  useEffect(() => {
+    if (!draftKey || readOnly || submissionCompleted) return;
+    if (!hasMaintenanceDraftContent(form, fieldValues)) {
+      clearMaintenanceDraft(draftKey);
+      return;
+    }
+    saveMaintenanceDraft(draftKey, { fieldValues, form, queued: queuedForSync });
+  }, [draftKey, fieldValues, form, queuedForSync, readOnly, submissionCompleted]);
 
   const updateField = (field, value) => {
     setSubmitError("");
+    if (draftKey) {
+      setSyncMessage(isOnline
+        ? "Rascunho salvo neste dispositivo."
+        : "Sem conexão. Rascunho salvo neste dispositivo.");
+    }
     setErrors((current) => ({ ...current, [field]: "" }));
     setForm((current) => ({ ...current, [field]: value }));
   };
@@ -260,15 +351,21 @@ export default function MaintenanceForm({
 
   const updateDynamicField = (fieldName, value) => {
     setSubmitError("");
+    if (draftKey) {
+      setSyncMessage(isOnline
+        ? "Rascunho salvo neste dispositivo."
+        : "Sem conexão. Rascunho salvo neste dispositivo.");
+    }
     setErrors((current) => ({ ...current, [`payload.${fieldName}`]: "" }));
     setFieldValues((current) => ({ ...current, [fieldName]: value }));
   };
 
-  const submitMaintenance = async (event) => {
-    event.preventDefault();
-    if (readOnly || submitting || fieldsLoading) return;
-
-    const validationErrors = validateMaintenanceForm(form, fields, fieldValues);
+  const sendMaintenance = useCallback(async ({ automatic = false } = {}) => {
+    if (readOnly || submitting || fieldsLoading || restoringDraftFields) return;
+    const validationErrors = validateMaintenanceForm(form, fields, fieldValues, {
+      today,
+      vehicleYear,
+    });
     const attachmentError = getAttachmentError(receiptFiles);
     if (attachmentError) validationErrors.receipt = attachmentError;
 
@@ -276,15 +373,55 @@ export default function MaintenanceForm({
     setSubmitError("");
     if (Object.keys(validationErrors).length > 0) return;
 
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+    if (offline && draftKey) {
+      setIsOnline(false);
+      if (receiptFiles.length > 0) {
+        setErrors((current) => ({
+          ...current,
+          receipt: "Para enviar depois, remova os comprovantes e adicione-os quando estiver conectado.",
+        }));
+        setSyncMessage("Os campos foram preservados, mas arquivos não são incluídos no rascunho offline.");
+        return;
+      }
+      const draftSaved = saveMaintenanceDraft(draftKey, { fieldValues, form, queued: true });
+      if (!draftSaved) {
+        setSubmitError("O navegador não permitiu salvar o registro neste dispositivo. Reconecte-se para continuar.");
+        setSyncMessage("");
+        return;
+      }
+      setQueuedForSync(true);
+      setSyncMessage("Registro salvo. Ele será enviado automaticamente quando a conexão voltar.");
+      return;
+    }
+
     setSubmitting(true);
+    setSyncMessage(automatic ? "Enviando o registro salvo..." : "");
     try {
       await onSubmit?.({ fieldValues, files: receiptFiles, form });
+      clearMaintenanceDraft(draftKey);
+      setQueuedForSync(false);
+      if (draftKey) {
+        setForm({ ...cleanFormState });
+        setFieldValues({});
+        setReceiptFiles([]);
+        setErrors({});
+        setSubmitError("");
+        setSyncMessage(automatic ? "Registro sincronizado com sucesso." : "");
+        onCategoryChange?.("");
+      }
     } catch (error) {
       const isAlert = form.status === "A realizar";
       setErrors(isAlert
         ? getMaintenanceAlertFieldErrors(error)
         : getMaintenanceFieldErrors(error));
-      if (error?.maintenanceCreated) setSubmissionCompleted(true);
+      if (error?.maintenanceCreated) {
+        clearMaintenanceDraft(draftKey);
+        setSubmissionCompleted(true);
+        setQueuedForSync(false);
+      } else if (automatic) {
+        setQueuedForSync(false);
+      }
       setSubmitError(isAlert
         ? getMaintenanceAlertErrorMessage(
           error,
@@ -297,6 +434,44 @@ export default function MaintenanceForm({
     } finally {
       setSubmitting(false);
     }
+  }, [
+    cleanFormState,
+    draftKey,
+    fieldValues,
+    fields,
+    fieldsLoading,
+    form,
+    onCategoryChange,
+    onSubmit,
+    readOnly,
+    receiptFiles,
+    restoringDraftFields,
+    submitting,
+    today,
+    vehicleYear,
+  ]);
+
+  useEffect(() => {
+    if (!queuedForSync || !isOnline || fieldsLoading || fieldsError
+      || restoringDraftFields || submitting) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void sendMaintenance({ automatic: true });
+    });
+    return () => { active = false; };
+  }, [
+    fieldsError,
+    fieldsLoading,
+    isOnline,
+    queuedForSync,
+    restoringDraftFields,
+    sendMaintenance,
+    submitting,
+  ]);
+
+  const submitMaintenance = async (event) => {
+    event.preventDefault();
+    await sendMaintenance();
   };
 
   const selectedServiceType = serviceTypes.find((serviceType) => (
@@ -309,6 +484,15 @@ export default function MaintenanceForm({
         <h2>{title}</h2>
         <p>{intro}</p>
       </div>
+
+      {syncMessage && !readOnly && (
+        <div className={styles.draftStatus} data-offline={!isOnline || queuedForSync} role="status">
+          {!isOnline || queuedForSync
+            ? <WifiSlash aria-hidden size={20} weight="duotone" />
+            : <CloudArrowUp aria-hidden size={20} weight="duotone" />}
+          <p>{syncMessage}</p>
+        </div>
+      )}
 
       <form className={`app-form-card ${styles.maintenanceForm}`} noValidate onSubmit={submitMaintenance}>
         {!completedOnly && !alertOnly && (
@@ -392,6 +576,8 @@ export default function MaintenanceForm({
           <span className={`app-control-shell ${styles.inputShell}`} data-error={Boolean(errors.date)}>
             <input
               disabled={submitting || readOnly}
+              max={dateLimits.max || undefined}
+              min={dateLimits.min || undefined}
               name="date"
               onChange={(event) => updateField("date", event.target.value)}
               type="date"
@@ -502,7 +688,8 @@ export default function MaintenanceForm({
 
         {!readOnly && (
           <ActionButton
-            disabled={submitting || submissionCompleted || fieldsLoading || Boolean(fieldsError) || !form.category}
+            disabled={submitting || submissionCompleted || queuedForSync || fieldsLoading
+              || restoringDraftFields || Boolean(fieldsError) || !form.category}
             type="submit"
           >
             {submitting
@@ -510,8 +697,12 @@ export default function MaintenanceForm({
               : <FloppyDisk aria-hidden size={21} weight="bold" />}
             {submissionCompleted
               ? "Manutenção registrada"
+              : queuedForSync
+                ? "Aguardando conexão..."
               : submitting
               ? "Salvando..."
+              : draftKey && !isOnline
+                ? "Salvar para enviar depois"
               : form.status === "A realizar" && alertSubmitLabel
                 ? alertSubmitLabel
               : form.status === "Realizada" && completionSubmitLabel

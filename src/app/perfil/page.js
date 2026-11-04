@@ -4,16 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  DownloadSimple,
   PencilSimple,
   ShieldCheck,
   SignOut,
   Trash,
   UserCircle,
   WarningCircle,
+  X,
 } from "@phosphor-icons/react";
 import ActionButton from "../components/action-button";
 import AppShell, { useAuthUser } from "../components/app-shell";
 import FormField from "../components/form-field";
+import { usePwaInstall } from "../components/pwa-provider";
 import VerificationCodeFields from "../components/verification-code-fields";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
 import { deleteAccount, requestAccountDeletionCode, validateAccountDeletionCode } from "../account-api";
@@ -30,12 +33,24 @@ const PROFILE_TABS = [
   { id: "deletion", label: "Excluir conta", Icon: Trash },
 ];
 
+const PWA_INSTALL_PROMOTION_DISMISSED_KEY = "legadocar:pwa-install-promotion-dismissed";
+
+function wasInstallPromotionDismissed() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(PWA_INSTALL_PROMOTION_DISMISSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export default function ProfilePage() {
   return <AppShell><ProfileContent /></AppShell>;
 }
 
 function ProfileContent() {
   const user = useAuthUser();
+  const pwa = usePwaInstall();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
@@ -50,6 +65,8 @@ function ProfileContent() {
   const [deletionMessage, setDeletionMessage] = useState("");
   const [deletionTimeLeft, setDeletionTimeLeft] = useState(0);
   const [sentAt, setSentAt] = useState(0);
+  const [installMessage, setInstallMessage] = useState("");
+  const [installPromotionDismissed, setInstallPromotionDismissed] = useState(wasInstallPromotionDismissed);
   const tabRefs = useRef([]);
   const formattedDocument = user.document_type === "CNPJ"
     ? formatCnpj(String(user.document ?? ""))
@@ -152,6 +169,43 @@ function ProfileContent() {
     } finally { setPending(false); }
   };
 
+  const installApp = async () => {
+    setInstallMessage("");
+    const outcome = await pwa.install();
+    if (outcome === "accepted") {
+      setInstallMessage("A instalação do LegadoCar foi iniciada.");
+    } else if (outcome === "dismissed") {
+      setInstallMessage("A instalação foi cancelada. Você poderá tentar novamente pelo menu do navegador.");
+    }
+  };
+
+  const dismissInstallPromotion = () => {
+    setInstallPromotionDismissed(true);
+    setInstallMessage("");
+    try {
+      window.localStorage.setItem(PWA_INSTALL_PROMOTION_DISMISSED_KEY, "true");
+    } catch {
+      // A opção permanece fechada durante a sessão mesmo sem armazenamento local.
+    }
+  };
+
+  const restoreInstallPromotion = () => {
+    setInstallPromotionDismissed(false);
+    setInstallMessage("");
+    try {
+      window.localStorage.removeItem(PWA_INSTALL_PROMOTION_DISMISSED_KEY);
+    } catch {
+      // A sugestão ainda reaparece durante a sessão atual.
+    }
+  };
+
+  const showInstallPromotion = !installPromotionDismissed
+    && pwa.canInstall
+    && !pwa.installed;
+  const showCompactInstallButton = installPromotionDismissed
+    && pwa.canInstall
+    && !pwa.installed;
+
   return (
     <>
       <header className={`app-page-header ${styles.pageHeader}`}>
@@ -176,7 +230,42 @@ function ProfileContent() {
           </div>
           <div className={styles.profileIdentity}>
             <h2>{user.name}</h2>
+            {showCompactInstallButton && (
+              <button
+                aria-label="Mostrar opção de instalar o LegadoCar"
+                className={styles.compactInstallButton}
+                onClick={restoreInstallPromotion}
+                title="Instalar aplicativo"
+                type="button"
+              >
+                <DownloadSimple aria-hidden size={20} weight="bold" />
+              </button>
+            )}
           </div>
+          {showInstallPromotion && (
+            <section aria-label="Instalar LegadoCar" className={styles.installPromotion}>
+              <button
+                aria-label="Fechar sugestão de instalação"
+                className={styles.dismissInstallButton}
+                onClick={dismissInstallPromotion}
+                type="button"
+              >
+                <X aria-hidden size={18} weight="bold" />
+              </button>
+              <div className={styles.installPromotionContent}>
+                <DownloadSimple aria-hidden size={28} weight="duotone" />
+                <div>
+                  <strong>Instale o LegadoCar</strong>
+                  <p>Acesse sua garagem como um aplicativo, sem precisar abrir o navegador.</p>
+                </div>
+              </div>
+              <ActionButton onClick={() => void installApp()} type="button" variant="secondary">
+                <DownloadSimple aria-hidden size={20} weight="bold" />
+                Instalar aplicativo
+              </ActionButton>
+            </section>
+          )}
+          {installMessage && <p className={styles.installMessage} role="status">{installMessage}</p>}
         </section>
 
         <div aria-label="Seções do perfil" className={styles.tabList} role="tablist">

@@ -23,6 +23,13 @@
   letter-spacing: -0.035em;
 }
 
+.sectionHeader p {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
 .vehicleList {
   display: grid;
   gap: 14px;
@@ -171,52 +178,173 @@
   gap: 8px;
 }
 
-.maintenanceHeader {
+.maintenanceSummary {
+  border-top: 1px solid #e7e9ef;
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 13px;
+}
+
+.maintenanceRow {
   align-items: center;
   display: flex;
-  font-size: 0.77rem;
+  font-size: 0.78rem;
   gap: 12px;
   justify-content: space-between;
 }
 
-.maintenanceHeader > span {
+.maintenanceRow > span {
+  align-items: center;
   color: #5b6372;
+  display: inline-flex;
   font-weight: 690;
-  text-transform: capitalize;
+  gap: 6px;
 }
 
-.danger {
-  color: #c91d1d;
-}
-
-.info {
+.maintenanceRow > strong {
   color: #074793;
+  flex: 0 0 auto;
+  font-size: 0.79rem;
 }
 
-.progressTrack {
-  background: #e7e9ef;
-  border-radius: 999px;
-  height: 8px;
-  margin-top: 7px;
-  overflow: hidden;
-}
-
-.progressTrack span {
-  border-radius: inherit;
-  display: block;
-  height: 100%;
-}
-
-.progressDanger {
-  background: #d01d1d;
-}
-
-.progressInfo {
-  background: #074793;
+.overdueRow > span,
+.overdueRow > strong {
+  color: #b42318;
 }
 
 .addVehicleButton {
   --app-floating-action-size: 62px;
+  transition: background 150ms ease, transform 180ms ease;
+  z-index: 22;
+}
+
+.addVehicleButtonOpen {
+  transform: rotate(45deg);
+}
+
+.addMenuBackdrop {
+  background: rgba(18, 26, 41, 0.32);
+  border: 0;
+  inset: 0;
+  position: fixed;
+  z-index: 20;
+}
+
+.addVehicleMenu {
+  background: #fff;
+  border: 1px solid #dfe3ec;
+  border-radius: 15px;
+  bottom: calc(166px + env(safe-area-inset-bottom));
+  box-shadow: 0 18px 38px rgba(24, 37, 63, 0.2);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  position: fixed;
+  right: max(14px, calc((100vw - var(--app-content-width)) / 2 + 28px));
+  width: min(340px, calc(100vw - 28px));
+  z-index: 21;
+}
+
+.addVehicleMenu header {
+  display: grid;
+  gap: 2px;
+  padding: 4px 5px 7px;
+}
+
+.addVehicleMenu header strong {
+  color: var(--app-ink);
+  font-size: 0.95rem;
+}
+
+.addVehicleMenu header span {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+}
+
+.addVehicleMenu > a {
+  align-items: center;
+  border: 1px solid var(--app-line);
+  border-radius: 11px;
+  color: var(--app-ink);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 70px;
+  padding: 11px 12px;
+}
+
+.addVehicleMenu > a:hover {
+  background: #f7f9fd;
+  border-color: #c9d4e6;
+}
+
+.addVehicleMenu > a:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.2);
+  outline-offset: 1px;
+}
+
+.addVehicleMenu > a > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+
+.addVehicleMenu > a strong {
+  font-size: 0.84rem;
+}
+
+.addVehicleMenu > a small {
+  color: var(--app-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.addMenuIcon {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border-radius: 9px;
+  color: var(--app-blue);
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.loadMoreButton {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbd5e3;
+  border-radius: 10px;
+  color: var(--app-blue);
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  gap: 8px;
+  justify-content: center;
+  justify-self: center;
+  min-height: 42px;
+  padding: 9px 18px;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background: var(--app-blue-soft);
+}
+
+.loadMoreButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline-offset: 2px;
+}
+
+.loadMoreButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.loadMoreError {
+  color: var(--app-danger, #b42318);
+  font-size: 0.76rem;
+  text-align: center;
 }
 
 @keyframes garage-spin {

@@ -25,6 +25,13 @@ const vehicleErrorFields = {
   mileage: "mileage",
 };
 
+const vehicleTransferErrorFields = {
+  plate: "plate",
+  renavam: "renavam",
+  recipient_email: "recipient",
+  code: "code",
+};
+
 const maintenanceErrorFields = {
   "maintenances.0.service_type_id": "category",
   "maintenances.0.description": "description",
@@ -51,6 +58,22 @@ function getResourceList(data, resourceName) {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
   throw new Error(`O serviço retornou uma resposta inesperada ao carregar ${resourceName}.`);
+}
+
+function getResourcePage(data, resourceName) {
+  const items = getResourceList(data, resourceName);
+  const currentPage = Number(data?.meta?.current_page);
+  const lastPage = Number(data?.meta?.last_page);
+  const total = Number(data?.meta?.total);
+  const page = Number.isInteger(currentPage) && currentPage > 0 ? currentPage : 1;
+  const finalPage = Number.isInteger(lastPage) && lastPage >= page ? lastPage : page;
+
+  return {
+    hasMore: data?.links?.next != null || page < finalPage,
+    items,
+    page,
+    total: Number.isInteger(total) && total >= 0 ? total : items.length,
+  };
 }
 
 function getVehicleId(vehicleId) {
@@ -158,6 +181,34 @@ function formatApiDate(value) {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : "Data não informada";
 }
 
+function getLocalDate(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+export function summarizeMaintenanceAlertsByDate(alerts, referenceDate = getLocalDate()) {
+  const validReferenceDate = /^\d{4}-\d{2}-\d{2}$/.test(referenceDate)
+    ? referenceDate
+    : getLocalDate();
+  const pendingDates = alerts
+    .filter((alert) => alert?.status === "pending")
+    .map((alert) => alert?.date_due)
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(String(date ?? "")));
+  const upcomingDates = pendingDates
+    .filter((date) => date >= validReferenceDate)
+    .sort();
+  const nextDate = upcomingDates[0] ?? "";
+
+  return {
+    nextDate,
+    nextDateLabel: nextDate ? formatApiDate(nextDate) : "",
+    overdueCount: pendingDates.filter((date) => date < validReferenceDate).length,
+  };
+}
+
 function formatServiceType(serviceType) {
   const value = typeof serviceType === "string"
     ? serviceType
@@ -199,6 +250,7 @@ export function normalizeVehicle(vehicle) {
   const id = Number(vehicle?.id);
   const mileage = Number(vehicle?.mileage);
   const brand = typeof vehicle?.brand === "string" ? vehicle.brand.trim() : "";
+  const color = typeof vehicle?.color === "string" ? vehicle.color.trim() : "";
   const model = typeof vehicle?.model === "string" ? vehicle.model.trim() : "";
   const plate = typeof vehicle?.plate === "string" ? vehicle.plate.trim() : "";
 
@@ -210,6 +262,8 @@ export function normalizeVehicle(vehicle) {
     id,
     brand,
     brandId: vehicle?.brand_code == null ? "" : String(vehicle.brand_code),
+    color,
+    createdAt: typeof vehicle?.created_at === "string" ? vehicle.created_at : "",
     mileage,
     model,
     name: `${brand} ${model}`,
@@ -217,6 +271,35 @@ export function normalizeVehicle(vehicle) {
     type: vehicleTypeFolders[vehicle?.type] ?? "cars",
     version: vehicle?.year ? `Ano ${vehicle.year}` : "Ano não informado",
     year: vehicle?.year ?? null,
+  };
+}
+
+function normalizeVehicleTransfer(transfer) {
+  const id = Number(transfer?.transfer_id ?? transfer?.id);
+  const vehicleId = Number(transfer?.vehicle_id ?? transfer?.vehicle?.id);
+  const status = typeof transfer?.status === "string" ? transfer.status.trim() : "";
+
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(vehicleId) || vehicleId <= 0 || !status) {
+    throw new Error("O serviço retornou uma transferência inválida.");
+  }
+
+  const vehicle = transfer?.vehicle && typeof transfer.vehicle === "object"
+    ? {
+        id: vehicleId,
+        model: typeof transfer.vehicle.model === "string" ? transfer.vehicle.model.trim() : "",
+        plate: typeof transfer.vehicle.plate === "string" ? transfer.vehicle.plate.trim() : "",
+      }
+    : null;
+
+  return {
+    id,
+    initiatedBy: typeof transfer?.initiated_by === "string" ? transfer.initiated_by : "",
+    expiresAt: typeof transfer?.expires_at === "string" ? transfer.expires_at : "",
+    ownerValidated: Boolean(transfer?.owner_validated),
+    recipientValidated: Boolean(transfer?.recipient_validated),
+    status,
+    vehicle,
+    vehicleId,
   };
 }
 
@@ -244,6 +327,26 @@ export function normalizeMaintenance(maintenance) {
     status: "Realizada",
     title: serviceType,
     value: maintenance?.cost ?? null,
+  };
+}
+
+export function normalizeMaintenanceExpense(maintenance) {
+  const id = Number(maintenance?.id);
+  const cost = Number(maintenance?.cost);
+  const serviceDate = typeof maintenance?.service_date === "string"
+    ? maintenance.service_date.slice(0, 10)
+    : "";
+
+  if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(cost) || cost < 0
+    || !/^\d{4}-\d{2}-\d{2}$/.test(serviceDate)) {
+    throw new Error("O serviço retornou despesas de manutenção inválidas.");
+  }
+
+  return {
+    category: formatServiceType(maintenance?.service_type),
+    cost,
+    id,
+    serviceDate,
   };
 }
 
@@ -406,6 +509,14 @@ export function buildVehiclePayload({ form, brand, model, year }) {
   };
 }
 
+export function buildBuyerTransferPayload(form) {
+  const renavam = String(form.renavam ?? "").replace(/\D/g, "");
+  return {
+    plate: String(form.plate ?? "").toUpperCase().replace(/[^A-Z0-9]/g, ""),
+    renavam: renavam.length === 9 ? `00${renavam}` : renavam,
+  };
+}
+
 export function getVehicleFieldErrors(error) {
   if (error?.status >= 500) return {};
   const fieldErrors = {};
@@ -423,6 +534,41 @@ export function getVehicleFieldErrors(error) {
 
 export function getVehicleErrorMessage(error, fallback) {
   if (Object.keys(getVehicleFieldErrors(error)).length > 0) {
+    return "Confira os campos destacados e tente novamente.";
+  }
+  return getAuthErrorMessage(error, fallback);
+}
+
+export function getVehicleTransferSuggestion(error) {
+  const details = error?.data?.errors;
+  if (error?.status !== 422 || details?.can_transfer !== true) return null;
+
+  const vehicleId = Number(details.vehicle_id);
+  return {
+    model: typeof details.model === "string" ? details.model.trim() : "",
+    ownerHint: typeof details.owner_hint === "string" ? details.owner_hint.trim() : "",
+    plate: typeof details.plate === "string" ? details.plate.trim() : "",
+    vehicleId: Number.isInteger(vehicleId) && vehicleId > 0 ? vehicleId : null,
+  };
+}
+
+export function getVehicleTransferFieldErrors(error) {
+  if (error?.status >= 500) return {};
+  const fieldErrors = {};
+
+  for (const [field, messages] of Object.entries(error?.data?.errors ?? {})) {
+    const formField = vehicleTransferErrorFields[field];
+    const message = Array.isArray(messages) ? messages[0] : messages;
+    if (formField && typeof message === "string" && !fieldErrors[formField]) {
+      fieldErrors[formField] = message;
+    }
+  }
+
+  return fieldErrors;
+}
+
+export function getVehicleTransferErrorMessage(error, fallback) {
+  if (Object.keys(getVehicleTransferFieldErrors(error)).length > 0) {
     return "Confira os campos destacados e tente novamente.";
   }
   return getAuthErrorMessage(error, fallback);
@@ -530,10 +676,38 @@ export function getCachedVehicles() {
   }
 }
 
+export function getCachedVehiclePage() {
+  const result = getCachedAccountResponse("/vehicles?per_page=15&page=1", { allowStale: true });
+  if (!result) return null;
+  try {
+    const page = getResourcePage(result.data, "seus veículos");
+    return { ...page, items: page.items.map(normalizeVehicle) };
+  } catch {
+    invalidateAccountReadCache();
+    return null;
+  }
+}
+
 export async function listVehicles() {
   const result = await requestAccount("/vehicles", { method: "GET", cacheForMs: 30000 });
   try {
     return getVehicleList(result.data).map(normalizeVehicle);
+  } catch (error) {
+    invalidateAccountReadCache();
+    throw error;
+  }
+}
+
+export async function listVehiclePage(page = 1) {
+  const pageNumber = getPositiveId(page, "Página de veículos inválida.");
+  const endpoint = `/vehicles?per_page=15&page=${pageNumber}`;
+  const result = await requestAccount(endpoint, {
+    method: "GET",
+    cacheForMs: pageNumber === 1 ? 30000 : 0,
+  });
+  try {
+    const resourcePage = getResourcePage(result.data, "seus veículos");
+    return { ...resourcePage, items: resourcePage.items.map(normalizeVehicle) };
   } catch (error) {
     invalidateAccountReadCache();
     throw error;
@@ -590,9 +764,39 @@ export async function changeVehiclePlateType(vehicleId, actionToken) {
   });
 }
 
-export async function deleteVehicle(vehicleId) {
+export async function requestVehicleDeletionCode() {
+  return requestAccount("/otp/request", {
+    payload: { purpose: "vehicle_deletion" },
+  });
+}
+
+export async function validateVehicleDeletionCode(code) {
+  if (!/^\d{6}$/.test(code)) {
+    throw new Error("Digite os seis números enviados para o seu e-mail.");
+  }
+
+  const result = await requestAccount("/otp/validate", {
+    payload: { purpose: "vehicle_deletion", code },
+  });
+  const actionToken = result.data?.action_token;
+
+  if (typeof actionToken !== "string" || !actionToken.trim()) {
+    throw new Error("Não foi possível confirmar sua identidade. Solicite um novo código.");
+  }
+
+  return actionToken;
+}
+
+export async function deleteVehicle(vehicleId, actionToken) {
   const id = getVehicleId(vehicleId);
-  return requestAccount(`/vehicles/${id}`, { method: "DELETE" });
+  if (typeof actionToken !== "string" || !actionToken.trim()) {
+    throw new Error("Solicite um novo código de confirmação antes de remover o veículo.");
+  }
+
+  return requestAccount(`/vehicles/${id}`, {
+    method: "DELETE",
+    actionToken,
+  });
 }
 
 export async function getMaintenance(maintenanceId) {
@@ -604,7 +808,80 @@ export async function getMaintenance(maintenanceId) {
 export async function listVehicleMaintenances(vehicleId) {
   const id = getVehicleId(vehicleId);
   const result = await requestAccount(`/vehicles/${id}/maintenances`, { method: "GET" });
-  return getResourceList(result.data, "o histórico de manutenções").map(normalizeMaintenance);
+  const records = getResourceList(result.data, "o histórico de manutenções");
+  return enrichMaintenanceAuthorship(records);
+}
+
+async function enrichMaintenanceAuthorship(records) {
+  return Promise.all(records.map(async (record) => {
+    const maintenance = normalizeMaintenance(record);
+    if (typeof record?.is_author === "boolean") return maintenance;
+
+    try {
+      const detail = await getMaintenance(maintenance.id);
+      return { ...maintenance, readonly: detail.readonly };
+    } catch {
+      return { ...maintenance, readonly: true };
+    }
+  }));
+}
+
+export async function listVehicleMaintenancesPage(vehicleId, page = 1) {
+  const id = getVehicleId(vehicleId);
+  const pageNumber = getPositiveId(page, "Página do histórico inválida.");
+  const result = await requestAccount(
+    `/vehicles/${id}/maintenances?per_page=15&page=${pageNumber}`,
+    { method: "GET" },
+  );
+  const resourcePage = getResourcePage(result.data, "o histórico de manutenções");
+  return {
+    ...resourcePage,
+    items: await enrichMaintenanceAuthorship(resourcePage.items),
+  };
+}
+
+export async function listVehicleMaintenanceDetails(vehicleId) {
+  const id = getVehicleId(vehicleId);
+  const maintenances = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await requestAccount(
+      `/vehicles/${id}/maintenances?per_page=15&page=${page}`,
+      { method: "GET" },
+    );
+    const resourcePage = getResourcePage(result.data, "o histórico de manutenções");
+    const details = await Promise.all(resourcePage.items.map((record) => {
+      const maintenanceId = getPositiveId(record?.id, "Manutenção não encontrada.");
+      return getMaintenance(maintenanceId);
+    }));
+
+    maintenances.push(...details);
+    hasMore = resourcePage.hasMore;
+    page = resourcePage.page + 1;
+  }
+
+  return maintenances;
+}
+
+export async function listMaintenanceExpenses() {
+  const expenses = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await requestAccount(`/maintenances?per_page=15&page=${page}`, {
+      method: "GET",
+      cacheForMs: page === 1 ? 30000 : 0,
+    });
+    const expensePage = getResourcePage(result.data, "suas despesas de manutenção");
+    expenses.push(...expensePage.items.map(normalizeMaintenanceExpense));
+    hasMore = expensePage.hasMore;
+    page = expensePage.page + 1;
+  }
+
+  return expenses;
 }
 
 export async function listVehicleAlerts(vehicleId, currentMileage) {
@@ -617,9 +894,94 @@ export async function listVehicleAlerts(vehicleId, currentMileage) {
     .map((alert) => normalizeMaintenanceAlert(alert, currentMileage));
 }
 
+export async function listVehicleAlertsPage(vehicleId, currentMileage, page = 1) {
+  const id = getVehicleId(vehicleId);
+  const pageNumber = getPositiveId(page, "Página de alertas inválida.");
+  const result = await requestAccount(
+    `/vehicles/${id}/maintenance-alerts?filter%5Bstatus%5D=pending&per_page=15&page=${pageNumber}`,
+    { method: "GET" },
+  );
+  const resourcePage = getResourcePage(result.data, "os alertas de manutenção");
+  return {
+    ...resourcePage,
+    items: resourcePage.items.map((alert) => normalizeMaintenanceAlert(alert, currentMileage)),
+  };
+}
+
+export async function getVehicleMaintenanceDateSummary(vehicleId, referenceDate) {
+  const id = getVehicleId(vehicleId);
+  const alerts = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await requestAccount(
+      `/vehicles/${id}/maintenance-alerts?filter%5Bstatus%5D=pending&per_page=15&page=${page}`,
+      { method: "GET", cacheForMs: 30000 },
+    );
+    const resourcePage = getResourcePage(result.data, "os alertas de manutenção");
+    alerts.push(...resourcePage.items);
+    hasMore = resourcePage.hasMore;
+    page = resourcePage.page + 1;
+  }
+
+  return summarizeMaintenanceAlertsByDate(alerts, referenceDate);
+}
+
 export async function createVehicle(payload) {
   const result = await requestAccount("/vehicles", { method: "POST", payload });
   return normalizeVehicle(result.data);
+}
+
+export async function startVehicleTransferByBuyer(payload) {
+  const result = await requestAccount("/transfers/start-by-buyer", {
+    method: "POST",
+    payload,
+  });
+  return normalizeVehicleTransfer(result.data);
+}
+
+export async function startVehicleTransferByOwner(vehicleId, recipientEmail) {
+  const id = getVehicleId(vehicleId);
+  const email = String(recipientEmail ?? "").trim().toLowerCase();
+  if (!email) throw new Error("Informe o e-mail do novo proprietário.");
+
+  const result = await requestAccount(`/vehicles/${id}/transfers`, {
+    method: "POST",
+    payload: { recipient_email: email },
+  });
+  return normalizeVehicleTransfer(result.data);
+}
+
+export async function getVehicleTransfer(transferId) {
+  const id = getPositiveId(transferId, "Transferência não encontrada.");
+  const result = await requestAccount(`/transfers/${id}`, { method: "GET" });
+  return normalizeVehicleTransfer(result.data);
+}
+
+export async function validateVehicleTransferCode(code) {
+  if (!/^\d{6}$/.test(code)) {
+    throw new Error("Digite os seis números do código de confirmação.");
+  }
+
+  const result = await requestAccount("/transfers/validate", {
+    method: "POST",
+    payload: { code },
+  });
+  const data = result.data;
+  const id = Number(data?.transfer_id);
+  const status = typeof data?.status === "string" ? data.status.trim() : "";
+
+  if (!Number.isInteger(id) || id <= 0 || !status) {
+    throw new Error("O serviço retornou uma confirmação de transferência inválida.");
+  }
+
+  return {
+    id,
+    ownerValidated: Boolean(data.owner_validated),
+    recipientValidated: Boolean(data.recipient_validated),
+    status,
+  };
 }
 
 export async function listServiceTypes() {
