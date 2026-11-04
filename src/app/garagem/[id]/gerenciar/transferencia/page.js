@@ -7,74 +7,45 @@ import {
   CheckCircle,
   CircleNotch,
   ClockCountdown,
-  HourglassMedium,
   IdentificationCard,
   ShieldWarning,
 } from "@phosphor-icons/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ActionButton from "../../../../components/action-button";
-import AppShell from "../../../../components/app-shell";
-import { getAuthErrorMessage } from "../../../../auth-api";
+import AppShell, { useAuthUser } from "../../../../components/app-shell";
 import FormField from "../../../../components/form-field";
 import VehicleBrandLogo from "../../../../components/vehicle-brand-logo";
 import VehiclePlate from "../../../../components/vehicle-plate";
 import VerificationCodeFields from "../../../../components/verification-code-fields";
+import { getAuthErrorMessage } from "../../../../auth-api";
 import {
   createEmptyCode,
-  formatCpf,
-  getDocumentValidationError,
   isValidEmail,
-  onlyDigits,
   VERIFICATION_CODE_LENGTH,
 } from "../../../../lib/form-validation";
 import PageTopBar from "../../../_components/page-top-bar";
-import { getVehicle } from "../../../_lib/garage-api";
 import {
-  confirmPreviewTransferParticipant,
-  createPreviewTransfer,
-  getPreviewTransfer,
-  removePreviewTransfer,
-  savePreviewTransfer,
-  TRANSFER_CONFIRMATION_WINDOW_HOURS,
-} from "../../../_lib/vehicle-transfer";
+  getVehicle,
+  getVehicleTransfer,
+  getVehicleTransferErrorMessage,
+  getVehicleTransferFieldErrors,
+  startVehicleTransferByOwner,
+  validateVehicleTransferCode,
+} from "../../../_lib/garage-api";
 import styles from "./page.module.css";
 
-function validateRecipient(value) {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) return "Informe o e-mail ou CPF do novo proprietário.";
-  if (normalizedValue.includes("@")) {
-    return isValidEmail(normalizedValue) ? "" : "Digite um endereço de e-mail válido.";
-  }
-
-  return getDocumentValidationError(normalizedValue, "personal");
-}
-
-function getRecipientType(value) {
-  return value.includes("@") ? "email" : "cpf";
-}
-
-function formatRecipientInput(value) {
-  if (/^[\d.\-\s]*$/.test(value)) return formatCpf(value);
-  return value.slice(0, 254);
-}
-
-function maskRecipient(value, recipientType) {
-  if (recipientType === "cpf") {
-    const digits = onlyDigits(value);
-    return `***.***.***-${digits.slice(-2)}`;
-  }
-
-  const [name, domain] = value.split("@");
-  return `${name.slice(0, 2)}***@${domain}`;
+function getStorageKey(userId, vehicleId) {
+  return `legado-car-owner-transfer-${userId}-${vehicleId}`;
 }
 
 function formatDeadline(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Prazo não informado";
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function ParticipantStatus({ confirmed, description, label }) {
@@ -83,7 +54,7 @@ function ParticipantStatus({ confirmed, description, label }) {
       <span className="app-action-icon">
         {confirmed
           ? <CheckCircle aria-hidden size={22} weight="fill" />
-          : <HourglassMedium aria-hidden size={22} weight="duotone" />}
+          : <ClockCountdown aria-hidden size={22} weight="duotone" />}
       </span>
       <span className="app-process-status-copy">
         <strong>{label}</strong>
@@ -99,9 +70,19 @@ function ParticipantStatus({ confirmed, description, label }) {
 }
 
 export default function VehicleTransferPage() {
+  return (
+    <AppShell>
+      <VehicleTransferContent />
+    </AppShell>
+  );
+}
+
+function VehicleTransferContent() {
   const params = useParams();
   const router = useRouter();
+  const user = useAuthUser();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const storageKey = getStorageKey(user.id, vehicleId);
   const [retryRevision, setRetryRevision] = useState(0);
   const [vehicleState, setVehicleState] = useState({
     error: "",
@@ -112,8 +93,11 @@ export default function VehicleTransferPage() {
   const [recipient, setRecipient] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [feedback, setFeedback] = useState("");
   const [transfer, setTransfer] = useState(null);
   const [ready, setReady] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [receivedCodeOpen, setReceivedCodeOpen] = useState(false);
   const [code, setCode] = useState(createEmptyCode);
 
   useEffect(() => {
@@ -157,40 +141,236 @@ export default function VehicleTransferPage() {
   }, [retryRevision, vehicleId]);
 
   useEffect(() => {
-    const readyTimer = window.setTimeout(() => {
-      setTransfer(getPreviewTransfer(vehicleId));
-      setReady(true);
-    }, 0);
+    let active = true;
 
-    return () => window.clearTimeout(readyTimer);
-  }, [vehicleId]);
+    async function restoreTransfer() {
+      window.localStorage.removeItem(`legado-car-transfer:${vehicleId}`);
+      const storedId = window.localStorage.getItem(storageKey);
+      if (!storedId) {
+        if (active) setReady(true);
+        return;
+      }
 
-  useEffect(() => {
-    if (!transfer || transfer.status !== "pending") return undefined;
+      try {
+        const loadedTransfer = await getVehicleTransfer(storedId);
+        if (loadedTransfer.vehicleId !== Number(vehicleId)) {
+          window.localStorage.removeItem(storageKey);
+          if (active) setFeedback("A transferência salva não corresponde a este veículo.");
+        } else if (active) {
+          setTransfer(loadedTransfer);
+        }
+      } catch (error) {
+        if (error?.status === 404) {
+          window.localStorage.removeItem(storageKey);
+        } else if (active) {
+          setFeedback(
+            getAuthErrorMessage(
+              error,
+              "Não foi possível recuperar a transferência. Tente novamente.",
+            ),
+          );
+        }
+      } finally {
+        if (active) setReady(true);
+      }
+    }
 
-    const expirationTimer = window.setInterval(() => {
-      const currentTransfer = getPreviewTransfer(vehicleId);
-      if (currentTransfer?.status === "expired") setTransfer(currentTransfer);
-    }, 30000);
+    void restoreTransfer();
+    return () => { active = false; };
+  }, [storageKey, vehicleId]);
 
-    return () => window.clearInterval(expirationTimer);
-  }, [transfer, vehicleId]);
+  const clearTransfer = () => {
+    window.localStorage.removeItem(storageKey);
+    setTransfer(null);
+    setRecipient("");
+    setAccepted(false);
+    setCode(createEmptyCode());
+    setErrors({});
+    setFeedback("");
+    setReceivedCodeOpen(false);
+  };
+
+  const confirmBuyerRequest = async (event) => {
+    event.preventDefault();
+    if (pending) return;
+
+    if (code.join("").length !== VERIFICATION_CODE_LENGTH) {
+      setErrors({ code: "Digite os seis números recebidos pelo novo proprietário." });
+      return;
+    }
+
+    setPending(true);
+    setErrors({});
+    setFeedback("");
+    let confirmedTransferId = null;
+
+    try {
+      const confirmation = await validateVehicleTransferCode(code.join(""));
+      confirmedTransferId = confirmation.id;
+      window.localStorage.setItem(storageKey, String(confirmation.id));
+
+      const loadedTransfer = await getVehicleTransfer(confirmation.id);
+      if (loadedTransfer.vehicleId !== Number(vehicleId)) {
+        window.localStorage.removeItem(storageKey);
+        throw new Error("A solicitação confirmada não corresponde a este veículo.");
+      }
+
+      const updatedTransfer = {
+        ...loadedTransfer,
+        ownerValidated: confirmation.ownerValidated,
+        recipientValidated: confirmation.recipientValidated,
+        status: confirmation.status,
+      };
+      setTransfer(updatedTransfer);
+      setCode(createEmptyCode());
+      if (updatedTransfer.status === "completed") {
+        window.localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      if (confirmedTransferId) {
+        setFeedback(
+          error?.message === "A solicitação confirmada não corresponde a este veículo."
+            ? error.message
+            : "Sua confirmação foi recebida, mas não foi possível carregar o andamento. Atualize a página.",
+        );
+      } else {
+        setErrors({
+          code: getVehicleTransferFieldErrors(error).code
+            ?? getVehicleTransferErrorMessage(
+              error,
+              "O código não pôde ser validado. Tente novamente.",
+            ),
+        });
+      }
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const startTransfer = async (event) => {
+    event.preventDefault();
+    if (pending) return;
+
+    const normalizedRecipient = recipient.trim().toLowerCase();
+    const nextErrors = {};
+    if (!normalizedRecipient) {
+      nextErrors.recipient = "Informe o e-mail do novo proprietário.";
+    } else if (!isValidEmail(normalizedRecipient)) {
+      nextErrors.recipient = "Digite um endereço de e-mail válido.";
+    } else if (normalizedRecipient === String(user.email ?? "").trim().toLowerCase()) {
+      nextErrors.recipient = "Informe o e-mail de outra pessoa.";
+    }
+    if (!accepted) {
+      nextErrors.consent = "Confirme que está ciente das condições da transferência.";
+    }
+
+    setErrors(nextErrors);
+    setFeedback("");
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setPending(true);
+    try {
+      const startedTransfer = await startVehicleTransferByOwner(
+        vehicleId,
+        normalizedRecipient,
+      );
+      window.localStorage.setItem(storageKey, String(startedTransfer.id));
+      setTransfer(startedTransfer);
+      setCode(createEmptyCode());
+    } catch (error) {
+      setErrors(getVehicleTransferFieldErrors(error));
+      setFeedback(
+        getVehicleTransferErrorMessage(
+          error,
+          "Não foi possível iniciar a transferência. Tente novamente.",
+        ),
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const refreshTransfer = async () => {
+    if (!transfer || pending) return;
+    setPending(true);
+    setFeedback("");
+    try {
+      const refreshedTransfer = await getVehicleTransfer(transfer.id);
+      if (refreshedTransfer.vehicleId !== Number(vehicleId)) {
+        throw new Error("A transferência não corresponde a este veículo.");
+      }
+      setTransfer(refreshedTransfer);
+      if (refreshedTransfer.status === "completed") {
+        window.localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      setFeedback(
+        getAuthErrorMessage(
+          error,
+          "Não foi possível atualizar o andamento. Tente novamente.",
+        ),
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const confirmOwnerCode = async (event) => {
+    event.preventDefault();
+    if (!transfer || pending) return;
+
+    if (code.join("").length !== VERIFICATION_CODE_LENGTH) {
+      setErrors({ code: "Digite os seis números recebidos pelo novo proprietário." });
+      return;
+    }
+
+    setPending(true);
+    setErrors({});
+    setFeedback("");
+    try {
+      const confirmation = await validateVehicleTransferCode(code.join(""));
+      if (confirmation.id !== transfer.id) {
+        throw new Error("A confirmação não corresponde a esta transferência. Atualize o andamento.");
+      }
+      const updatedTransfer = {
+        ...transfer,
+        ownerValidated: confirmation.ownerValidated,
+        recipientValidated: confirmation.recipientValidated,
+        status: confirmation.status,
+      };
+      setTransfer(updatedTransfer);
+      setCode(createEmptyCode());
+      if (updatedTransfer.status === "completed") {
+        window.localStorage.removeItem(storageKey);
+      }
+    } catch (error) {
+      setErrors({
+        code: getVehicleTransferFieldErrors(error).code
+          ?? getVehicleTransferErrorMessage(
+            error,
+            "O código não pôde ser validado. Tente novamente.",
+          ),
+      });
+    } finally {
+      setPending(false);
+    }
+  };
 
   if (vehicleState.loading) {
     return (
-      <AppShell>
+      <>
         <PageTopBar title="Transferir veículo" />
         <section className="app-empty-state app-empty-state--narrow" role="status">
           <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <p>Carregando veículo...</p>
         </section>
-      </AppShell>
+      </>
     );
   }
 
   if (!vehicleState.vehicle) {
     return (
-      <AppShell>
+      <>
         <PageTopBar title="Transferir veículo" />
         <section className="app-empty-state app-empty-state--narrow" role="alert">
           <h2>
@@ -214,60 +394,15 @@ export default function VehicleTransferPage() {
             {vehicleState.notFound ? "Ir para garagem" : "Tentar novamente"}
           </button>
         </section>
-      </AppShell>
+      </>
     );
   }
 
   const vehicle = vehicleState.vehicle;
-
-  const startTransfer = (event) => {
-    event.preventDefault();
-    const recipientError = validateRecipient(recipient);
-    const nextErrors = {
-      recipient: recipientError,
-      consent: accepted ? "" : "Confirme que está ciente das condições da transferência.",
-    };
-
-    if (recipientError || nextErrors.consent) {
-      setErrors(nextErrors);
-      return;
-    }
-
-    const recipientType = getRecipientType(recipient);
-    const nextTransfer = createPreviewTransfer({
-      recipientDisplay: maskRecipient(recipient.trim().toLowerCase(), recipientType),
-      vehicleId: vehicle.id,
-    });
-
-    savePreviewTransfer(nextTransfer);
-    setTransfer(nextTransfer);
-    setErrors({});
-  };
-
-  const confirmSellerCode = (event) => {
-    event.preventDefault();
-
-    if (code.join("").length !== VERIFICATION_CODE_LENGTH) {
-      setErrors({ code: "Digite os seis dígitos enviados para você." });
-      return;
-    }
-
-    setTransfer(confirmPreviewTransferParticipant(transfer, "seller"));
-    setCode(createEmptyCode());
-    setErrors({});
-  };
-
-  const restartTransfer = () => {
-    removePreviewTransfer(vehicle.id);
-    setTransfer(null);
-    setRecipient("");
-    setAccepted(false);
-    setCode(createEmptyCode());
-    setErrors({});
-  };
+  const terminalStatus = ["cancelled", "expired"].includes(transfer?.status);
 
   return (
-    <AppShell>
+    <>
       <PageTopBar title="Transferir veículo" />
 
       <main className={styles.transferScreen}>
@@ -284,42 +419,104 @@ export default function VehicleTransferPage() {
           <VehiclePlate plate={vehicle.plate} />
         </section>
 
+        {feedback && (
+          <p className="app-feedback app-feedback--error" role="alert">{feedback}</p>
+        )}
+
         {!ready ? (
           <div className={styles.loadingState} role="status">
-            <HourglassMedium aria-hidden size={24} weight="duotone" />
+            <CircleNotch aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
             Carregando transferência...
           </div>
         ) : !transfer ? (
           <>
             <header className={styles.intro}>
               <h2>Transferir histórico do veículo</h2>
-              <p>Inicie o processo para disponibilizar o histórico ao novo proprietário.</p>
+              <p>Informe quem receberá o veículo e o histórico registrado no LegadoCar.</p>
             </header>
 
             <section className="app-notice app-notice--danger">
               <ShieldWarning aria-hidden size={25} weight="fill" />
               <div>
                 <h2>Atenção importante</h2>
-                <p>
-                  A transferência será concluída somente após a confirmação do comprador e do vendedor.
-                  Depois de concluída, ela não poderá ser desfeita.
-                </p>
-                <p><strong>Nota:</strong> esta operação não substitui a transferência legal junto ao DETRAN.</p>
+                <p>A transferência será concluída somente após a confirmação das duas pessoas.</p>
+                <p>Esta operação não substitui a transferência legal junto ao DETRAN.</p>
               </div>
             </section>
+
+            <section className={`app-card ${styles.receivedTransferCard}`}>
+              <div className={styles.receivedTransferHeader}>
+                <div>
+                  <h2>O comprador solicitou a transferência?</h2>
+                  <p>Confirme aqui usando o código que ele recebeu e forneceu a você.</p>
+                </div>
+                {!receivedCodeOpen && (
+                  <ActionButton
+                    onClick={() => {
+                      setReceivedCodeOpen(true);
+                      setCode(createEmptyCode());
+                      setErrors({});
+                      setFeedback("");
+                    }}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Informar código
+                  </ActionButton>
+                )}
+              </div>
+
+              {receivedCodeOpen && (
+                <form className={styles.receivedCodeForm} noValidate onSubmit={confirmBuyerRequest}>
+                  <VerificationCodeFields
+                    autoFocus={false}
+                    code={code}
+                    error={errors.code}
+                    onChange={(nextCode) => {
+                      setCode(nextCode);
+                      setErrors((current) => ({ ...current, code: "" }));
+                      setFeedback("");
+                    }}
+                  />
+                  {errors.code && <p className="app-error-text">{errors.code}</p>}
+                  <div className={styles.receivedTransferActions}>
+                    <ActionButton disabled={pending} type="submit">
+                      {pending ? "Confirmando..." : "Confirmar transferência"}
+                    </ActionButton>
+                    <ActionButton
+                      disabled={pending}
+                      onClick={() => {
+                        setReceivedCodeOpen(false);
+                        setCode(createEmptyCode());
+                        setErrors({});
+                        setFeedback("");
+                      }}
+                      type="button"
+                      variant="secondary"
+                    >
+                      Voltar
+                    </ActionButton>
+                  </div>
+                </form>
+              )}
+            </section>
+
+            <div className={styles.optionDivider}><span>ou inicie a transferência</span></div>
 
             <form className={`app-form-card ${styles.transferForm}`} noValidate onSubmit={startTransfer}>
               <FormField
                 autoComplete="email"
                 error={errors.recipient}
                 Icon={IdentificationCard}
-                label="E-mail ou CPF do novo proprietário"
+                label="E-mail do novo proprietário"
                 name="new-owner"
                 onChange={(event) => {
-                  setRecipient(formatRecipientInput(event.target.value));
+                  setRecipient(event.target.value.slice(0, 255));
                   setErrors((current) => ({ ...current, recipient: "" }));
+                  setFeedback("");
                 }}
-                placeholder="E-mail ou 000.000.000-00"
+                placeholder="nome@exemplo.com"
+                type="email"
                 value={recipient}
               />
 
@@ -336,28 +533,30 @@ export default function VehicleTransferPage() {
                   <Check aria-hidden size={15} weight="bold" />
                 </span>
                 <span>
-                  Estou ciente de que, após as duas confirmações, o histórico será transferido e o veículo será desvinculado da minha conta.
+                  Estou ciente de que, após as duas confirmações, o veículo e seu histórico serão transferidos para a outra pessoa.
                 </span>
               </label>
               {errors.consent && <p className="app-error-text">{errors.consent}</p>}
 
               <div className={styles.formActions}>
-                <ActionButton type="submit">
-                  <ArrowsLeftRight aria-hidden size={20} weight="bold" />
-                  Iniciar transferência
+                <ActionButton disabled={pending} type="submit">
+                  {pending
+                    ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <ArrowsLeftRight aria-hidden size={20} weight="bold" />}
+                  {pending ? "Iniciando..." : "Iniciar transferência"}
                 </ActionButton>
-                <ActionButton onClick={() => router.back()} type="button" variant="secondary">
+                <ActionButton disabled={pending} onClick={() => router.back()} type="button" variant="secondary">
                   Cancelar
                 </ActionButton>
               </div>
             </form>
           </>
-        ) : transfer.status === "expired" ? (
+        ) : terminalStatus ? (
           <section className={`app-card ${styles.expiredState}`}>
             <ClockCountdown aria-hidden size={30} weight="duotone" />
-            <h2>Prazo de confirmação encerrado</h2>
-            <p>A transferência não foi concluída dentro do prazo previsto.</p>
-            <ActionButton onClick={restartTransfer} type="button">
+            <h2>Transferência encerrada</h2>
+            <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações.</p>
+            <ActionButton onClick={clearTransfer} type="button">
               Iniciar nova transferência
             </ActionButton>
           </section>
@@ -365,23 +564,23 @@ export default function VehicleTransferPage() {
           <section className={`app-card ${styles.completedState}`}>
             <CheckCircle aria-hidden size={34} weight="fill" />
             <h2>Transferência concluída</h2>
-            <p>Comprador e vendedor confirmaram seus códigos. O histórico foi disponibilizado ao novo proprietário.</p>
-            <ActionButton onClick={() => router.push(`/garagem/${vehicle.id}`)} type="button">
-              Voltar ao veículo
+            <p>As duas confirmações foram realizadas e o veículo foi transferido.</p>
+            <ActionButton onClick={() => router.replace("/garagem")} type="button">
+              Voltar para a garagem
             </ActionButton>
           </section>
         ) : (
           <>
             <header className={styles.intro}>
               <h2>Transferência em andamento</h2>
-              <p>O processo foi iniciado e aguarda a confirmação dos dois participantes.</p>
+              <p>O processo aguarda a confirmação do proprietário atual e do novo proprietário.</p>
             </header>
 
             <section className="app-notice app-notice--info">
               <ClockCountdown aria-hidden size={25} weight="duotone" />
               <div>
-                <h2>Códigos de confirmação enviados</h2>
-                <p>Comprador e vendedor receberam códigos independentes. Cada pessoa pode confirmar em momentos diferentes.</p>
+                <h2>Troque os códigos com o novo proprietário</h2>
+                <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele.</p>
               </div>
             </section>
 
@@ -392,27 +591,26 @@ export default function VehicleTransferPage() {
                   <span>Prazo para as duas confirmações</span>
                   <strong>{formatDeadline(transfer.expiresAt)}</strong>
                 </div>
-                <em>{TRANSFER_CONFIRMATION_WINDOW_HOURS} horas</em>
               </div>
 
               <div className="app-process-status">
                 <ParticipantStatus
-                  confirmed={transfer.sellerStatus === "confirmed"}
+                  confirmed={transfer.ownerValidated}
                   description="Proprietário atual"
-                  label="Vendedor"
+                  label="Sua confirmação"
                 />
                 <ParticipantStatus
-                  confirmed={transfer.buyerStatus === "confirmed"}
-                  description={transfer.recipientDisplay}
-                  label="Comprador"
+                  confirmed={transfer.recipientValidated}
+                  description="Novo proprietário"
+                  label="Outra confirmação"
                 />
               </div>
 
-              {transfer.sellerStatus !== "confirmed" ? (
-                <form className={styles.codeForm} noValidate onSubmit={confirmSellerCode}>
+              {!transfer.ownerValidated ? (
+                <form className={styles.codeForm} noValidate onSubmit={confirmOwnerCode}>
                   <div>
-                    <h2>Confirme seu código</h2>
-                    <p>Digite o código enviado ao contato do vendedor.</p>
+                    <h2>Código recebido pelo novo proprietário</h2>
+                    <p>Digite o código que a outra pessoa recebeu por e-mail e forneceu a você.</p>
                   </div>
                   <VerificationCodeFields
                     autoFocus={false}
@@ -424,18 +622,24 @@ export default function VehicleTransferPage() {
                     }}
                   />
                   {errors.code && <p className="app-error-text">{errors.code}</p>}
-                  <ActionButton type="submit">Confirmar código</ActionButton>
+                  <ActionButton disabled={pending} type="submit">
+                    {pending ? "Confirmando..." : "Confirmar código"}
+                  </ActionButton>
                 </form>
               ) : (
                 <p className="app-feedback app-feedback--success" role="status">
                   <CheckCircle aria-hidden size={18} weight="fill" />
-                  Seu código foi confirmado. O processo continuará aguardando o comprador.
+                  Sua confirmação foi realizada. Agora falta a confirmação da outra pessoa.
                 </p>
               )}
+
+              <ActionButton disabled={pending} onClick={refreshTransfer} type="button" variant="secondary">
+                {pending ? "Atualizando..." : "Atualizar andamento"}
+              </ActionButton>
             </section>
           </>
         )}
       </main>
-    </AppShell>
+    </>
   );
 }

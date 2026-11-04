@@ -1,0 +1,47 @@
+.cancellationCard {
+  --app-card-radius: 12px;
+  display: grid;
+  gap: 16px;
+  margin: 18px auto 12px;
+  max-width: 460px;
+}
+
+.cancellationHeading {
+  align-items: center;
+  color: var(--app-danger);
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.cancellationHeading h2 {
+  color: var(--app-ink);
+  font-size: 1rem;
+}
+
+.cancellationHeading p,
+.cancellationConfirmation > p {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.cancellationConfirmation {
+  border-top: 1px solid var(--app-line);
+  display: grid;
+  gap: 13px;
+  padding-top: 15px;
+}
+
+.cancellationActions {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 440px) {
+  .cancellationActions {
+    grid-template-columns: 1fr;
+  }
+}

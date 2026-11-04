@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CircleNotch } from "@phosphor-icons/react";
-import AppShell from "../../../components/app-shell";
+import AppShell, { useAuthUser } from "../../../components/app-shell";
 import MaintenanceForm from "../../_components/maintenance-form";
 import PageTopBar from "../../_components/page-top-bar";
+import { saveNavigationFeedback } from "../../../lib/navigation-feedback";
+import { createMaintenanceDraftKey } from "../../_lib/maintenance-draft";
 import {
   buildMaintenanceAlertPayload,
   buildMaintenancePayload,
@@ -20,9 +22,15 @@ import {
 import { getAuthErrorMessage } from "../../../auth-api";
 
 export default function NewMaintenancePage() {
+  return <AppShell><NewMaintenanceContent /></AppShell>;
+}
+
+function NewMaintenanceContent() {
+  const user = useAuthUser();
   const params = useParams();
   const router = useRouter();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const draftKey = createMaintenanceDraftKey(user?.id, vehicleId);
   const fieldRequest = useRef(0);
   const [retryRevision, setRetryRevision] = useState(0);
   const [requestState, setRequestState] = useState({
@@ -77,7 +85,7 @@ export default function NewMaintenancePage() {
     return () => { active = false; };
   }, [retryRevision, vehicleId]);
 
-  const loadServiceFields = async (identifier) => {
+  const loadServiceFields = useCallback(async (identifier) => {
     const requestId = fieldRequest.current + 1;
     fieldRequest.current = requestId;
 
@@ -104,7 +112,7 @@ export default function NewMaintenancePage() {
         });
       }
     }
-  };
+  }, []);
 
   const submitService = async ({ fieldValues, files, form }) => {
     const serviceType = requestState.serviceTypes.find((item) => (
@@ -118,6 +126,7 @@ export default function NewMaintenancePage() {
         serviceType,
       });
       await createMaintenanceAlert(vehicleId, payload);
+      saveNavigationFeedback("Alerta de manutenção criado com sucesso.");
       router.push(`/garagem/${vehicleId}`);
       return;
     }
@@ -150,11 +159,12 @@ export default function NewMaintenancePage() {
       }
     }
 
+    saveNavigationFeedback("Manutenção registrada com sucesso.");
     router.push(`/garagem/${vehicleId}`);
   };
 
   return (
-    <AppShell>
+    <>
       <PageTopBar title="Registrar manutenção" />
 
       {requestState.loading ? (
@@ -181,6 +191,7 @@ export default function NewMaintenancePage() {
       ) : (
         <MaintenanceForm
           alertSubmitLabel="Salvar alerta"
+          draftKey={draftKey}
           fields={fieldsState.fields}
           fieldsError={fieldsState.error}
           fieldsLoading={fieldsState.loading}
@@ -190,8 +201,9 @@ export default function NewMaintenancePage() {
           serviceTypes={requestState.serviceTypes}
           submitLabel="Salvar manutenção"
           title="Registro de manutenção"
+          vehicleYear={requestState.vehicle.year}
         />
       )}
-    </AppShell>
+    </>
   );
 }

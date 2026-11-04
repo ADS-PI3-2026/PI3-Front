@@ -48,6 +48,7 @@
 }
 
 .detailsContent {
+  border-top: 1px solid #e6e8ef;
   padding: 0 22px 18px;
 }
 
@@ -60,19 +61,138 @@
   text-align: center;
 }
 
+.periodField {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.periodField span {
+  color: var(--app-muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.periodField select {
+  appearance: none;
+  background: var(--app-control-background);
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  color: var(--app-ink);
+  min-height: 44px;
+  padding: 0 13px;
+}
+
+.periodField select:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.requestState {
+  align-items: center;
+  background: #f7f9fc;
+  border: 1px dashed #cbd3e4;
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  margin-top: 18px;
+  padding: 24px 18px;
+  text-align: center;
+}
+
+.requestState strong {
+  color: var(--app-ink);
+  font-size: 0.9rem;
+}
+
+.requestState p {
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  max-width: 390px;
+}
+
+.requestState button {
+  color: var(--app-blue);
+  font-size: 0.78rem;
+  font-weight: 750;
+  margin-top: 5px;
+}
+
 .summaryGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.summaryGrid div {
+  background: #f7f9fc;
+  border: 1px solid #e2e7f0;
+  border-radius: 11px;
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+}
+
+.summaryGrid dt {
+  color: var(--app-muted);
+  font-size: 0.69rem;
+}
+
+.summaryGrid dd {
+  color: var(--app-ink);
+  font-size: 0.96rem;
+  font-weight: 780;
+}
+
+.categorySection {
+  margin-top: 20px;
+}
+
+.categorySection h4 {
+  color: var(--app-ink);
+  font-size: 0.86rem;
+  margin-bottom: 14px;
+}
+
+.chartGrid {
   align-items: center;
   display: grid;
-  gap: 8px;
-  margin-top: 22px;
+  gap: 20px;
 }
 
 .chartWrap {
-  height: 196px;
+  height: 190px;
   margin: 0 auto;
   max-width: 220px;
   position: relative;
   width: 100%;
+}
+
+.chart {
+  display: block;
+  height: 100%;
+  overflow: visible;
+  transform: rotate(-90deg);
+  width: 100%;
+}
+
+.chartBackground,
+.chartSegment {
+  fill: none;
+  stroke-width: 7;
+}
+
+.chartBackground {
+  stroke: #e8edf5;
+}
+
+.chartSegment {
+  stroke-linecap: butt;
 }
 
 .chartCenter {
@@ -86,66 +206,86 @@
 }
 
 .chartCenter span {
-  color: #606777;
-  font-size: 0.78rem;
+  color: var(--app-muted);
+  font-size: 0.72rem;
   font-weight: 650;
 }
 
 .chartCenter strong {
   color: #074793;
-  font-size: 1.18rem;
+  font-size: 1rem;
   letter-spacing: -0.025em;
   margin-top: 2px;
 }
 
 .legend {
   display: grid;
-  gap: 15px;
-  min-width: 0;
+  gap: 6px;
+  list-style: none;
 }
 
-.legendRow {
+.legend li {
   align-items: center;
+  border-bottom: 1px solid var(--app-line);
   display: grid;
   gap: 9px;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
+  grid-template-columns: 11px minmax(0, 1fr) auto;
+  padding: 8px 2px 9px;
 }
 
 .legendDot {
   border-radius: 50%;
-  height: 12px;
-  width: 12px;
+  height: 11px;
+  width: 11px;
 }
 
-.legendName {
-  color: #4e5668;
-  font-size: 0.92rem;
+.legendDescription,
+.legendValue {
+  display: grid;
+  gap: 3px;
+}
+
+.legendDescription strong,
+.legendValue strong {
+  color: var(--app-ink);
+  font-size: 0.8rem;
+}
+
+.legendDescription {
+  min-width: 0;
+}
+
+.legendDescription strong {
   overflow-wrap: anywhere;
 }
 
-.legendRow strong {
-  color: #262a34;
-  font-size: 0.9rem;
+.legendValue {
+  justify-items: end;
+  white-space: nowrap;
 }
 
-.totalServices {
-  align-items: center;
-  border-top: 1px solid #e6e8ef;
-  color: #4f5667;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 22px;
-  padding-top: 20px;
-}
-
-.totalServices strong {
-  color: #074793;
-  font-size: 1.18rem;
+.legend small {
+  color: var(--app-muted);
+  font-size: 0.68rem;
 }
 
 @media (min-width: 560px) {
+  .chartGrid {
+    grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr);
+  }
+}
+
+@media (max-width: 390px) {
   .summaryGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .detailsContent {
+    padding-inline: 16px;
+  }
+
+  .chartCenter strong {
+    font-size: 0.9rem;
   }
 }
 

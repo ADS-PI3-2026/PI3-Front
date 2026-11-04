@@ -23,8 +23,9 @@
 
 .profileSummary {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 15px;
+  grid-template-columns: 72px minmax(0, 1fr);
 }
 
 .avatar {
@@ -41,6 +42,36 @@
   color: #252832;
   font-size: 1.16rem;
   letter-spacing: -0.025em;
+}
+
+.profileIdentity {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.compactInstallButton {
+  align-items: center;
+  background: #edf4fd;
+  border: 1px solid #d4e3f6;
+  border-radius: 10px;
+  color: #074793;
+  display: inline-flex;
+  flex: 0 0 38px;
+  height: 38px;
+  justify-content: center;
+}
+
+.compactInstallButton:hover {
+  background: #dfeafb;
+}
+
+.compactInstallButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 2px;
 }
 
 .tabList {
@@ -171,6 +202,71 @@
   margin: -5px 0 14px;
 }
 
+.installPromotion {
+  background: linear-gradient(145deg, #f0f6ff, #e6f0fd);
+  border: 1px solid #ccdef5;
+  border-radius: 14px;
+  display: grid;
+  gap: 14px;
+  grid-column: 1 / -1;
+  padding: 16px;
+  position: relative;
+}
+
+.installPromotionContent {
+  align-items: flex-start;
+  color: #074793;
+  display: flex;
+  gap: 10px;
+  padding-right: 24px;
+}
+
+.installPromotionContent > svg {
+  flex: 0 0 auto;
+}
+
+.installPromotion strong {
+  color: #263142;
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 4px;
+}
+
+.installPromotion p,
+.installMessage {
+  color: #697181;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.dismissInstallButton {
+  align-items: center;
+  border-radius: 50%;
+  color: #596779;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 32px;
+}
+
+.dismissInstallButton:hover {
+  background: rgba(7, 71, 147, 0.09);
+  color: #074793;
+}
+
+.dismissInstallButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline-offset: 1px;
+}
+
+.installMessage {
+  grid-column: 1 / -1;
+  margin: -3px 0 0;
+}
+
 .deletionForm {
   margin-top: -4px;
 }
@@ -251,7 +347,6 @@
 
   .profileSummary {
     align-items: center;
-    flex-direction: row;
     grid-area: summary;
   }
 
@@ -271,11 +366,6 @@
   .tabPanel {
     grid-area: panel;
   }
-}
-
-.profileIdentity {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 @media (min-width: 1080px) {

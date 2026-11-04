@@ -23,21 +23,10 @@ import {
   normalizeDocument,
 } from "./lib/form-validation";
 import { getRecoveryStep } from "./lib/recovery-flow";
+import { legalContent } from "./lib/legal-content";
+import { saveNavigationFeedback } from "./lib/navigation-feedback";
 import { getAuthenticatedHomePath } from "./lib/user-access";
 import styles from "./page.module.css";
-
-const legalContent = {
-  terms: {
-    eyebrow: "Documento legal",
-    title: "Termos de Uso",
-    intro: "Estes termos apresentam as condições gerais para utilizar o LegadoCar.",
-  },
-  privacy: {
-    eyebrow: "Seus dados",
-    title: "Política de Privacidade",
-    intro: "Esta política explica como o LegadoCar tratará os dados fornecidos por você.",
-  },
-};
 
 function Icon({ name, size = 20 }) {
   const paths = {
@@ -143,24 +132,13 @@ function LegalDialog({ type, onClose }) {
       </div>
       <div className={styles.legalCopy}>
         <p>{content.intro}</p>
-        <h3>1. Informações gerais</h3>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris consequat,
-          mauris at tincidunt commodo, justo purus tristique lectus, vitae luctus
-          magna urna a lectus. Integer vitae pretium risus.
-        </p>
-        <h3>2. Uso da plataforma</h3>
-        <p>
-          Sed posuere, neque at tincidunt commodo, nunc enim commodo tortor, nec
-          ullamcorper sapien turpis vel ligula. Praesent vitae sem a sapien posuere
-          elementum. Donec accumsan mi vel sem feugiat, id posuere massa suscipit.
-        </p>
-        <h3>3. Responsabilidades</h3>
-        <p>
-          Pellentesque habitant morbi tristique senectus et netus et malesuada fames
-          ac turpis egestas. Duis id justo ut lorem tincidunt bibendum. Nulla facilisi.
-        </p>
-        <p className={styles.legalUpdated}>Última atualização: agosto de 2026.</p>
+        {content.sections.map((section) => (
+          <section key={section.title}>
+            <h3>{section.title}</h3>
+            {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          </section>
+        ))}
+        <p className={styles.legalUpdated}>Última atualização: {content.updatedAt}.</p>
       </div>
       <ActionButton onClick={onClose} type="button">Entendi</ActionButton>
     </Dialog>
@@ -801,6 +779,7 @@ function RegisterScreen({ onLogin, onLegal }) {
       }
       const session = saveAuthSession({ authResult: result });
       setForm((current) => ({ ...current, password: "", confirm: "" }));
+      saveNavigationFeedback("Conta criada com sucesso. Sua garagem está pronta para começar.");
       router.replace(getAuthenticatedHomePath(session.user));
     } catch (error) {
       const fieldErrors = getAuthFieldErrors(error);

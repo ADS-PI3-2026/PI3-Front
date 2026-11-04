@@ -107,16 +107,19 @@
   gap: 16px;
 }
 
-.mileageForm {
+.mileageForm,
+.updateForm {
   display: grid;
   gap: 16px;
 }
 
-.mileageInput input {
+.mileageInput input,
+.updateInput input {
   padding: 0 13px;
 }
 
-.mileageInput svg {
+.mileageInput svg,
+.updateInput svg {
   color: #6f7788;
   flex: 0 0 auto;
   margin-left: 12px;

@@ -4,6 +4,28 @@ export function onlyDigits(value) {
   return String(value ?? "").replace(/\D/g, "");
 }
 
+export function formatPlateInput(value) {
+  const characters = String(value ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  let plate = "";
+
+  for (const character of characters) {
+    const position = plate.length;
+    const acceptsCharacter = position < 3
+      ? /^[A-Z]$/.test(character)
+      : position === 3 || position >= 5
+        ? /^\d$/.test(character)
+        : /^[A-Z0-9]$/.test(character);
+
+    if (acceptsCharacter) plate += character;
+    if (plate.length === 7) break;
+  }
+
+  const isLegacyPlate = plate.length >= 5 && /^\d$/.test(plate[4]);
+  return isLegacyPlate ? `${plate.slice(0, 3)}-${plate.slice(3)}` : plate;
+}
+
 export function isValidPlate(plate) {
   const value = String(plate ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   return /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(value) || /^[A-Z]{3}[0-9]{4}$/.test(value);
@@ -41,6 +63,38 @@ export function toDateInputValue(value) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized;
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(normalized);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+}
+
+export function getLocalDateInputValue(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getVehicleYear(value) {
+  const match = String(value ?? "").match(/\b(\d{4})\b/);
+  const year = match ? Number(match[1]) : NaN;
+  return Number.isInteger(year) && year > 0 ? year : null;
+}
+
+export function getMaintenanceDateLimits({ status, today, vehicleYear } = {}) {
+  const currentDate = isValidDate(today) ? toDateInputValue(today) : getLocalDateInputValue();
+  const normalizedVehicleYear = getVehicleYear(vehicleYear);
+  const vehicleStartDate = normalizedVehicleYear ? `${normalizedVehicleYear}-01-01` : "";
+
+  if (status === "Realizada") {
+    return { max: currentDate, min: vehicleStartDate };
+  }
+
+  return {
+    max: "",
+    min: vehicleStartDate > currentDate ? vehicleStartDate : currentDate,
+  };
 }
 
 function getCurrencyDigits(value) {
@@ -101,6 +155,28 @@ export function validateVehicleForm(form) {
   return errors;
 }
 
+export function validateBuyerTransferForm(form) {
+  const errors = {};
+  const plate = String(form.plate ?? "").trim();
+  const renavam = onlyDigits(form.renavam);
+
+  if (!plate) {
+    errors.plate = "Informe a placa do veículo.";
+  } else if (!isValidPlate(plate)) {
+    errors.plate = "Use uma placa válida: ABC-1234 ou ABC1D23.";
+  }
+
+  if (!renavam) {
+    errors.renavam = "Informe o RENAVAM do veículo.";
+  } else if (renavam.length !== 9 && renavam.length !== 11) {
+    errors.renavam = "Digite os 9 ou 11 dígitos do RENAVAM.";
+  } else if (!validarRenavam(renavam)) {
+    errors.renavam = "Informe um RENAVAM válido.";
+  }
+
+  return errors;
+}
+
 function isEmptyDynamicValue(value) {
   if (Array.isArray(value)) return value.length === 0;
   return value === undefined || value === null || String(value).trim() === "";
@@ -113,9 +189,16 @@ function isConditionalFieldRequired(field, fieldValues) {
     || (!isEmptyDynamicValue(parentValue) && parentValue !== false && parentValue !== "false");
 }
 
-export function validateMaintenanceForm(form, fields = [], fieldValues = {}) {
+export function validateMaintenanceForm(form, fields = [], fieldValues = {}, options = {}) {
   const errors = {};
   const isCompleted = form.status === "Realizada";
+  const dateLimits = getMaintenanceDateLimits({
+    status: form.status,
+    today: options.today,
+    vehicleYear: options.vehicleYear,
+  });
+  const normalizedDate = toDateInputValue(form.date);
+  const vehicleYear = getVehicleYear(options.vehicleYear);
 
   if (!form.status) errors.status = "Selecione o status do serviço.";
   if (!form.category) errors.category = "Selecione uma categoria.";
@@ -124,7 +207,13 @@ export function validateMaintenanceForm(form, fields = [], fieldValues = {}) {
   }
 
   if (isCompleted) {
-    if (!isValidDate(form.date)) errors.date = "Informe uma data válida.";
+    if (!isValidDate(form.date)) {
+      errors.date = "Informe uma data válida.";
+    } else if (dateLimits.min && normalizedDate < dateLimits.min) {
+      errors.date = `A data não pode ser anterior ao ano do veículo (${vehicleYear}).`;
+    } else if (dateLimits.max && normalizedDate > dateLimits.max) {
+      errors.date = "Uma manutenção realizada não pode ter data futura.";
+    }
   } else {
     const hasDate = String(form.date ?? "").trim().length > 0;
     const hasMileageDue = String(form.mileageDue ?? "").trim().length > 0;
@@ -132,8 +221,14 @@ export function validateMaintenanceForm(form, fields = [], fieldValues = {}) {
     if (!hasDate && !hasMileageDue) {
       errors.deadline = "Informe a data ou a quilometragem prevista.";
     }
-    if (hasDate && !isValidDate(form.date)) {
-      errors.date = "Informe uma data válida.";
+    if (hasDate) {
+      if (!isValidDate(form.date)) {
+        errors.date = "Informe uma data válida.";
+      } else if (vehicleYear && normalizedDate < `${vehicleYear}-01-01`) {
+        errors.date = `A data não pode ser anterior ao ano do veículo (${vehicleYear}).`;
+      } else if (normalizedDate < dateLimits.min) {
+        errors.date = "Um alerta não pode ser agendado para uma data passada.";
+      }
     }
     if (hasMileageDue && !isNonNegativeInteger(form.mileageDue)) {
       errors.mileageDue = "Informe uma quilometragem inteira igual ou maior que zero.";

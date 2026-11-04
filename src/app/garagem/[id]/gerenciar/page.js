@@ -11,6 +11,7 @@ import {
   Gauge,
   IdentificationCard,
   Info,
+  Palette,
   ShieldCheck,
   ShieldWarning,
   Trash,
@@ -41,7 +42,9 @@ import {
   getVehicleErrorMessage,
   getVehicleFieldErrors,
   requestVehiclePlateChangeCode,
+  requestVehicleDeletionCode,
   updateVehicle,
+  validateVehicleDeletionCode,
   validateVehiclePlateChangeCode,
 } from "../../_lib/garage-api";
 import { onlyDigits } from "../../_lib/garage-validation";
@@ -67,8 +70,14 @@ export default function ManageVehiclePage() {
   const [mileageError, setMileageError] = useState("");
   const [mileageValue, setMileageValue] = useState("");
   const [updatingMileage, setUpdatingMileage] = useState(false);
+  const [colorError, setColorError] = useState("");
+  const [colorValue, setColorValue] = useState("");
+  const [updatingColor, setUpdatingColor] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteConfirmationError, setDeleteConfirmationError] = useState("");
+  const [deleteCode, setDeleteCode] = useState(createEmptyCode);
+  const [deleteCodeError, setDeleteCodeError] = useState("");
+  const [deleteStep, setDeleteStep] = useState("confirmation");
   const [deletingVehicle, setDeletingVehicle] = useState(false);
   const [plateCode, setPlateCode] = useState(createEmptyCode);
   const [plateCodeError, setPlateCodeError] = useState("");
@@ -179,6 +188,14 @@ export default function ManageVehiclePage() {
     setMileageValue(String(vehicle.mileage));
   };
 
+  const openColorAction = () => {
+    setActiveAction("color");
+    setPanelScrollRevision((revision) => revision + 1);
+    setActionFeedback({ message: "", type: "" });
+    setColorError("");
+    setColorValue(vehicle.color);
+  };
+
   const openPlateAction = () => {
     setActiveAction("plate");
     setPanelScrollRevision((revision) => revision + 1);
@@ -194,6 +211,9 @@ export default function ManageVehiclePage() {
     setActionFeedback({ message: "", type: "" });
     setDeleteConfirmation("");
     setDeleteConfirmationError("");
+    setDeleteCode(createEmptyCode());
+    setDeleteCodeError("");
+    setDeleteStep("confirmation");
   };
 
   const submitMileage = async (event) => {
@@ -235,6 +255,45 @@ export default function ManageVehiclePage() {
       });
     } finally {
       setUpdatingMileage(false);
+    }
+  };
+
+  const submitColor = async (event) => {
+    event.preventDefault();
+    const color = colorValue.trim();
+
+    if (!color) {
+      setColorError("Informe a cor do veículo.");
+      return;
+    }
+
+    setUpdatingColor(true);
+    setColorError("");
+    setActionFeedback({ message: "", type: "" });
+    try {
+      const updatedVehicle = await updateVehicle(vehicle.id, {
+        color,
+        mileage: vehicle.mileage,
+      });
+      setRequestState((current) => ({ ...current, vehicle: updatedVehicle }));
+      setColorValue(updatedVehicle.color);
+      setActiveAction("");
+      setActionFeedback({
+        message: `Cor atualizada para ${updatedVehicle.color}.`,
+        type: "success",
+      });
+    } catch (error) {
+      const fieldErrors = getVehicleFieldErrors(error);
+      setColorError(fieldErrors.color ?? "");
+      setActionFeedback({
+        message: getVehicleErrorMessage(
+          error,
+          "Não foi possível atualizar a cor. Tente novamente.",
+        ),
+        type: "error",
+      });
+    } finally {
+      setUpdatingColor(false);
     }
   };
 
@@ -296,8 +355,9 @@ export default function ManageVehiclePage() {
     }
   };
 
-  const submitVehicleDeletion = async (event) => {
-    event.preventDefault();
+  const sendDeletionCode = async () => {
+    if (deletingVehicle) return;
+
     const normalizedConfirmation = deleteConfirmation.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const normalizedPlate = vehicle.plate.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
@@ -308,18 +368,59 @@ export default function ManageVehiclePage() {
 
     setDeletingVehicle(true);
     setDeleteConfirmationError("");
+    setDeleteCodeError("");
     setActionFeedback({ message: "", type: "" });
     try {
-      await deleteVehicle(vehicle.id);
+      await requestVehicleDeletionCode();
+      setDeleteCode(createEmptyCode());
+      setDeleteStep("code");
+    } catch (error) {
+      setDeleteCodeError(
+        getAuthErrorMessage(error, "Não foi possível enviar o código. Tente novamente."),
+      );
+    } finally {
+      setDeletingVehicle(false);
+    }
+  };
+
+  const submitDeletionConfirmation = (event) => {
+    event.preventDefault();
+    void sendDeletionCode();
+  };
+
+  const confirmVehicleDeletion = async (event) => {
+    event.preventDefault();
+    if (deletingVehicle) return;
+
+    if (deleteCode.join("").length !== VERIFICATION_CODE_LENGTH) {
+      setDeleteCodeError("Digite os seis números enviados para o seu e-mail cadastrado.");
+      return;
+    }
+
+    let codeValidated = false;
+    setDeletingVehicle(true);
+    setDeleteCodeError("");
+    setActionFeedback({ message: "", type: "" });
+    try {
+      const actionToken = await validateVehicleDeletionCode(deleteCode.join(""));
+      codeValidated = true;
+      await deleteVehicle(vehicle.id, actionToken);
       router.replace("/garagem");
     } catch (error) {
-      setActionFeedback({
-        message: getAuthErrorMessage(
-          error,
-          "Não foi possível remover o veículo. Tente novamente.",
-        ),
-        type: "error",
-      });
+      const message = getAuthErrorMessage(
+        error,
+        codeValidated
+          ? "Não foi possível remover o veículo."
+          : "O código não pôde ser validado. Tente novamente.",
+      );
+
+      if (codeValidated) {
+        setDeleteCode(createEmptyCode());
+        setDeleteStep("confirmation");
+        setDeleteCodeError(`${message} Solicite um novo código para tentar novamente.`);
+      } else {
+        setDeleteCodeError(message);
+      }
     } finally {
       setDeletingVehicle(false);
     }
@@ -338,7 +439,10 @@ export default function ManageVehiclePage() {
           />
           <div className={styles.vehicleName}>
             <h2>{vehicle.name}</h2>
-            <p>{vehicle.version}</p>
+            <p>
+              {vehicle.version}
+              {vehicle.color ? ` · ${vehicle.color}` : ""}
+            </p>
           </div>
           <VehiclePlate plate={vehicle.plate} />
         </section>
@@ -366,6 +470,22 @@ export default function ManageVehiclePage() {
               <CaretRight aria-hidden size={19} weight="bold" />
             </button>
 
+            <button
+              aria-expanded={activeAction === "color"}
+              className={`app-action-item ${activeAction === "color" ? "app-action-item--active" : ""}`}
+              onClick={openColorAction}
+              type="button"
+            >
+              <span className="app-action-icon">
+                <Palette aria-hidden size={24} weight="duotone" />
+              </span>
+              <span className="app-action-copy">
+                <strong>Alterar cor</strong>
+                <span>Cor atual: {vehicle.color || "não informada"}.</span>
+              </span>
+              <CaretRight aria-hidden size={19} weight="bold" />
+            </button>
+
             <Link
               className="app-action-item"
               href={`/garagem/${vehicle.id}/gerenciar/transferencia`}
@@ -374,7 +494,7 @@ export default function ManageVehiclePage() {
                 <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
               </span>
               <span className="app-action-copy">
-                <strong>Transferir veículo</strong>
+                <strong>Transferência</strong>
                 <span>Alterar o proprietário responsável pelo veículo.</span>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
@@ -475,6 +595,52 @@ export default function ManageVehiclePage() {
           </section>
         )}
 
+        {activeAction === "color" && (
+          <section className={`app-card ${styles.actionPanel}`} ref={actionPanelRef}>
+            <div className={styles.panelHeading}>
+              <span className="app-action-icon">
+                <Palette aria-hidden size={24} weight="duotone" />
+              </span>
+              <div>
+                <h2>Alterar cor do veículo</h2>
+                <p>Informe a cor atual do veículo.</p>
+              </div>
+            </div>
+
+            <form className={styles.updateForm} noValidate onSubmit={submitColor}>
+              <label className="app-field">
+                <span>Cor do veículo</span>
+                <span
+                  className={`app-control-shell ${styles.updateInput}`}
+                  data-error={Boolean(colorError)}
+                >
+                  <Palette aria-hidden size={20} weight="regular" />
+                  <input
+                    autoComplete="off"
+                    disabled={updatingColor}
+                    maxLength={255}
+                    onChange={(event) => {
+                      setColorValue(event.target.value);
+                      setColorError("");
+                      setActionFeedback({ message: "", type: "" });
+                    }}
+                    placeholder="Ex.: Prata"
+                    value={colorValue}
+                  />
+                </span>
+                {colorError && <small className="app-error-text">{colorError}</small>}
+              </label>
+
+              <ActionButton disabled={updatingColor} type="submit">
+                {updatingColor
+                  ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                  : <FloppyDisk aria-hidden size={20} weight="bold" />}
+                {updatingColor ? "Atualizando..." : "Salvar cor"}
+              </ActionButton>
+            </form>
+          </section>
+        )}
+
         {activeAction === "plate" && plateCanBeConverted && (
           <section className={`app-card ${styles.actionPanel}`} ref={actionPanelRef}>
             <div className={styles.panelHeading}>
@@ -568,38 +734,82 @@ export default function ManageVehiclePage() {
               </div>
             </div>
 
-            <form className={styles.deleteForm} noValidate onSubmit={submitVehicleDeletion}>
-              <label className="app-field">
-                <span>Digite a placa {vehicle.plate} para confirmar</span>
-                <span
-                  className={`app-control-shell ${styles.deleteInput}`}
-                  data-error={Boolean(deleteConfirmationError)}
-                >
-                  <input
-                    autoComplete="off"
-                    disabled={deletingVehicle}
-                    maxLength={8}
-                    onChange={(event) => {
-                      setDeleteConfirmation(event.target.value.toUpperCase());
-                      setDeleteConfirmationError("");
-                      setActionFeedback({ message: "", type: "" });
-                    }}
-                    placeholder={vehicle.plate}
-                    value={deleteConfirmation}
-                  />
-                </span>
-                {deleteConfirmationError && (
-                  <small className="app-error-text">{deleteConfirmationError}</small>
-                )}
-              </label>
+            {deleteStep === "confirmation" ? (
+              <form className={styles.deleteForm} noValidate onSubmit={submitDeletionConfirmation}>
+                <label className="app-field">
+                  <span>Digite a placa {vehicle.plate} para confirmar</span>
+                  <span
+                    className={`app-control-shell ${styles.deleteInput}`}
+                    data-error={Boolean(deleteConfirmationError)}
+                  >
+                    <input
+                      autoComplete="off"
+                      disabled={deletingVehicle}
+                      maxLength={8}
+                      onChange={(event) => {
+                        setDeleteConfirmation(event.target.value.toUpperCase());
+                        setDeleteConfirmationError("");
+                        setDeleteCodeError("");
+                        setActionFeedback({ message: "", type: "" });
+                      }}
+                      placeholder={vehicle.plate}
+                      value={deleteConfirmation}
+                    />
+                  </span>
+                  {deleteConfirmationError && (
+                    <small className="app-error-text">{deleteConfirmationError}</small>
+                  )}
+                </label>
 
-              <ActionButton disabled={deletingVehicle} type="submit" variant="danger">
-                {deletingVehicle
-                  ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                  : <Trash aria-hidden size={20} weight="bold" />}
-                {deletingVehicle ? "Removendo..." : "Remover veículo"}
-              </ActionButton>
-            </form>
+                <div className={styles.securityNotice}>
+                  <ShieldCheck aria-hidden size={22} weight="duotone" />
+                  <div>
+                    <strong>Confirmação de segurança</strong>
+                    <p>Enviaremos um código para o seu e-mail antes de remover o veículo.</p>
+                  </div>
+                </div>
+
+                <ActionButton disabled={deletingVehicle} type="submit">
+                  {deletingVehicle
+                    ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <EnvelopeSimple aria-hidden size={20} weight="bold" />}
+                  {deletingVehicle ? "Enviando código..." : "Enviar código de confirmação"}
+                </ActionButton>
+                {deleteCodeError && <p className="app-error-text" role="alert">{deleteCodeError}</p>}
+              </form>
+            ) : (
+              <form className={styles.verificationForm} noValidate onSubmit={confirmVehicleDeletion}>
+                <div className={styles.verificationHeading}>
+                  <h3>Confirme a remoção</h3>
+                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado.</p>
+                </div>
+                <VerificationCodeFields
+                  code={deleteCode}
+                  error={deleteCodeError}
+                  onChange={(nextCode) => {
+                    setDeleteCode(nextCode);
+                    setDeleteCodeError("");
+                  }}
+                />
+                {deleteCodeError && <p className="app-error-text">{deleteCodeError}</p>}
+                <div className={styles.verificationActions}>
+                  <button
+                    className={styles.resendButton}
+                    disabled={deletingVehicle}
+                    onClick={() => void sendDeletionCode()}
+                    type="button"
+                  >
+                    {deletingVehicle ? "Aguarde..." : "Reenviar código"}
+                  </button>
+                  <ActionButton disabled={deletingVehicle} type="submit" variant="danger">
+                    {deletingVehicle
+                      ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                      : <Trash aria-hidden size={20} weight="bold" />}
+                    {deletingVehicle ? "Confirmando..." : "Confirmar e remover veículo"}
+                  </ActionButton>
+                </div>
+              </form>
+            )}
           </section>
         )}
 

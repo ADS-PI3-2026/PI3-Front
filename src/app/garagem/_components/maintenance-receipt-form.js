@@ -72,6 +72,10 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
   const [actionId, setActionId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [uploadRevision, setUploadRevision] = useState(0);
+  const remainingAttachmentSlots = Math.max(
+    MAX_FILES - maintenance.attachments.length,
+    0,
+  );
 
   const details = [
     ["Categoria", maintenance.category],
@@ -89,8 +93,12 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
     setFileLabel(label);
     setFiles(selectedFiles);
 
-    if (selectedFiles.length > MAX_FILES) {
-      setFileError("Selecione no máximo cinco arquivos por envio.");
+    if (selectedFiles.length > remainingAttachmentSlots) {
+      setFileError(
+        remainingAttachmentSlots === 1
+          ? "Selecione somente mais um comprovante."
+          : `Selecione no máximo mais ${remainingAttachmentSlots} comprovantes.`,
+      );
     } else if (selectedFiles.some((file) => file.size > MAX_FILE_SIZE)) {
       setFileError("Cada arquivo deve ter no máximo 10 MB.");
     } else if (selectedFiles.some((file) => !isAcceptedFile(file))) {
@@ -105,7 +113,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
       return;
     }
     if (
-      files.length > MAX_FILES
+      files.length > remainingAttachmentSlots
       || files.some((file) => file.size > MAX_FILE_SIZE)
       || files.some((file) => !isAcceptedFile(file))
     ) return;
@@ -305,17 +313,19 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
           )}
         </section>
 
-        {!maintenance.readonly && (
+        {!maintenance.readonly && remainingAttachmentSlots > 0 && (
           <form className={styles.uploadForm} onSubmit={submitReceipt}>
             <FileUploadField
               accept=".png,.jpg,.jpeg,.pdf"
               compact
               disabled={uploading}
               error={fileError}
-              hint="JPG, PNG ou PDF. Até 5 arquivos de 10 MB por envio."
+              hint={`JPG, PNG ou PDF. ${remainingAttachmentSlots === 1
+                ? "Mais 1 comprovante de até 10 MB."
+                : `Até mais ${remainingAttachmentSlots} comprovantes de 10 MB.`}`}
               key={uploadRevision}
               label="Adicionar comprovantes"
-              maxFiles={MAX_FILES}
+              maxFiles={remainingAttachmentSlots}
               maxFileSize={MAX_FILE_SIZE}
               multiple
               name="receipt"
@@ -331,6 +341,12 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
               {uploading ? "Enviando..." : "Enviar comprovantes"}
             </ActionButton>
           </form>
+        )}
+
+        {!maintenance.readonly && remainingAttachmentSlots === 0 && (
+          <p className={styles.attachmentLimit} role="status">
+            Limite de cinco comprovantes atingido.
+          </p>
         )}
 
         {feedback.message && (
