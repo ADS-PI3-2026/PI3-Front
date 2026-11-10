@@ -4,6 +4,15 @@ export const expensePeriods = [
   { label: "Todo o período", value: "all" },
 ];
 
+export function filterExpensesByVehicle(expenses, vehicleId = "all") {
+  if (!Array.isArray(expenses)) return [];
+  if (vehicleId === "all") return expenses;
+
+  const selectedVehicleId = Number(vehicleId);
+  if (!Number.isInteger(selectedVehicleId) || selectedVehicleId <= 0) return [];
+  return expenses.filter((expense) => Number(expense?.vehicleId) === selectedVehicleId);
+}
+
 function isInPeriod(serviceDate, period, referenceDate) {
   if (period === "all") return true;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(serviceDate ?? ""));

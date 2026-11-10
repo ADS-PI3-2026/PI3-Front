@@ -61,13 +61,19 @@
   text-align: center;
 }
 
-.periodField {
+.filters {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   margin-top: 18px;
 }
 
-.periodField span {
+.filterField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filterField span {
   color: var(--app-muted);
   font-size: 0.7rem;
   font-weight: 750;
@@ -75,17 +81,22 @@
   text-transform: uppercase;
 }
 
-.periodField select {
+.filterField select {
   appearance: none;
   background: var(--app-control-background);
   border: 1px solid var(--app-line);
   border-radius: 10px;
   color: var(--app-ink);
+  max-width: 100%;
   min-height: 44px;
+  min-width: 0;
+  overflow: hidden;
   padding: 0 13px;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
-.periodField select:focus-visible {
+.filterField select:focus-visible {
   outline: 3px solid var(--app-focus-ring);
   outline-offset: 2px;
 }
@@ -163,6 +174,7 @@
   align-items: center;
   display: grid;
   gap: 20px;
+  min-width: 0;
 }
 
 .chartWrap {
@@ -222,6 +234,8 @@
   display: grid;
   gap: 6px;
   list-style: none;
+  min-width: 0;
+  width: 100%;
 }
 
 .legend li {
@@ -230,7 +244,9 @@
   display: grid;
   gap: 9px;
   grid-template-columns: 11px minmax(0, 1fr) auto;
+  min-width: 0;
   padding: 8px 2px 9px;
+  width: 100%;
 }
 
 .legendDot {
@@ -243,6 +259,7 @@
 .legendValue {
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .legendDescription strong,
@@ -270,8 +287,12 @@
 }
 
 @media (min-width: 560px) {
+  .filters {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+
   .chartGrid {
-    grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   }
 }
 
@@ -286,6 +307,16 @@
 
   .chartCenter strong {
     font-size: 0.9rem;
+  }
+
+  .legend li {
+    grid-template-columns: 11px minmax(0, 1fr);
+  }
+
+  .legendValue {
+    grid-column: 2;
+    justify-items: start;
+    white-space: normal;
   }
 }
 

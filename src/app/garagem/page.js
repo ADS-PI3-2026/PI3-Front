@@ -21,6 +21,7 @@ import VehicleRegistrationLimit from "./_components/vehicle-registration-limit";
 import {
   getCachedVehiclePage,
   getVehicleMaintenanceDateSummary,
+  listVehicleTransferPage,
   listVehiclePage,
 } from "./_lib/garage-api";
 import {
@@ -59,6 +60,7 @@ function GarageContent() {
   const [retryRevision, setRetryRevision] = useState(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [maintenanceSummaries, setMaintenanceSummaries] = useState({});
+  const [pendingTransferCount, setPendingTransferCount] = useState(0);
   const requestedSummaryIds = useRef(new Set());
   const mounted = useRef(true);
   const remainingRegistrations = getRemainingVehicleRegistrations(requestState.total);
@@ -112,6 +114,22 @@ function GarageContent() {
     }
 
     void loadVehicles();
+    return () => { active = false; };
+  }, [retryRevision]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPendingTransferCount() {
+      try {
+        const page = await listVehicleTransferPage(1);
+        if (active) setPendingTransferCount(page.total);
+      } catch {
+        if (active) setPendingTransferCount(0);
+      }
+    }
+
+    void loadPendingTransferCount();
     return () => { active = false; };
   }, [retryRevision]);
 
@@ -197,16 +215,25 @@ function GarageContent() {
         </section>
 
         <section aria-labelledby="vehicles-title" className={styles.vehiclesSection}>
+          {pendingTransferCount > 0 && (
+            <Link className={styles.transferNotice} href="/garagem/transferencia">
+              <span className={styles.transferNoticeIcon}>
+                <ArrowsLeftRight aria-hidden size={24} weight="duotone" />
+              </span>
+              <span>
+                <strong>
+                  {pendingTransferCount} {pendingTransferCount === 1
+                    ? "transferência em andamento"
+                    : "transferências em andamento"}
+                </strong>
+                <small>Acompanhe, confirme ou cancele suas solicitações</small>
+              </span>
+              <CaretRight aria-hidden size={19} weight="bold" />
+            </Link>
+          )}
+
           <div className={styles.sectionHeader}>
-            <div>
-              <h2 id="vehicles-title">Meus veículos</h2>
-              {showRemainingRegistrations && (
-                <p>
-                  Você ainda pode cadastrar {remainingRegistrations}{" "}
-                  {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
-                </p>
-              )}
-            </div>
+            <h2 id="vehicles-title">Meus veículos</h2>
           </div>
 
           <div aria-busy={requestState.loading || requestState.loadingMore} aria-live="polite" className={styles.vehicleList}>
@@ -224,7 +251,7 @@ function GarageContent() {
             ) : requestState.vehicles.length === 0 ? (
               <div className={styles.requestState}>
                 <h3>Sua garagem está vazia</h3>
-                <p>Cadastre seu primeiro veículo para começar a registrar manutenções e alertas.</p>
+                <p>Cadastre seu primeiro veículo para começar a registrar manutenções e alertas</p>
               </div>
             ) : (
               <>
@@ -310,6 +337,13 @@ function GarageContent() {
             )}
           </div>
 
+          {showRemainingRegistrations && (
+            <p className={styles.registrationAvailability}>
+              Você ainda pode cadastrar {remainingRegistrations}{" "}
+              {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
+            </p>
+          )}
+
           {registrationLimitReached && <VehicleRegistrationLimit />}
 
           {addMenuOpen && showAddVehicleButton && (
@@ -328,7 +362,7 @@ function GarageContent() {
               >
                 <header>
                   <strong>Adicionar veículo</strong>
-                  <span>Escolha como deseja continuar.</span>
+                  <span>Escolha como deseja continuar</span>
                 </header>
                 <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
                   <span className={styles.addMenuIcon}>
@@ -336,7 +370,7 @@ function GarageContent() {
                   </span>
                   <span>
                     <strong>Cadastrar novo</strong>
-                    <small>Adicionar um veículo que ainda não possui histórico.</small>
+                    <small>Adicionar um veículo que ainda não possui histórico</small>
                   </span>
                   <CaretRight aria-hidden size={18} weight="bold" />
                 </Link>
@@ -345,8 +379,8 @@ function GarageContent() {
                     <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
                   </span>
                   <span>
-                    <strong>Transferir existente</strong>
-                    <small>Solicitar ou confirmar a transferência de um veículo.</small>
+                    <strong>Transferências</strong>
+                    <small>Acompanhar solicitações ou transferir um veículo existente</small>
                   </span>
                   <CaretRight aria-hidden size={18} weight="bold" />
                 </Link>

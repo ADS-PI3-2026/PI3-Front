@@ -14,10 +14,10 @@ export default function VehicleTransferSuggestion({ disabled = false, onRequest,
         <strong>Veículo já cadastrado</strong>
         <p>
           {ownerHint
-            ? <>Este veículo já possui histórico vinculado a <b>{ownerHint}</b>.</>
+            ? <>Este veículo já possui histórico vinculado a <b>{ownerHint}</b></>
             : "Este veículo já possui histórico vinculado a outro usuário."}
         </p>
-        <small>Você pode solicitar a transferência para trazer o veículo e seu histórico para sua garagem.</small>
+        <small>Você pode solicitar a transferência para trazer o veículo e seu histórico para sua garagem</small>
       </div>
       <ActionButton disabled={disabled} onClick={onRequest} type="button" variant="secondary">
         <ArrowsLeftRight aria-hidden size={20} weight="bold" />

@@ -290,13 +290,24 @@ function normalizeVehicleTransfer(transfer) {
         plate: typeof transfer.vehicle.plate === "string" ? transfer.vehicle.plate.trim() : "",
       }
     : null;
+  const counterpartId = Number(transfer?.counterpart?.id);
+  const counterpart = transfer?.counterpart && typeof transfer.counterpart === "object"
+    ? {
+        email: typeof transfer.counterpart.email === "string" ? transfer.counterpart.email.trim() : "",
+        id: Number.isInteger(counterpartId) && counterpartId > 0 ? counterpartId : null,
+        name: typeof transfer.counterpart.name === "string" ? transfer.counterpart.name.trim() : "",
+      }
+    : null;
 
   return {
+    counterpart,
+    createdAt: typeof transfer?.created_at === "string" ? transfer.created_at : "",
     id,
     initiatedBy: typeof transfer?.initiated_by === "string" ? transfer.initiated_by : "",
     expiresAt: typeof transfer?.expires_at === "string" ? transfer.expires_at : "",
     ownerValidated: Boolean(transfer?.owner_validated),
     recipientValidated: Boolean(transfer?.recipient_validated),
+    role: ["owner", "recipient"].includes(transfer?.role) ? transfer.role : "",
     status,
     vehicle,
     vehicleId,
@@ -333,11 +344,13 @@ export function normalizeMaintenance(maintenance) {
 export function normalizeMaintenanceExpense(maintenance) {
   const id = Number(maintenance?.id);
   const cost = Number(maintenance?.cost);
+  const vehicleId = Number(maintenance?.vehicle_id);
   const serviceDate = typeof maintenance?.service_date === "string"
     ? maintenance.service_date.slice(0, 10)
     : "";
 
   if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(cost) || cost < 0
+    || !Number.isInteger(vehicleId) || vehicleId <= 0
     || !/^\d{4}-\d{2}-\d{2}$/.test(serviceDate)) {
     throw new Error("O serviço retornou despesas de manutenção inválidas.");
   }
@@ -347,6 +360,7 @@ export function normalizeMaintenanceExpense(maintenance) {
     cost,
     id,
     serviceDate,
+    vehicleId,
   };
 }
 
@@ -957,6 +971,29 @@ export async function getVehicleTransfer(transferId) {
   const id = getPositiveId(transferId, "Transferência não encontrada.");
   const result = await requestAccount(`/transfers/${id}`, { method: "GET" });
   return normalizeVehicleTransfer(result.data);
+}
+
+export async function listVehicleTransferPage(page = 1, { status = "pending", vehicleId = null } = {}) {
+  const pageNumber = getPositiveId(page, "Página de transferências inválida.");
+  const params = new URLSearchParams();
+  if (status) params.set("filter[status]", String(status));
+  if (vehicleId != null) {
+    params.set("filter[vehicle_id]", String(getVehicleId(vehicleId)));
+  }
+  params.set("per_page", "15");
+  params.set("page", String(pageNumber));
+
+  const result = await requestAccount(`/transfers?${params.toString()}`, { method: "GET" });
+  const resourcePage = getResourcePage(result.data, "suas transferências");
+  return {
+    ...resourcePage,
+    items: resourcePage.items.map(normalizeVehicleTransfer),
+  };
+}
+
+export async function cancelVehicleTransfer(transferId) {
+  const id = getPositiveId(transferId, "Transferência não encontrada.");
+  await requestAccount(`/transfers/${id}`, { method: "DELETE" });
 }
 
 export async function validateVehicleTransferCode(code) {

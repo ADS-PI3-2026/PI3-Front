@@ -37,69 +37,148 @@
   margin-top: 4px;
 }
 
-.transferForm {
-  --app-form-card-padding: 18px;
-  --app-form-gap: 18px;
-  --app-form-radius: 12px;
-}
-
-.receivedTransferCard {
-  --app-card-padding: 18px;
-  --app-card-radius: 12px;
-  display: grid;
-  gap: 16px;
-}
-
-.receivedTransferHeader {
-  align-items: center;
+.newTransferSection {
+  border-top: 1px solid var(--app-line);
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  padding-top: 20px;
 }
 
-.receivedTransferHeader h2 {
+.actionHeader h2 {
   color: var(--app-ink);
-  font-size: 1rem;
+  font-size: 1.05rem;
+}
+
+.actionHeader p {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  margin-top: 3px;
+}
+
+.choiceGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.choiceCard {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--app-line);
+  border-radius: 13px;
+  color: var(--app-blue);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 86px;
+  padding: 13px 14px;
+  text-align: left;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.choiceCard:hover {
+  background: #f7f9fd;
+  border-color: #b9cbe3;
+  transform: translateY(-1px);
+}
+
+.choiceCard:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline-offset: 2px;
+}
+
+.choiceIcon {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border-radius: 10px;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.choiceCard > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.choiceCard strong {
+  color: var(--app-ink);
+  font-size: 0.88rem;
+}
+
+.choiceCard small {
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.actionPanel {
+  --app-card-padding: 18px;
+  --app-card-radius: 13px;
+  display: grid;
+  gap: 18px;
+}
+
+.panelBack,
+.detailBack {
+  align-items: center;
+  color: var(--app-blue);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 750;
+  gap: 6px;
+  justify-self: start;
+}
+
+.panelBack:focus-visible,
+.detailBack:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid rgba(7, 71, 147, 0.2);
+  outline-offset: 2px;
+}
+
+.panelBack:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.panelHeader {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.panelHeader h2 {
+  color: var(--app-ink);
+  font-size: 1.12rem;
   line-height: 1.25;
 }
 
-.receivedTransferHeader p {
+.panelHeader p {
   color: var(--app-muted);
   font-size: 0.76rem;
   line-height: 1.45;
   margin-top: 4px;
 }
 
-.receivedCodeForm {
-  border-top: 1px solid var(--app-line);
+.panelNotice {
+  align-items: start;
+  background: var(--app-blue-soft);
+  border-radius: 10px;
+  color: var(--app-blue);
   display: grid;
-  gap: 14px;
-  padding-top: 16px;
-}
-
-.receivedTransferActions {
-  display: grid;
+  font-size: 0.72rem;
   gap: 9px;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.45;
+  padding: 11px 12px;
 }
 
-.optionDivider {
-  align-items: center;
-  color: var(--app-muted);
+.embeddedForm {
   display: grid;
-  font-size: 0.68rem;
-  font-weight: 700;
-  gap: 10px;
-  grid-template-columns: 1fr auto 1fr;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.optionDivider::before,
-.optionDivider::after {
-  background: var(--app-line);
-  content: "";
-  height: 1px;
+  gap: 17px;
 }
 
 .pendingCard {
@@ -233,18 +312,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .choiceCard,
   .loadingIcon {
     animation: none;
+    transition: none;
   }
 }
 
 @media (max-width: 440px) {
-  .receivedTransferHeader {
-    align-items: stretch;
-    grid-template-columns: 1fr;
+  .choiceCard {
+    align-items: start;
   }
 
-  .receivedTransferActions {
-    grid-template-columns: 1fr;
+  .choiceIcon {
+    height: 42px;
+    width: 42px;
   }
 }

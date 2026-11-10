@@ -50,7 +50,7 @@ function AdminDashboard() {
         <div>
           <p>Visão geral</p>
           <h1>Olá, {firstName}</h1>
-          <span>Esta é a área reservada para a administração do LegadoCar.</span>
+          <span>Esta é a área reservada para a administração do LegadoCar</span>
         </div>
         <div className={styles.restrictedBadge}>
           <ShieldCheck aria-hidden size={22} weight="duotone" />

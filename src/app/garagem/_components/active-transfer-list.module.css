@@ -1,0 +1,264 @@
+.section {
+  display: grid;
+  gap: 12px;
+}
+
+.header {
+  align-items: end;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.header h2 {
+  color: var(--app-ink);
+  font-size: 1.05rem;
+}
+
+.header p {
+  color: var(--app-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.header > span {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border-radius: 999px;
+  color: var(--app-blue);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  min-width: 28px;
+  padding-inline: 8px;
+}
+
+.requestState {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  color: var(--app-blue);
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  padding: 16px;
+  text-align: center;
+}
+
+.requestState {
+  justify-items: center;
+}
+
+.requestState strong {
+  color: var(--app-ink);
+  font-size: 0.82rem;
+}
+
+.requestState p {
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.requestState button {
+  color: var(--app-blue);
+  font-size: 0.76rem;
+  font-weight: 750;
+  margin-top: 3px;
+}
+
+.emptyState {
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.list {
+  background: #fff;
+  border: 1px solid var(--app-line);
+  border-radius: 13px;
+  box-shadow: 0 4px 14px rgba(34, 46, 78, 0.04);
+  list-style: none;
+  overflow: hidden;
+}
+
+.list li + li {
+  border-top: 1px solid var(--app-line);
+}
+
+.row {
+  align-items: center;
+  background: #fff;
+  color: inherit;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  min-height: 88px;
+  padding: 13px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.row:hover {
+  background: #f7f9fd;
+}
+
+.row:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline-offset: -3px;
+}
+
+.icon {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border-radius: 10px;
+  color: var(--app-blue);
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.copy,
+.summary {
+  display: grid;
+  min-width: 0;
+}
+
+.copy {
+  gap: 2px;
+}
+
+.role {
+  color: var(--app-blue);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.copy > strong {
+  color: var(--app-ink);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy small {
+  color: var(--app-muted);
+  font-size: 0.68rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary {
+  gap: 6px;
+  justify-items: end;
+}
+
+.progress {
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 780;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.action {
+  background: #fff1cf;
+  color: #805800;
+}
+
+.waiting {
+  background: var(--app-blue-soft);
+  color: var(--app-blue);
+}
+
+.confirmed {
+  background: #dff7ea;
+  color: #17724c;
+}
+
+.summary small {
+  align-items: center;
+  color: var(--app-muted);
+  display: inline-flex;
+  font-size: 0.65rem;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.caret {
+  color: var(--app-blue);
+}
+
+.loadMore {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbd5e3;
+  border-radius: 10px;
+  color: var(--app-blue);
+  display: inline-flex;
+  font-size: 0.77rem;
+  font-weight: 750;
+  gap: 7px;
+  justify-content: center;
+  justify-self: center;
+  min-height: 42px;
+  padding: 9px 15px;
+}
+
+.loadingIcon {
+  animation: active-transfer-spin 800ms linear infinite;
+}
+
+@keyframes active-transfer-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 520px) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .summary {
+    grid-column: 2 / -1;
+    justify-items: start;
+  }
+
+  .caret {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 370px) {
+  .icon {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .summary {
+    grid-column: 1 / -1;
+  }
+
+  .caret {
+    grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
+  }
+}

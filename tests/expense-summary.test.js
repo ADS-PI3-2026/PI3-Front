@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { summarizeExpenses } from "../src/app/garagem/_lib/expense-summary.js";
+import {
+  filterExpensesByVehicle,
+  summarizeExpenses,
+} from "../src/app/garagem/_lib/expense-summary.js";
 
 const expenses = [
-  { category: "Mecânica", cost: 350, serviceDate: "2026-11-01" },
-  { category: "Mecânica", cost: 150, serviceDate: "2026-10-15" },
-  { category: "Elétrica", cost: 200, serviceDate: "2025-11-03" },
+  { category: "Mecânica", cost: 350, serviceDate: "2026-11-01", vehicleId: 7 },
+  { category: "Mecânica", cost: 150, serviceDate: "2026-10-15", vehicleId: 7 },
+  { category: "Elétrica", cost: 200, serviceDate: "2025-11-03", vehicleId: 8 },
 ];
 
 test("resume despesas do mês e agrupa as categorias", () => {
@@ -30,4 +33,10 @@ test("resume o ano e todo o período", () => {
     { category: "Mecânica", count: 2, total: 500 },
     { category: "Elétrica", count: 1, total: 200 },
   ]);
+});
+
+test("filtra as despesas pelo veículo selecionado", () => {
+  assert.deepEqual(filterExpensesByVehicle(expenses, "8"), [expenses[2]]);
+  assert.deepEqual(filterExpensesByVehicle(expenses, "all"), expenses);
+  assert.deepEqual(filterExpensesByVehicle(expenses, "invalid"), []);
 });
