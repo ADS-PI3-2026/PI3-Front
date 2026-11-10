@@ -844,6 +844,72 @@ test("inicia a transferência pelo proprietário com o e-mail do destinatário",
   assert.equal(transfer.initiatedBy, "owner");
 });
 
+test("lista as transferências pendentes com papel, contraparte e paginação", async () => {
+  const session = startSession();
+  globalThis.fetch = async (url, options) => {
+    assert.equal(
+      url,
+      "http://localhost:8000/api/transfers?filter%5Bstatus%5D=pending&filter%5Bvehicle_id%5D=7&per_page=15&page=2",
+    );
+    assert.equal(options.method, "GET");
+    assert.equal(options.headers.Authorization, `Bearer ${session.accessToken}`);
+    return success({
+      data: [{
+        id: 43,
+        role: "recipient",
+        status: "pending",
+        initiated_by: "owner",
+        vehicle: { id: 7, model: "Corolla XEi 2.0", plate: "ABC1D23" },
+        counterpart: { id: 12, name: "Maria", email: "maria@exemplo.com" },
+        owner_validated: true,
+        recipient_validated: false,
+        expires_at: "2026-11-11T12:00:00-03:00",
+        created_at: "2026-11-09T12:00:00-03:00",
+      }],
+      links: { next: null },
+      meta: { current_page: 2, last_page: 2, total: 16 },
+    });
+  };
+
+  const page = await (await garageApi()).listVehicleTransferPage(2, {
+    status: "pending",
+    vehicleId: 7,
+  });
+
+  assert.equal(page.page, 2);
+  assert.equal(page.total, 16);
+  assert.equal(page.hasMore, false);
+  assert.deepEqual(page.items[0], {
+    counterpart: { id: 12, name: "Maria", email: "maria@exemplo.com" },
+    createdAt: "2026-11-09T12:00:00-03:00",
+    expiresAt: "2026-11-11T12:00:00-03:00",
+    id: 43,
+    initiatedBy: "owner",
+    ownerValidated: true,
+    recipientValidated: false,
+    role: "recipient",
+    status: "pending",
+    vehicle: { id: 7, model: "Corolla XEi 2.0", plate: "ABC1D23" },
+    vehicleId: 7,
+  });
+});
+
+test("cancela uma transferência pelo identificador", async () => {
+  const session = startSession();
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return success(null);
+  };
+
+  await (await garageApi()).cancelVehicleTransfer(43);
+
+  assert.equal(request.url, "http://localhost:8000/api/transfers/43");
+  assert.equal(request.options.method, "DELETE");
+  assert.equal(request.options.headers.Authorization, `Bearer ${session.accessToken}`);
+  assert.equal(request.options.body, undefined);
+});
+
 test("não valida transferência sem um código de seis números", async () => {
   startSession();
   let calls = 0;
@@ -1143,7 +1209,7 @@ test("carrega todas as páginas das despesas da garagem", async () => {
     "http://localhost:8000/api/maintenances?per_page=15&page=2",
   ]);
   assert.deepEqual(expenses, [
-    { category: "Troca oleo", cost: 125.5, id: 1, serviceDate: "2026-11-01" },
-    { category: "Parte eletrica", cost: 80, id: 2, serviceDate: "2026-10-20" },
+    { category: "Troca oleo", cost: 125.5, id: 1, serviceDate: "2026-11-01", vehicleId: 7 },
+    { category: "Parte eletrica", cost: 80, id: 2, serviceDate: "2026-10-20", vehicleId: 7 },
   ]);
 });

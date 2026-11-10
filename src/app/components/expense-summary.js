@@ -3,8 +3,12 @@
 import { CaretDown } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { getAuthErrorMessage } from "../auth-api";
-import { listMaintenanceExpenses } from "../garagem/_lib/garage-api";
-import { expensePeriods, summarizeExpenses } from "../garagem/_lib/expense-summary";
+import { listMaintenanceExpenses, listVehicles } from "../garagem/_lib/garage-api";
+import {
+  expensePeriods,
+  filterExpensesByVehicle,
+  summarizeExpenses,
+} from "../garagem/_lib/expense-summary";
 import styles from "./expense-summary.module.css";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -32,8 +36,21 @@ export default function ExpenseSummary() {
   const [period, setPeriod] = useState("year");
   const [requestState, setRequestState] = useState({ error: "", loading: true });
   const [retryRevision, setRetryRevision] = useState(0);
-  const summary = useMemo(() => summarizeExpenses(expenses, period), [expenses, period]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState("all");
+  const [vehicles, setVehicles] = useState([]);
+  const filteredExpenses = useMemo(
+    () => filterExpensesByVehicle(expenses, selectedVehicleId),
+    [expenses, selectedVehicleId],
+  );
+  const summary = useMemo(
+    () => summarizeExpenses(filteredExpenses, period),
+    [filteredExpenses, period],
+  );
   const periodLabel = expensePeriods.find((item) => item.value === period)?.label ?? "Período";
+  const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === selectedVehicleId);
+  const vehicleLabel = selectedVehicle
+    ? `${selectedVehicle.name} · ${selectedVehicle.plate}`
+    : "todos os veículos";
   const chartCategories = useMemo(() => (
     summary.categories.map((category, index, categories) => {
       const percentage = summary.total > 0 ? (category.total / summary.total) * 100 : 0;
@@ -58,9 +75,13 @@ export default function ExpenseSummary() {
     async function loadExpenses() {
       setRequestState({ error: "", loading: true });
       try {
-        const loadedExpenses = await listMaintenanceExpenses();
+        const [loadedExpenses, loadedVehicles] = await Promise.all([
+          listMaintenanceExpenses(),
+          listVehicles(),
+        ]);
         if (active) {
           setExpenses(loadedExpenses);
+          setVehicles(loadedVehicles);
           setRequestState({ error: "", loading: false });
         }
       } catch (error) {
@@ -83,7 +104,7 @@ export default function ExpenseSummary() {
   return (
     <details className={`app-card ${styles.card}`}>
       <summary
-        aria-label={`Ver resumo de gastos de ${periodLabel.toLowerCase()}`}
+        aria-label={`Ver resumo de gastos de ${vehicleLabel}, no período: ${periodLabel.toLowerCase()}`}
         className={styles.trigger}
       >
         <strong>Ver resumo de gastos</strong>
@@ -93,14 +114,32 @@ export default function ExpenseSummary() {
       <div className={styles.detailsContent}>
         <h3 className={styles.detailsTitle}>Resumo de gastos da garagem</h3>
 
-        <label className={styles.periodField}>
-          <span>Período</span>
-          <select disabled={requestState.loading} onChange={(event) => setPeriod(event.target.value)} value={period}>
-            {expensePeriods.map((item) => (
-              <option key={item.value} value={item.value}>{item.label}</option>
-            ))}
-          </select>
-        </label>
+        <div className={styles.filters}>
+          <label className={styles.filterField}>
+            <span>Período</span>
+            <select disabled={requestState.loading} onChange={(event) => setPeriod(event.target.value)} value={period}>
+              {expensePeriods.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className={styles.filterField}>
+            <span>Veículo</span>
+            <select
+              disabled={requestState.loading}
+              onChange={(event) => setSelectedVehicleId(event.target.value)}
+              value={selectedVehicleId}
+            >
+              <option value="all">Todos os veículos</option>
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.name} · {vehicle.plate}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {requestState.loading ? (
           <div className={styles.requestState} role="status">
@@ -117,7 +156,7 @@ export default function ExpenseSummary() {
         ) : summary.count === 0 ? (
           <div className={styles.requestState} role="status">
             <strong>Nenhuma despesa neste período</strong>
-            <p>Os valores aparecerão aqui quando houver manutenções realizadas no período selecionado.</p>
+            <p>Os valores aparecerão aqui quando houver manutenções para os filtros selecionados.</p>
           </div>
         ) : (
           <>

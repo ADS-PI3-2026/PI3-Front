@@ -14,17 +14,21 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import ActionButton from "../../components/action-button";
-import AppShell, { useAuthUser } from "../../components/app-shell";
+import AppShell from "../../components/app-shell";
 import FormField from "../../components/form-field";
 import VerificationCodeFields from "../../components/verification-code-fields";
 import { getAuthErrorMessage } from "../../auth-api";
 import { createEmptyCode, VERIFICATION_CODE_LENGTH } from "../../lib/form-validation";
+import ActiveTransferList from "../_components/active-transfer-list";
 import PageTopBar from "../_components/page-top-bar";
+import TransferCancelControl from "../_components/transfer-cancel-control";
 import {
   buildBuyerTransferPayload,
+  cancelVehicleTransfer,
   getVehicleTransfer,
   getVehicleTransferErrorMessage,
   getVehicleTransferFieldErrors,
+  listVehicleTransferPage,
   startVehicleTransferByBuyer,
   validateVehicleTransferCode,
 } from "../_lib/garage-api";
@@ -35,10 +39,6 @@ import {
 } from "../_lib/garage-validation";
 import { consumeVehicleTransferPrefill } from "../_lib/vehicle-transfer-prefill";
 import styles from "./page.module.css";
-
-function getStorageKey(userId) {
-  return "legado-car-buyer-transfer-" + userId;
-}
 
 function formatDeadline(value) {
   const date = new Date(value);
@@ -68,57 +68,82 @@ export default function BuyerTransferPage() {
 }
 
 function BuyerTransferContent() {
-  const user = useAuthUser();
-  const storageKey = getStorageKey(user.id);
   const [accepted, setAccepted] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
   const [code, setCode] = useState(createEmptyCode);
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState("");
   const [form, setForm] = useState({ plate: "", renavam: "" });
+  const [listActionFeedback, setListActionFeedback] = useState({ error: "", success: "" });
+  const [listRevision, setListRevision] = useState(0);
   const [pending, setPending] = useState(false);
   const [receivedCodeOpen, setReceivedCodeOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [transfer, setTransfer] = useState(null);
+  const [transferList, setTransferList] = useState({
+    error: "",
+    hasMore: false,
+    items: [],
+    loading: true,
+    loadingMore: false,
+    page: 1,
+    total: 0,
+  });
 
   useEffect(() => {
     let active = true;
 
-    async function restoreTransfer() {
-      const storedId = window.localStorage.getItem(storageKey);
+    async function loadPrefill() {
+      await Promise.resolve();
+      if (!active) return;
       const prefill = consumeVehicleTransferPrefill();
-      if (!storedId) {
-        if (active) {
-          if (prefill) setForm(prefill);
-          setReady(true);
-        }
-        return;
-      }
+      if (prefill) setForm(prefill);
+      setReady(true);
+    }
 
+    void loadPrefill();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadTransfers() {
+      setTransferList((current) => ({ ...current, error: "", loading: true }));
       try {
-        const loadedTransfer = await getVehicleTransfer(storedId);
-        if (active) setTransfer(loadedTransfer);
+        const page = await listVehicleTransferPage(1);
+        if (!active) return;
+        setTransferList({
+          error: "",
+          hasMore: page.hasMore,
+          items: page.items,
+          loading: false,
+          loadingMore: false,
+          page: page.page,
+          total: page.total,
+        });
       } catch (error) {
-        if (error?.status === 404) {
-          window.localStorage.removeItem(storageKey);
-        } else if (active) {
-          setFeedback(
-            getAuthErrorMessage(
-              error,
-              "Não foi possível recuperar a transferência. Tente novamente.",
-            ),
-          );
-        }
-      } finally {
-        if (active) setReady(true);
+        if (!active) return;
+        setTransferList({
+          error: getAuthErrorMessage(
+            error,
+            "Não foi possível carregar suas transferências. Tente novamente.",
+          ),
+          hasMore: false,
+          items: [],
+          loading: false,
+          loadingMore: false,
+          page: 1,
+          total: 0,
+        });
       }
     }
 
-    void restoreTransfer();
+    void loadTransfers();
     return () => { active = false; };
-  }, [storageKey]);
+  }, [listRevision]);
 
   const clearTransfer = () => {
-    window.localStorage.removeItem(storageKey);
     setTransfer(null);
     setForm({ plate: "", renavam: "" });
     setAccepted(false);
@@ -126,6 +151,55 @@ function BuyerTransferContent() {
     setErrors({});
     setFeedback("");
     setReceivedCodeOpen(false);
+    setListRevision((revision) => revision + 1);
+  };
+
+  const loadMoreTransfers = async () => {
+    if (transferList.loadingMore || !transferList.hasMore) return;
+    setTransferList((current) => ({ ...current, loadingMore: true }));
+    try {
+      const nextPage = await listVehicleTransferPage(transferList.page + 1);
+      setTransferList((current) => {
+        const knownIds = new Set(current.items.map((item) => item.id));
+        return {
+          ...current,
+          hasMore: nextPage.hasMore,
+          items: [...current.items, ...nextPage.items.filter((item) => !knownIds.has(item.id))],
+          loadingMore: false,
+          page: nextPage.page,
+          total: nextPage.total,
+        };
+      });
+    } catch (error) {
+      setTransferList((current) => ({ ...current, loadingMore: false }));
+      setListActionFeedback({
+        error: getAuthErrorMessage(error, "Não foi possível carregar mais transferências."),
+        success: "",
+      });
+    }
+  };
+
+  const cancelTransfer = async (transferToCancel) => {
+    if (cancellingId != null) return false;
+    setCancellingId(transferToCancel.id);
+    setListActionFeedback({ error: "", success: "" });
+    try {
+      await cancelVehicleTransfer(transferToCancel.id);
+      if (transfer?.id === transferToCancel.id) setTransfer(null);
+      setListActionFeedback({ error: "", success: "Transferência cancelada com sucesso." });
+      setListRevision((revision) => revision + 1);
+      return true;
+    } catch (error) {
+      const message = getAuthErrorMessage(error, "Não foi possível cancelar a transferência.");
+      setListActionFeedback({
+        error: message,
+        success: "",
+      });
+      if (transfer?.id === transferToCancel.id) setFeedback(message);
+      return false;
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   const confirmReceivedTransfer = async (event) => {
@@ -145,7 +219,6 @@ function BuyerTransferContent() {
     try {
       const confirmation = await validateVehicleTransferCode(code.join(""));
       confirmedTransferId = confirmation.id;
-      window.localStorage.setItem(storageKey, String(confirmation.id));
 
       const loadedTransfer = await getVehicleTransfer(confirmation.id);
       const updatedTransfer = {
@@ -156,9 +229,7 @@ function BuyerTransferContent() {
       };
       setTransfer(updatedTransfer);
       setCode(createEmptyCode());
-      if (updatedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
+      setListRevision((revision) => revision + 1);
     } catch (error) {
       if (confirmedTransferId) {
         setFeedback("Sua confirmação foi recebida, mas não foi possível carregar o andamento. Atualize a página.");
@@ -193,12 +264,12 @@ function BuyerTransferContent() {
       const startedTransfer = await startVehicleTransferByBuyer(
         buildBuyerTransferPayload(form),
       );
-      window.localStorage.setItem(storageKey, String(startedTransfer.id));
       setTransfer({
         ...startedTransfer,
         requestedPlate: form.plate,
       });
       setCode(createEmptyCode());
+      setListRevision((revision) => revision + 1);
     } catch (error) {
       setErrors(getVehicleTransferFieldErrors(error));
       setFeedback(
@@ -221,9 +292,7 @@ function BuyerTransferContent() {
     try {
       const refreshedTransfer = await getVehicleTransfer(transfer.id);
       setTransfer(refreshedTransfer);
-      if (refreshedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
+      setListRevision((revision) => revision + 1);
     } catch (error) {
       setFeedback(
         getAuthErrorMessage(
@@ -261,9 +330,7 @@ function BuyerTransferContent() {
       };
       setTransfer(updatedTransfer);
       setCode(createEmptyCode());
-      if (updatedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
+      setListRevision((revision) => revision + 1);
     } catch (error) {
       setErrors({
         code: getVehicleTransferFieldErrors(error).code
@@ -280,7 +347,7 @@ function BuyerTransferContent() {
   if (!ready) {
     return (
       <>
-        <PageTopBar title="Solicitar transferência" />
+        <PageTopBar title="Transferências" />
         <section className="app-empty-state app-empty-state--narrow" role="status">
           <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <p>Carregando transferência...</p>
@@ -294,11 +361,46 @@ function BuyerTransferContent() {
 
   return (
     <>
-      <PageTopBar title="Solicitar transferência" />
+      <PageTopBar title="Transferências" />
 
       <main className={styles.transferScreen}>
         {!transfer ? (
           <>
+            {listActionFeedback.success && (
+              <p className="app-feedback app-feedback--success" role="status">
+                <CheckCircle aria-hidden size={18} weight="fill" />
+                {listActionFeedback.success}
+              </p>
+            )}
+            {listActionFeedback.error && (
+              <p className="app-feedback app-feedback--error" role="alert">
+                <WarningCircle aria-hidden size={18} weight="fill" />
+                {listActionFeedback.error}
+              </p>
+            )}
+
+            <ActiveTransferList
+              cancellingId={cancellingId}
+              error={transferList.error}
+              hasMore={transferList.hasMore}
+              items={transferList.items}
+              loading={transferList.loading}
+              loadingMore={transferList.loadingMore}
+              onCancel={cancelTransfer}
+              onLoadMore={() => void loadMoreTransfers()}
+              onRetry={() => setListRevision((revision) => revision + 1)}
+              onSelect={(selectedTransfer) => {
+                setTransfer(selectedTransfer);
+                setCode(createEmptyCode());
+                setErrors({});
+                setFeedback("");
+                setListActionFeedback({ error: "", success: "" });
+              }}
+              total={transferList.total}
+            />
+
+            <div className={styles.optionDivider}><span>ou inicie uma solicitação</span></div>
+
             <header className={styles.intro}>
               <span className={styles.introIcon}>
                 <ArrowsLeftRight aria-hidden size={28} weight="duotone" />
@@ -545,6 +647,11 @@ function BuyerTransferContent() {
               >
                 {pending ? "Atualizando..." : "Atualizar andamento"}
               </ActionButton>
+
+              <TransferCancelControl
+                disabled={pending || cancellingId === transfer.id}
+                onConfirm={() => cancelTransfer(transfer)}
+              />
             </section>
           </>
         )}

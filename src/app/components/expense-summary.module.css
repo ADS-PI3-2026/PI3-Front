@@ -61,13 +61,19 @@
   text-align: center;
 }
 
-.periodField {
+.filters {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   margin-top: 18px;
 }
 
-.periodField span {
+.filterField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filterField span {
   color: var(--app-muted);
   font-size: 0.7rem;
   font-weight: 750;
@@ -75,17 +81,22 @@
   text-transform: uppercase;
 }
 
-.periodField select {
+.filterField select {
   appearance: none;
   background: var(--app-control-background);
   border: 1px solid var(--app-line);
   border-radius: 10px;
   color: var(--app-ink);
+  max-width: 100%;
   min-height: 44px;
+  min-width: 0;
+  overflow: hidden;
   padding: 0 13px;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
-.periodField select:focus-visible {
+.filterField select:focus-visible {
   outline: 3px solid var(--app-focus-ring);
   outline-offset: 2px;
 }
@@ -270,6 +281,10 @@
 }
 
 @media (min-width: 560px) {
+  .filters {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+
   .chartGrid {
     grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr);
   }

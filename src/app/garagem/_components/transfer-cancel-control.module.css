@@ -1,0 +1,43 @@
+.confirmation {
+  align-items: start;
+  background: #fff6f5;
+  border: 1px solid #f2c7c2;
+  border-radius: 11px;
+  color: var(--app-danger);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 13px;
+}
+
+.confirmation strong {
+  color: var(--app-ink);
+  display: block;
+  font-size: 0.84rem;
+}
+
+.confirmation p {
+  color: var(--app-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+}
+
+.actions button {
+  font-size: 0.78rem;
+  min-height: 44px;
+  padding-inline: 10px;
+}
+
+@media (max-width: 420px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}

@@ -25,19 +25,18 @@ import {
   VERIFICATION_CODE_LENGTH,
 } from "../../../../lib/form-validation";
 import PageTopBar from "../../../_components/page-top-bar";
+import TransferCancelControl from "../../../_components/transfer-cancel-control";
 import {
+  cancelVehicleTransfer,
   getVehicle,
   getVehicleTransfer,
   getVehicleTransferErrorMessage,
   getVehicleTransferFieldErrors,
+  listVehicleTransferPage,
   startVehicleTransferByOwner,
   validateVehicleTransferCode,
 } from "../../../_lib/garage-api";
 import styles from "./page.module.css";
-
-function getStorageKey(userId, vehicleId) {
-  return `legado-car-owner-transfer-${userId}-${vehicleId}`;
-}
 
 function formatDeadline(value) {
   const date = new Date(value);
@@ -82,7 +81,6 @@ function VehicleTransferContent() {
   const router = useRouter();
   const user = useAuthUser();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const storageKey = getStorageKey(user.id, vehicleId);
   const [retryRevision, setRetryRevision] = useState(0);
   const [vehicleState, setVehicleState] = useState({
     error: "",
@@ -97,6 +95,7 @@ function VehicleTransferContent() {
   const [transfer, setTransfer] = useState(null);
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
+  const [successFeedback, setSuccessFeedback] = useState("");
   const [receivedCodeOpen, setReceivedCodeOpen] = useState(false);
   const [code, setCode] = useState(createEmptyCode);
 
@@ -144,25 +143,11 @@ function VehicleTransferContent() {
     let active = true;
 
     async function restoreTransfer() {
-      window.localStorage.removeItem(`legado-car-transfer:${vehicleId}`);
-      const storedId = window.localStorage.getItem(storageKey);
-      if (!storedId) {
-        if (active) setReady(true);
-        return;
-      }
-
       try {
-        const loadedTransfer = await getVehicleTransfer(storedId);
-        if (loadedTransfer.vehicleId !== Number(vehicleId)) {
-          window.localStorage.removeItem(storageKey);
-          if (active) setFeedback("A transferência salva não corresponde a este veículo.");
-        } else if (active) {
-          setTransfer(loadedTransfer);
-        }
+        const page = await listVehicleTransferPage(1, { vehicleId });
+        if (active) setTransfer(page.items.find((item) => item.role === "owner") ?? null);
       } catch (error) {
-        if (error?.status === 404) {
-          window.localStorage.removeItem(storageKey);
-        } else if (active) {
+        if (active) {
           setFeedback(
             getAuthErrorMessage(
               error,
@@ -177,16 +162,16 @@ function VehicleTransferContent() {
 
     void restoreTransfer();
     return () => { active = false; };
-  }, [storageKey, vehicleId]);
+  }, [vehicleId]);
 
   const clearTransfer = () => {
-    window.localStorage.removeItem(storageKey);
     setTransfer(null);
     setRecipient("");
     setAccepted(false);
     setCode(createEmptyCode());
     setErrors({});
     setFeedback("");
+    setSuccessFeedback("");
     setReceivedCodeOpen(false);
   };
 
@@ -207,11 +192,9 @@ function VehicleTransferContent() {
     try {
       const confirmation = await validateVehicleTransferCode(code.join(""));
       confirmedTransferId = confirmation.id;
-      window.localStorage.setItem(storageKey, String(confirmation.id));
 
       const loadedTransfer = await getVehicleTransfer(confirmation.id);
       if (loadedTransfer.vehicleId !== Number(vehicleId)) {
-        window.localStorage.removeItem(storageKey);
         throw new Error("A solicitação confirmada não corresponde a este veículo.");
       }
 
@@ -223,9 +206,6 @@ function VehicleTransferContent() {
       };
       setTransfer(updatedTransfer);
       setCode(createEmptyCode());
-      if (updatedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
     } catch (error) {
       if (confirmedTransferId) {
         setFeedback(
@@ -274,7 +254,6 @@ function VehicleTransferContent() {
         vehicleId,
         normalizedRecipient,
       );
-      window.localStorage.setItem(storageKey, String(startedTransfer.id));
       setTransfer(startedTransfer);
       setCode(createEmptyCode());
     } catch (error) {
@@ -300,9 +279,6 @@ function VehicleTransferContent() {
         throw new Error("A transferência não corresponde a este veículo.");
       }
       setTransfer(refreshedTransfer);
-      if (refreshedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
     } catch (error) {
       setFeedback(
         getAuthErrorMessage(
@@ -340,9 +316,6 @@ function VehicleTransferContent() {
       };
       setTransfer(updatedTransfer);
       setCode(createEmptyCode());
-      if (updatedTransfer.status === "completed") {
-        window.localStorage.removeItem(storageKey);
-      }
     } catch (error) {
       setErrors({
         code: getVehicleTransferFieldErrors(error).code
@@ -351,6 +324,31 @@ function VehicleTransferContent() {
             "O código não pôde ser validado. Tente novamente.",
           ),
       });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const cancelTransfer = async () => {
+    if (!transfer || pending) return false;
+    setPending(true);
+    setFeedback("");
+    setSuccessFeedback("");
+    try {
+      await cancelVehicleTransfer(transfer.id);
+      setTransfer(null);
+      setRecipient("");
+      setAccepted(false);
+      setCode(createEmptyCode());
+      setErrors({});
+      setReceivedCodeOpen(false);
+      setSuccessFeedback("Transferência cancelada com sucesso.");
+      return true;
+    } catch (error) {
+      setFeedback(
+        getAuthErrorMessage(error, "Não foi possível cancelar a transferência."),
+      );
+      return false;
     } finally {
       setPending(false);
     }
@@ -421,6 +419,12 @@ function VehicleTransferContent() {
 
         {feedback && (
           <p className="app-feedback app-feedback--error" role="alert">{feedback}</p>
+        )}
+        {successFeedback && (
+          <p className="app-feedback app-feedback--success" role="status">
+            <CheckCircle aria-hidden size={18} weight="fill" />
+            {successFeedback}
+          </p>
         )}
 
         {!ready ? (
@@ -636,6 +640,11 @@ function VehicleTransferContent() {
               <ActionButton disabled={pending} onClick={refreshTransfer} type="button" variant="secondary">
                 {pending ? "Atualizando..." : "Atualizar andamento"}
               </ActionButton>
+
+              <TransferCancelControl
+                disabled={pending}
+                onConfirm={cancelTransfer}
+              />
             </section>
           </>
         )}

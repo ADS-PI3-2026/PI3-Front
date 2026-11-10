@@ -21,6 +21,7 @@ import VehicleRegistrationLimit from "./_components/vehicle-registration-limit";
 import {
   getCachedVehiclePage,
   getVehicleMaintenanceDateSummary,
+  listVehicleTransferPage,
   listVehiclePage,
 } from "./_lib/garage-api";
 import {
@@ -59,6 +60,7 @@ function GarageContent() {
   const [retryRevision, setRetryRevision] = useState(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [maintenanceSummaries, setMaintenanceSummaries] = useState({});
+  const [pendingTransferCount, setPendingTransferCount] = useState(0);
   const requestedSummaryIds = useRef(new Set());
   const mounted = useRef(true);
   const remainingRegistrations = getRemainingVehicleRegistrations(requestState.total);
@@ -112,6 +114,22 @@ function GarageContent() {
     }
 
     void loadVehicles();
+    return () => { active = false; };
+  }, [retryRevision]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPendingTransferCount() {
+      try {
+        const page = await listVehicleTransferPage(1);
+        if (active) setPendingTransferCount(page.total);
+      } catch {
+        if (active) setPendingTransferCount(0);
+      }
+    }
+
+    void loadPendingTransferCount();
     return () => { active = false; };
   }, [retryRevision]);
 
@@ -197,6 +215,23 @@ function GarageContent() {
         </section>
 
         <section aria-labelledby="vehicles-title" className={styles.vehiclesSection}>
+          {pendingTransferCount > 0 && (
+            <Link className={styles.transferNotice} href="/garagem/transferencia">
+              <span className={styles.transferNoticeIcon}>
+                <ArrowsLeftRight aria-hidden size={24} weight="duotone" />
+              </span>
+              <span>
+                <strong>
+                  {pendingTransferCount} {pendingTransferCount === 1
+                    ? "transferência em andamento"
+                    : "transferências em andamento"}
+                </strong>
+                <small>Acompanhe, confirme ou cancele suas solicitações.</small>
+              </span>
+              <CaretRight aria-hidden size={19} weight="bold" />
+            </Link>
+          )}
+
           <div className={styles.sectionHeader}>
             <div>
               <h2 id="vehicles-title">Meus veículos</h2>
@@ -345,8 +380,8 @@ function GarageContent() {
                     <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
                   </span>
                   <span>
-                    <strong>Transferir existente</strong>
-                    <small>Solicitar ou confirmar a transferência de um veículo.</small>
+                    <strong>Transferências</strong>
+                    <small>Acompanhar solicitações ou transferir um veículo existente.</small>
                   </span>
                   <CaretRight aria-hidden size={18} weight="bold" />
                 </Link>

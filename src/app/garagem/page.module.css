@@ -30,6 +30,56 @@
   margin-top: 4px;
 }
 
+.transferNotice {
+  align-items: center;
+  background: #eef5ff;
+  border: 1px solid #cbdcf4;
+  border-radius: 13px;
+  color: var(--app-blue);
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 15px;
+  min-height: 70px;
+  padding: 11px 13px;
+}
+
+.transferNotice:hover {
+  background: #e6f0fe;
+  border-color: #abc5e8;
+}
+
+.transferNotice:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline-offset: 2px;
+}
+
+.transferNoticeIcon {
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.transferNotice > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.transferNotice strong {
+  color: var(--app-ink);
+  font-size: 0.84rem;
+}
+
+.transferNotice small {
+  color: var(--app-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
 .vehicleList {
   display: grid;
   gap: 14px;
