@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CircleNotch, WarningCircle, XCircle } from "@phosphor-icons/react";
+import { CircleNotchIcon, WarningCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 import ActionButton from "../../../../components/action-button";
 import AppShell from "../../../../components/app-shell";
 import { getAuthSession } from "../../../../auth-session";
@@ -140,7 +140,7 @@ export default function MaintenanceAlertPage() {
 
       {requestState.loading ? (
         <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotch aria-hidden size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden size={25} weight="bold" />
           <p>Carregando alerta...</p>
         </section>
       ) : !requestState.alert ? (
@@ -189,7 +189,7 @@ export default function MaintenanceAlertPage() {
           {!requestState.readOnly && (
             <section className={`app-card ${styles.cancellationCard}`}>
               <div className={styles.cancellationHeading}>
-                <XCircle aria-hidden size={25} weight="duotone" />
+                <XCircleIcon aria-hidden size={25} weight="duotone" />
                 <div>
                   <h2>Cancelar alerta</h2>
                   <p>O alerta sairá da lista de manutenções pendentes</p>
@@ -201,7 +201,7 @@ export default function MaintenanceAlertPage() {
                   <p>Deseja realmente cancelar este alerta?</p>
                   {cancellationState.error && (
                     <p className="app-feedback app-feedback--error" role="alert">
-                      <WarningCircle aria-hidden size={18} weight="fill" />
+                      <WarningCircleIcon aria-hidden size={18} weight="fill" />
                       {cancellationState.error}
                     </p>
                   )}

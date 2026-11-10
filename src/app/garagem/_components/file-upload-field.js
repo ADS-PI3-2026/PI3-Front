@@ -2,11 +2,11 @@
 
 import { useId } from "react";
 import {
-  File,
-  FileImage,
-  FilePdf,
-  UploadSimple,
-  X,
+  FileIcon,
+  FileImageIcon,
+  FilePdfIcon,
+  UploadSimpleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import styles from "./file-upload-field.module.css";
 
@@ -26,11 +26,11 @@ function getFileType(file) {
 
 function FileTypeIcon({ file }) {
   const type = getFileType(file);
-  if (type === "PDF") return <FilePdf aria-hidden size={21} weight="duotone" />;
+  if (type === "PDF") return <FilePdfIcon aria-hidden size={21} weight="duotone" />;
   if (["PNG", "JPG"].includes(type)) {
-    return <FileImage aria-hidden size={21} weight="duotone" />;
+    return <FileImageIcon aria-hidden size={21} weight="duotone" />;
   }
-  return <File aria-hidden size={21} weight="duotone" />;
+  return <FileIcon aria-hidden size={21} weight="duotone" />;
 }
 
 function getFileKey(file) {
@@ -86,7 +86,7 @@ export default function FileUploadField({
           data-error={Boolean(error)}
           htmlFor={inputId}
         >
-          <UploadSimple aria-hidden size={26} weight="bold" />
+          <UploadSimpleIcon aria-hidden size={26} weight="bold" />
           <strong>
             {selectedFiles.length > 0 ? "Adicionar outros arquivos" : value || "Anexar arquivo"}
           </strong>
@@ -138,7 +138,7 @@ export default function FileUploadField({
                     title="Remover da seleção"
                     type="button"
                   >
-                    <X aria-hidden size={18} weight="bold" />
+                    <XIcon aria-hidden size={18} weight="bold" />
                   </button>
                 </li>
               );

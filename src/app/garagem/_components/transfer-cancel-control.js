@@ -1,6 +1,6 @@
 "use client";
 
-import { WarningCircle, XCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import ActionButton from "../../components/action-button";
 import styles from "./transfer-cancel-control.module.css";
@@ -22,7 +22,7 @@ export default function TransferCancelControl({ disabled = false, onConfirm }) {
         type="button"
         variant="secondary"
       >
-        <XCircle aria-hidden size={19} weight="bold" />
+        <XCircleIcon aria-hidden size={19} weight="bold" />
         Cancelar transferência
       </ActionButton>
     );
@@ -30,7 +30,7 @@ export default function TransferCancelControl({ disabled = false, onConfirm }) {
 
   return (
     <div className={styles.confirmation} role="alertdialog" aria-labelledby={titleId}>
-      <WarningCircle aria-hidden size={24} weight="fill" />
+      <WarningCircleIcon aria-hidden size={24} weight="fill" />
       <div>
         <strong id={titleId}>Cancelar esta transferência?</strong>
         <p>O veículo continuará com o proprietário atual</p>

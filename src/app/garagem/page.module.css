@@ -169,16 +169,17 @@
 }
 
 .vehicleHeading {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
+  gap: 12px;
 }
 
 .vehicleIdentity {
   align-items: center;
   display: flex;
+  flex: 1;
   gap: 11px;
   min-width: 0;
-  width: 100%;
 }
 
 .vehicleCopy {
@@ -196,44 +197,41 @@
   letter-spacing: -0.02em;
 }
 
-.vehicleDetails {
+.vehicleOverview {
   align-items: center;
   color: #5f6675;
-  display: flex;
-  font-size: 0.88rem;
-  gap: 12px;
-  justify-content: space-between;
-  margin-top: 2px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 10px;
 }
 
-.vehicleDetails span {
+.vehicleTypeIcon {
+  align-items: center;
+  color: #9299a6;
+  display: inline-flex;
+  justify-content: center;
+  width: 29px;
+}
+
+.vehicleMetadata {
+  display: grid;
+  font-size: 0.82rem;
+  gap: 4px;
   min-width: 0;
 }
 
-.vehicleDetails span:first-child {
+.vehicleMetadata > strong {
+  color: #3f4654;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.vehicleDetails span:last-child {
-  flex: 0 0 auto;
-}
-
-.mileage {
-  align-items: center;
-  color: #4d5565;
-  display: flex;
-  font-size: 0.88rem;
-  gap: 16px;
-  justify-content: space-between;
-  margin: 22px 0;
-}
-
 .mileageValue {
   align-items: center;
   display: inline-flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .maintenanceSummary {

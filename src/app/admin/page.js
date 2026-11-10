@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  ArrowsLeftRight,
-  ChartBar,
-  ClipboardText,
-  FileText,
-  ShieldCheck,
-  UsersThree,
-  Wrench,
+  ArrowsLeftRightIcon,
+  ChartBarIcon,
+  ClipboardTextIcon,
+  FileTextIcon,
+  ShieldCheckIcon,
+  UsersThreeIcon,
+  WrenchIcon,
 } from "@phosphor-icons/react";
 import AdminShell, { useAdminUser } from "../components/admin-shell";
 import styles from "./page.module.css";
@@ -16,27 +16,27 @@ const plannedModules = [
   {
     title: "Usuários e moderação",
     description: "Gerenciamento de contas internas e acompanhamento dos usuários da plataforma.",
-    Icon: UsersThree,
+    Icon: UsersThreeIcon,
   },
   {
     title: "Tipos de serviço",
     description: "Organização das categorias e dos campos utilizados nos registros de manutenção.",
-    Icon: Wrench,
+    Icon: WrenchIcon,
   },
   {
     title: "Textos legais",
     description: "Edição e publicação dos Termos de Uso e da Política de Privacidade.",
-    Icon: FileText,
+    Icon: FileTextIcon,
   },
   {
     title: "Mediações técnicas",
     description: "Acompanhamento de transferências pendentes que precisem de intervenção administrativa.",
-    Icon: ArrowsLeftRight,
+    Icon: ArrowsLeftRightIcon,
   },
   {
     title: "Trilha de auditoria",
     description: "Consulta futura dos registros de alterações e exclusões realizadas na plataforma.",
-    Icon: ClipboardText,
+    Icon: ClipboardTextIcon,
   },
 ];
 
@@ -53,7 +53,7 @@ function AdminDashboard() {
           <span>Esta é a área reservada para a administração do LegadoCar</span>
         </div>
         <div className={styles.restrictedBadge}>
-          <ShieldCheck aria-hidden size={22} weight="duotone" />
+          <ShieldCheckIcon aria-hidden size={22} weight="duotone" />
           Acesso administrativo
         </div>
       </section>
@@ -64,7 +64,7 @@ function AdminDashboard() {
             <p>Estrutura inicial</p>
             <h2 id="admin-modules-title">Módulos previstos</h2>
           </div>
-          <ChartBar aria-hidden size={28} weight="duotone" />
+          <ChartBarIcon aria-hidden size={28} weight="duotone" />
         </header>
 
         <div className={styles.moduleGrid}>
@@ -90,7 +90,7 @@ function AdminDashboard() {
             Os indicadores e as operações administrativas serão adicionados quando seus contratos e prioridades forem definidos pela equipe.
           </p>
         </div>
-        <ChartBar aria-hidden size={32} weight="duotone" />
+        <ChartBarIcon aria-hidden size={32} weight="duotone" />
       </section>
     </div>
   );

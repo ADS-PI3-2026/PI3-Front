@@ -44,13 +44,12 @@
 
 .mercosulTop {
   align-items: center;
-  background: #3154a3;
+  background: linear-gradient(180deg, #1554bd 0%, #083b9a 100%);
   color: #fff;
   display: flex;
-  justify-content: center;
-  grid-template-columns: 1fr auto 1fr;
   height: 9px;
   inset: 0 0 auto;
+  justify-content: center;
   padding: 0 4px;
   position: absolute;
   z-index: 2;
@@ -59,8 +58,56 @@
 .country {
   font-family: "Legado Plate", sans-serif;
   font-size: 6px;
-  letter-spacing: 0.3em;
   font-weight: 800;
+  letter-spacing: 0.22em;
+  padding-left: 0.22em;
+}
+
+.brazilFlag {
+  background: #159447;
+  border-radius: 1px;
+  height: 7px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+}
+
+.brazilFlag::before {
+  background: #f4d226;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  content: "";
+  height: 5px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+}
+
+.brazilFlag::after {
+  background: #24479a;
+  border-radius: 50%;
+  content: "";
+  height: 3px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+}
+
+.mercosulCountryCode {
+  bottom: 2px;
+  color: #17191b;
+  font-family: "Legado Plate", sans-serif;
+  font-size: 5px;
+  font-weight: 800;
+  left: 3px;
+  line-height: 1;
+  position: absolute;
+  z-index: 2;
 }
 
 .mercosul .plateNumber {
@@ -69,13 +116,18 @@
 }
 
 .antiga {
-  background: #eef4f3;
-  border: 1px solid #888888;
-  color: #2b2c2f;
+  background: #dfe7e7;
+  border: 1px solid rgba(132, 145, 148, 0.58);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    inset 0 -2px 4px rgba(80, 91, 94, 0.13),
+    0 2px 5px rgba(15, 24, 42, 0.14);
+  color: #17191b;
 }
 
 .antiga::before {
-  border: 1px solid #cfcfcf;
+  border: 1px solid rgba(116, 128, 131, 0.25);
   border-radius: 3px;
   content: "";
   inset: 1px;
@@ -96,8 +148,123 @@
   position: absolute;
 }
 
+.oldPlateTop {
+  align-items: center;
+  background: rgba(220, 228, 229, 0.84);
+  border: 1px solid rgba(96, 104, 106, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+  color: #202326;
+  display: flex;
+  font-family: "Legado Plate", sans-serif;
+  font-size: 5px;
+  font-weight: 700;
+  height: 9px;
+  inset: 3px 14px auto;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  position: absolute;
+  z-index: 2;
+}
+
+.oldPlateTop::before,
+.oldPlateTop::after {
+  background: #f3f6f6;
+  border: 1px solid #687174;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(171, 182, 184, 0.7);
+  content: "";
+  height: 4px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+}
+
+.oldPlateTop::before {
+  left: 4px;
+}
+
+.oldPlateTop::after {
+  right: 4px;
+}
+
 .antiga .plateNumber {
-  padding: 0 5px;
+  font-size: 18px;
+  padding: 1px 5px 0;
+  top: 10px;
+}
+
+.motorcycle {
+  border-radius: 6px;
+  height: 57px;
+  width: 70px;
+}
+
+.motorcycle .mercosulTop {
+  height: 13px;
+  padding-inline: 3px;
+}
+
+.motorcycle .country {
+  font-size: 6px;
+  letter-spacing: 0.18em;
+  padding-left: 0.18em;
+}
+
+.motorcycle .brazilFlag {
+  height: 9px;
+  right: 3px;
+  width: 13px;
+}
+
+.motorcycle .brazilFlag::before {
+  height: 6px;
+  width: 9px;
+}
+
+.motorcycle .brazilFlag::after {
+  height: 4px;
+  width: 4px;
+}
+
+.motorcycle .mercosulCountryCode {
+  bottom: 2px;
+  left: 2px;
+}
+
+.motorcycle .oldPlateTop {
+  border-color: rgba(126, 139, 142, 0.34);
+  font-size: 4px;
+  height: 10px;
+  inset: 4px 3px auto;
+}
+
+.motorcycle .oldPlateTop::before {
+  left: 3px;
+}
+
+.motorcycle .oldPlateTop::after {
+  right: 3px;
+}
+
+.motorcycle .motorcycleNumber {
+  flex-direction: column;
+  font-size: 18px;
+  gap: 0;
+  letter-spacing: 0.08em;
+  line-height: 0.92;
+  padding: 2px 3px 0;
+  text-indent: 0.08em;
+  transform: translateY(-3px);
+}
+
+.motorcycle.mercosul .motorcycleNumber {
+  top: 13px;
+}
+
+.motorcycle.antiga .motorcycleNumber {
+  top: 16px;
 }
 
 .default {

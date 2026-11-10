@@ -1,16 +1,16 @@
 "use client";
 
 import {
-  ArrowsLeftRight,
-  ChartBar,
-  ClipboardText,
-  FileText,
-  House,
-  List,
-  SignOut,
-  UsersThree,
-  Wrench,
-  X,
+  ArrowsLeftRightIcon,
+  ChartBarIcon,
+  ClipboardTextIcon,
+  FileTextIcon,
+  HouseIcon,
+  ListIcon,
+  SignOutIcon,
+  UsersThreeIcon,
+  WrenchIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,15 +23,15 @@ import LoadingScreen from "./loading-screen";
 import styles from "./admin-shell.module.css";
 
 const plannedNavigation = [
-  { label: "Usuários", Icon: UsersThree },
-  { label: "Tipos de serviço", Icon: Wrench },
-  { label: "Mediações", Icon: ArrowsLeftRight },
-  { label: "Auditoria", Icon: ClipboardText },
+  { label: "Usuários", Icon: UsersThreeIcon },
+  { label: "Tipos de serviço", Icon: WrenchIcon },
+  { label: "Mediações", Icon: ArrowsLeftRightIcon },
+  { label: "Auditoria", Icon: ClipboardTextIcon },
 ];
 
 const availableNavigation = [
-  { href: "/admin", label: "Visão geral", Icon: House },
-  { href: "/admin/conteudos-legais", label: "Textos legais", Icon: FileText },
+  { href: "/admin", label: "Visão geral", Icon: HouseIcon },
+  { href: "/admin/conteudos-legais", label: "Textos legais", Icon: FileTextIcon },
 ];
 
 const AdminUserContext = createContext(null);
@@ -91,7 +91,7 @@ export default function AdminShell({ children }) {
               onClick={() => setMenuOpen(true)}
               type="button"
             >
-              <List aria-hidden size={23} weight="bold" />
+              <ListIcon aria-hidden size={23} weight="bold" />
             </button>
             <div className={styles.brand}>
               <Image
@@ -115,7 +115,7 @@ export default function AdminShell({ children }) {
               <span>{user.email}</span>
             </div>
             <button disabled={loggingOut} onClick={logout} type="button">
-              <SignOut aria-hidden size={19} weight="bold" />
+              <SignOutIcon aria-hidden size={19} weight="bold" />
               {loggingOut ? "Saindo..." : "Sair"}
             </button>
           </div>
@@ -141,7 +141,7 @@ export default function AdminShell({ children }) {
                 onClick={() => setMenuOpen(false)}
                 type="button"
               >
-                <X aria-hidden size={21} weight="bold" />
+                <XIcon aria-hidden size={21} weight="bold" />
               </button>
             </div>
             <nav aria-label="Navegação administrativa">

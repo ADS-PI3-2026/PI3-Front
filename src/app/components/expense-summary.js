@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthErrorMessage } from "../auth-api";
 import { listMaintenanceExpenses, listVehicles } from "../garagem/_lib/garage-api";
@@ -115,7 +115,7 @@ export default function ExpenseSummary() {
         className={styles.trigger}
       >
         <strong>Ver resumo de gastos</strong>
-        <CaretDown aria-hidden className={styles.chevron} size={22} weight="bold" />
+        <CaretDownIcon aria-hidden className={styles.chevron} size={22} weight="bold" />
       </summary>
 
       <div className={styles.detailsContent}>

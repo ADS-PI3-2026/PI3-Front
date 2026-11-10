@@ -1,21 +1,22 @@
 "use client";
 
 import {
-  ArrowRight,
-  ArrowsLeftRight,
-  CaretRight,
-  CheckCircle,
-  CircleNotch,
-  EnvelopeSimple,
-  FloppyDisk,
-  Gauge,
-  IdentificationCard,
-  Info,
-  Palette,
-  ShieldCheck,
-  ShieldWarning,
-  Trash,
-  WarningCircle,
+  ArrowRightIcon,
+  ArrowsLeftRightIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  CircleNotchIcon,
+  EnvelopeSimpleIcon,
+  FloppyDiskIcon,
+  GaugeIcon,
+  IdentificationCardIcon,
+  InfoIcon,
+  PaletteIcon,
+  ShieldCheckIcon,
+  ShieldWarningIcon,
+  TrashIcon,
+  WarningCircleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -30,6 +31,11 @@ import {
   createEmptyCode,
   VERIFICATION_CODE_LENGTH,
 } from "../../../lib/form-validation";
+import {
+  clearPendingOtpRequest,
+  readPendingOtpRequest,
+  savePendingOtpRequest,
+} from "../../../lib/otp-request-state";
 import {
   convertLegacyPlateToMercosul,
   getVehiclePlateType,
@@ -51,11 +57,14 @@ import { onlyDigits } from "../../_lib/garage-validation";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
+const PLATE_OTP_PURPOSE = "change_plate_type";
+const VEHICLE_DELETION_OTP_PURPOSE = "vehicle_deletion";
 
 export default function ManageVehiclePage() {
   const params = useParams();
   const router = useRouter();
   const actionPanelRef = useRef(null);
+  const restoredOtpVehicleRef = useRef("");
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [retryRevision, setRetryRevision] = useState(0);
   const [requestState, setRequestState] = useState({
@@ -134,12 +143,43 @@ export default function ManageVehiclePage() {
     });
   }, [activeAction, panelScrollRevision]);
 
+  useEffect(() => {
+    if (requestState.loading || !requestState.vehicle
+      || restoredOtpVehicleRef.current === vehicleId) return;
+
+    restoredOtpVehicleRef.current = vehicleId;
+    const plateRequest = readPendingOtpRequest(PLATE_OTP_PURPOSE, vehicleId);
+    const deletionRequest = readPendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
+    const latestRequest = [plateRequest, deletionRequest]
+      .filter(Boolean)
+      .sort((first, second) => second.requestedAt - first.requestedAt)[0];
+
+    if (!latestRequest) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      if (latestRequest.purpose === PLATE_OTP_PURPOSE) {
+        setActiveAction("plate");
+        setPlateStep("code");
+        setPlateCode(createEmptyCode());
+        setPlateCodeError("");
+      } else {
+        setActiveAction("delete");
+        setDeleteStep("code");
+        setDeleteCode(createEmptyCode());
+        setDeleteCodeError("");
+      }
+      setPanelScrollRevision((revision) => revision + 1);
+    });
+    return () => { active = false; };
+  }, [requestState.loading, requestState.vehicle, vehicleId]);
+
   if (requestState.loading) {
     return (
       <AppShell>
         <PageTopBar title="Gerenciar veículo" />
         <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <p>Carregando veículo...</p>
         </section>
       </AppShell>
@@ -197,15 +237,17 @@ export default function ManageVehiclePage() {
   };
 
   const openPlateAction = () => {
+    const pendingRequest = readPendingOtpRequest(PLATE_OTP_PURPOSE, vehicleId);
     setActiveAction("plate");
     setPanelScrollRevision((revision) => revision + 1);
     setActionFeedback({ message: "", type: "" });
     setPlateCode(createEmptyCode());
     setPlateCodeError("");
-    setPlateStep("review");
+    setPlateStep(pendingRequest ? "code" : "review");
   };
 
   const openDeleteAction = () => {
+    const pendingRequest = readPendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
     setActiveAction("delete");
     setPanelScrollRevision((revision) => revision + 1);
     setActionFeedback({ message: "", type: "" });
@@ -213,7 +255,7 @@ export default function ManageVehiclePage() {
     setDeleteConfirmationError("");
     setDeleteCode(createEmptyCode());
     setDeleteCodeError("");
-    setDeleteStep("confirmation");
+    setDeleteStep(pendingRequest ? "code" : "confirmation");
   };
 
   const submitMileage = async (event) => {
@@ -305,6 +347,7 @@ export default function ManageVehiclePage() {
     setActionFeedback({ message: "", type: "" });
     try {
       await requestVehiclePlateChangeCode();
+      savePendingOtpRequest(PLATE_OTP_PURPOSE, vehicleId);
       setPlateCode(createEmptyCode());
       setPlateStep("code");
     } catch (error) {
@@ -314,6 +357,14 @@ export default function ManageVehiclePage() {
     } finally {
       setPlatePending(false);
     }
+  };
+
+  const cancelPlateConfirmation = () => {
+    clearPendingOtpRequest(PLATE_OTP_PURPOSE, vehicleId);
+    setPlateCode(createEmptyCode());
+    setPlateCodeError("");
+    setPlateStep("review");
+    setActionFeedback({ message: "", type: "" });
   };
 
   const confirmPlateChange = async (event) => {
@@ -333,6 +384,7 @@ export default function ManageVehiclePage() {
     try {
       const actionToken = await validateVehiclePlateChangeCode(plateCode.join(""));
       codeValidated = true;
+      clearPendingOtpRequest(PLATE_OTP_PURPOSE, vehicleId);
       await changeVehiclePlateType(vehicle.id, actionToken);
       window.location.reload();
     } catch (error) {
@@ -360,8 +412,9 @@ export default function ManageVehiclePage() {
 
     const normalizedConfirmation = deleteConfirmation.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const normalizedPlate = vehicle.plate.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const pendingRequest = readPendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
 
-    if (normalizedConfirmation !== normalizedPlate) {
+    if (!pendingRequest && normalizedConfirmation !== normalizedPlate) {
       setDeleteConfirmationError("Digite a placa completa do veículo para confirmar.");
       return;
     }
@@ -372,6 +425,7 @@ export default function ManageVehiclePage() {
     setActionFeedback({ message: "", type: "" });
     try {
       await requestVehicleDeletionCode();
+      savePendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
       setDeleteCode(createEmptyCode());
       setDeleteStep("code");
     } catch (error) {
@@ -386,6 +440,16 @@ export default function ManageVehiclePage() {
   const submitDeletionConfirmation = (event) => {
     event.preventDefault();
     void sendDeletionCode();
+  };
+
+  const cancelDeletionConfirmation = () => {
+    clearPendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
+    setDeleteCode(createEmptyCode());
+    setDeleteCodeError("");
+    setDeleteConfirmation("");
+    setDeleteConfirmationError("");
+    setDeleteStep("confirmation");
+    setActionFeedback({ message: "", type: "" });
   };
 
   const confirmVehicleDeletion = async (event) => {
@@ -404,6 +468,7 @@ export default function ManageVehiclePage() {
     try {
       const actionToken = await validateVehicleDeletionCode(deleteCode.join(""));
       codeValidated = true;
+      clearPendingOtpRequest(VEHICLE_DELETION_OTP_PURPOSE, vehicleId);
       await deleteVehicle(vehicle.id, actionToken);
       router.replace("/garagem");
     } catch (error) {
@@ -444,7 +509,7 @@ export default function ManageVehiclePage() {
               {vehicle.color ? ` · ${vehicle.color}` : ""}
             </p>
           </div>
-          <VehiclePlate plate={vehicle.plate} />
+          <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
         </section>
 
         <section aria-labelledby="management-options-title" className={styles.optionsSection}>
@@ -461,13 +526,13 @@ export default function ManageVehiclePage() {
               type="button"
             >
               <span className="app-action-icon">
-                <Gauge aria-hidden size={24} weight="duotone" />
+                <GaugeIcon aria-hidden size={24} weight="duotone" />
               </span>
               <span className="app-action-copy">
                 <strong>Atualizar quilometragem</strong>
                 <span>Odômetro atual: {mileageFormatter.format(vehicle.mileage)} km</span>
               </span>
-              <CaretRight aria-hidden size={19} weight="bold" />
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
             </button>
 
             <button
@@ -477,13 +542,13 @@ export default function ManageVehiclePage() {
               type="button"
             >
               <span className="app-action-icon">
-                <Palette aria-hidden size={24} weight="duotone" />
+                <PaletteIcon aria-hidden size={24} weight="duotone" />
               </span>
               <span className="app-action-copy">
                 <strong>Alterar cor</strong>
                 <span>Cor atual: {vehicle.color || "não informada"}</span>
               </span>
-              <CaretRight aria-hidden size={19} weight="bold" />
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
             </button>
 
             <Link
@@ -491,13 +556,13 @@ export default function ManageVehiclePage() {
               href={`/garagem/${vehicle.id}/gerenciar/transferencia`}
             >
               <span className="app-action-icon">
-                <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
+                <ArrowsLeftRightIcon aria-hidden size={23} weight="duotone" />
               </span>
               <span className="app-action-copy">
                 <strong>Transferência</strong>
                 <span>Alterar o proprietário responsável pelo veículo</span>
               </span>
-              <CaretRight aria-hidden size={19} weight="bold" />
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
             </Link>
 
             <button
@@ -508,7 +573,7 @@ export default function ManageVehiclePage() {
               type="button"
             >
               <span className="app-action-icon">
-                <IdentificationCard aria-hidden size={24} weight="duotone" />
+                <IdentificationCardIcon aria-hidden size={24} weight="duotone" />
               </span>
               <span className="app-action-copy">
                 <strong>Alteração de placa</strong>
@@ -522,11 +587,11 @@ export default function ManageVehiclePage() {
               </span>
               {plateAlreadyMercosul ? (
                 <span className="app-action-status">
-                  <CheckCircle aria-hidden size={17} weight="fill" />
+                  <CheckCircleIcon aria-hidden size={17} weight="fill" />
                   Atualizada
                 </span>
               ) : (
-                <CaretRight aria-hidden size={19} weight="bold" />
+                <CaretRightIcon aria-hidden size={19} weight="bold" />
               )}
             </button>
 
@@ -537,13 +602,13 @@ export default function ManageVehiclePage() {
               type="button"
             >
               <span className={`app-action-icon ${styles.dangerIcon}`}>
-                <Trash aria-hidden size={23} weight="duotone" />
+                <TrashIcon aria-hidden size={23} weight="duotone" />
               </span>
               <span className="app-action-copy">
                 <strong>Remover da garagem</strong>
                 <span>Remover o veículo e seu histórico da garagem</span>
               </span>
-              <CaretRight aria-hidden size={19} weight="bold" />
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
             </button>
           </div>
         </section>
@@ -552,7 +617,7 @@ export default function ManageVehiclePage() {
           <section className={`app-card ${styles.actionPanel}`} ref={actionPanelRef}>
             <div className={styles.panelHeading}>
               <span className="app-action-icon">
-                <Gauge aria-hidden size={24} weight="duotone" />
+                <GaugeIcon aria-hidden size={24} weight="duotone" />
               </span>
               <div>
                 <h2>Atualizar quilometragem</h2>
@@ -567,7 +632,7 @@ export default function ManageVehiclePage() {
                   className={`app-control-shell ${styles.mileageInput}`}
                   data-error={Boolean(mileageError)}
                 >
-                  <Gauge aria-hidden size={20} weight="regular" />
+                  <GaugeIcon aria-hidden size={20} weight="regular" />
                   <input
                     disabled={updatingMileage}
                     inputMode="numeric"
@@ -587,8 +652,8 @@ export default function ManageVehiclePage() {
 
               <ActionButton disabled={updatingMileage} type="submit">
                 {updatingMileage
-                  ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                  : <FloppyDisk aria-hidden size={20} weight="bold" />}
+                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                  : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
                 {updatingMileage ? "Atualizando..." : "Salvar quilometragem"}
               </ActionButton>
             </form>
@@ -599,7 +664,7 @@ export default function ManageVehiclePage() {
           <section className={`app-card ${styles.actionPanel}`} ref={actionPanelRef}>
             <div className={styles.panelHeading}>
               <span className="app-action-icon">
-                <Palette aria-hidden size={24} weight="duotone" />
+                <PaletteIcon aria-hidden size={24} weight="duotone" />
               </span>
               <div>
                 <h2>Alterar cor do veículo</h2>
@@ -614,7 +679,7 @@ export default function ManageVehiclePage() {
                   className={`app-control-shell ${styles.updateInput}`}
                   data-error={Boolean(colorError)}
                 >
-                  <Palette aria-hidden size={20} weight="regular" />
+                  <PaletteIcon aria-hidden size={20} weight="regular" />
                   <input
                     autoComplete="off"
                     disabled={updatingColor}
@@ -633,8 +698,8 @@ export default function ManageVehiclePage() {
 
               <ActionButton disabled={updatingColor} type="submit">
                 {updatingColor
-                  ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                  : <FloppyDisk aria-hidden size={20} weight="bold" />}
+                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                  : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
                 {updatingColor ? "Atualizando..." : "Salvar cor"}
               </ActionButton>
             </form>
@@ -645,7 +710,7 @@ export default function ManageVehiclePage() {
           <section className={`app-card ${styles.actionPanel}`} ref={actionPanelRef}>
             <div className={styles.panelHeading}>
               <span className="app-action-icon">
-                <IdentificationCard aria-hidden size={24} weight="duotone" />
+                <IdentificationCardIcon aria-hidden size={24} weight="duotone" />
               </span>
               <div>
                 <h2>Converter para o padrão Mercosul</h2>
@@ -656,31 +721,31 @@ export default function ManageVehiclePage() {
             <div aria-label="Conversão da placa" className={styles.plateComparison}>
               <div className={styles.plateStage}>
                 <span>Placa atual</span>
-                <VehiclePlate plate={vehicle.plate} />
+                <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
               </div>
-              <ArrowRight aria-hidden className={styles.conversionArrow} size={24} weight="bold" />
+              <ArrowRightIcon aria-hidden className={styles.conversionArrow} size={24} weight="bold" />
               <div className={styles.plateStage}>
                 <span>Nova placa</span>
-                <VehiclePlate plate={convertedPlate} />
+                <VehiclePlate plate={convertedPlate} type={vehicle.type} />
               </div>
             </div>
 
             <p className="app-feedback app-feedback--info">
-              <Info aria-hidden size={18} weight="fill" />
+              <InfoIcon aria-hidden size={18} weight="fill" />
               Apenas o segundo número do bloco numérico é convertido para a letra oficial correspondente.
             </p>
 
             {plateStep === "review" ? (
               <div className={styles.confirmationStep}>
                 <div className={styles.securityNotice}>
-                  <ShieldCheck aria-hidden size={22} weight="duotone" />
+                  <ShieldCheckIcon aria-hidden size={22} weight="duotone" />
                   <div>
                     <strong>Confirmação de segurança</strong>
                     <p>Enviaremos um código OTP para o e-mail cadastrado antes de alterar a placa</p>
                   </div>
                 </div>
                 <ActionButton disabled={platePending} onClick={sendPlateChangeCode} type="button">
-                  <EnvelopeSimple aria-hidden size={20} weight="bold" />
+                  <EnvelopeSimpleIcon aria-hidden size={20} weight="bold" />
                   {platePending ? "Enviando código..." : "Enviar código de confirmação"}
                 </ActionButton>
                 {plateCodeError && <p className="app-error-text" role="alert">{plateCodeError}</p>}
@@ -690,6 +755,7 @@ export default function ManageVehiclePage() {
                 <div className={styles.verificationHeading}>
                   <h3>Confirme a alteração</h3>
                   <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado</p>
+                  <p>O código permanece válido por até 10 minutos após o envio.</p>
                 </div>
                 <VerificationCodeFields
                   code={plateCode}
@@ -710,8 +776,17 @@ export default function ManageVehiclePage() {
                     {platePending ? "Reenviando..." : "Reenviar código"}
                   </button>
                   <ActionButton disabled={platePending} type="submit">
-                    <ShieldCheck aria-hidden size={20} weight="bold" />
+                    <ShieldCheckIcon aria-hidden size={20} weight="bold" />
                     {platePending ? "Confirmando..." : "Confirmar e converter placa"}
+                  </ActionButton>
+                  <ActionButton
+                    disabled={platePending}
+                    onClick={cancelPlateConfirmation}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XIcon aria-hidden size={20} weight="bold" />
+                    Cancelar alteração
                   </ActionButton>
                 </div>
               </form>
@@ -726,7 +801,7 @@ export default function ManageVehiclePage() {
           >
             <div className={styles.panelHeading}>
               <span className={`app-action-icon ${styles.dangerIcon}`}>
-                <ShieldWarning aria-hidden size={24} weight="duotone" />
+                <ShieldWarningIcon aria-hidden size={24} weight="duotone" />
               </span>
               <div>
                 <h2>Remover veículo da garagem</h2>
@@ -762,7 +837,7 @@ export default function ManageVehiclePage() {
                 </label>
 
                 <div className={styles.securityNotice}>
-                  <ShieldCheck aria-hidden size={22} weight="duotone" />
+                  <ShieldCheckIcon aria-hidden size={22} weight="duotone" />
                   <div>
                     <strong>Confirmação de segurança</strong>
                     <p>Enviaremos um código para o seu e-mail antes de remover o veículo</p>
@@ -771,8 +846,8 @@ export default function ManageVehiclePage() {
 
                 <ActionButton disabled={deletingVehicle} type="submit">
                   {deletingVehicle
-                    ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                    : <EnvelopeSimple aria-hidden size={20} weight="bold" />}
+                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <EnvelopeSimpleIcon aria-hidden size={20} weight="bold" />}
                   {deletingVehicle ? "Enviando código..." : "Enviar código de confirmação"}
                 </ActionButton>
                 {deleteCodeError && <p className="app-error-text" role="alert">{deleteCodeError}</p>}
@@ -782,6 +857,7 @@ export default function ManageVehiclePage() {
                 <div className={styles.verificationHeading}>
                   <h3>Confirme a remoção</h3>
                   <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado</p>
+                  <p>O código permanece válido por até 10 minutos após o envio.</p>
                 </div>
                 <VerificationCodeFields
                   code={deleteCode}
@@ -803,9 +879,18 @@ export default function ManageVehiclePage() {
                   </button>
                   <ActionButton disabled={deletingVehicle} type="submit" variant="danger">
                     {deletingVehicle
-                      ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                      : <Trash aria-hidden size={20} weight="bold" />}
+                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                      : <TrashIcon aria-hidden size={20} weight="bold" />}
                     {deletingVehicle ? "Confirmando..." : "Confirmar e remover veículo"}
+                  </ActionButton>
+                  <ActionButton
+                    disabled={deletingVehicle}
+                    onClick={cancelDeletionConfirmation}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XIcon aria-hidden size={20} weight="bold" />
+                    Cancelar remoção
                   </ActionButton>
                 </div>
               </form>
@@ -819,8 +904,8 @@ export default function ManageVehiclePage() {
             role={actionFeedback.type === "error" ? "alert" : "status"}
           >
             {actionFeedback.type === "error"
-              ? <WarningCircle aria-hidden size={18} weight="fill" />
-              : <CheckCircle aria-hidden size={18} weight="fill" />}
+              ? <WarningCircleIcon aria-hidden size={18} weight="fill" />
+              : <CheckCircleIcon aria-hidden size={18} weight="fill" />}
             {actionFeedback.message}
           </p>
         )}

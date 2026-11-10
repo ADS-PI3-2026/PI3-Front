@@ -1,19 +1,19 @@
 "use client";
 
 import {
-  ArrowLeft,
-  ArrowsLeftRight,
-  CalendarBlank,
-  CaretRight,
-  Check,
-  CheckCircle,
-  CircleNotch,
-  ClockCountdown,
-  HashStraight,
-  IdentificationCard,
-  Key,
-  ShieldCheck,
-  WarningCircle,
+  ArrowLeftIcon,
+  ArrowsLeftRightIcon,
+  CalendarBlankIcon,
+  CaretRightIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  CircleNotchIcon,
+  ClockCountdownIcon,
+  HashStraightIcon,
+  IdentificationCardIcon,
+  KeyIcon,
+  ShieldCheckIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import ActionButton from "../../components/action-button";
@@ -57,8 +57,8 @@ function ParticipantStatus({ confirmed, label }) {
     <div className={styles.participant}>
       <span className={confirmed ? styles.confirmedIcon : styles.pendingIcon}>
         {confirmed
-          ? <CheckCircle aria-hidden size={21} weight="fill" />
-          : <ClockCountdown aria-hidden size={21} weight="duotone" />}
+          ? <CheckCircleIcon aria-hidden size={21} weight="fill" />
+          : <ClockCountdownIcon aria-hidden size={21} weight="duotone" />}
       </span>
       <strong>{label}</strong>
       <span>{confirmed ? "Confirmado" : "Aguardando"}</span>
@@ -370,7 +370,7 @@ function BuyerTransferContent() {
       <>
         <PageTopBar title="Transferências" />
         <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <p>Carregando transferência...</p>
         </section>
       </>
@@ -389,35 +389,16 @@ function BuyerTransferContent() {
           <>
             {listActionFeedback.success && (
               <p className="app-feedback app-feedback--success" role="status">
-                <CheckCircle aria-hidden size={18} weight="fill" />
+                <CheckCircleIcon aria-hidden size={18} weight="fill" />
                 {listActionFeedback.success}
               </p>
             )}
             {listActionFeedback.error && (
               <p className="app-feedback app-feedback--error" role="alert">
-                <WarningCircle aria-hidden size={18} weight="fill" />
+                <WarningCircleIcon aria-hidden size={18} weight="fill" />
                 {listActionFeedback.error}
               </p>
             )}
-
-            <ActiveTransferList
-              error={transferList.error}
-              hasMore={transferList.hasMore}
-              items={transferList.items}
-              loading={transferList.loading}
-              loadingMore={transferList.loadingMore}
-              onLoadMore={() => void loadMoreTransfers()}
-              onRetry={() => setListRevision((revision) => revision + 1)}
-              onSelect={(selectedTransfer) => {
-                setTransfer(selectedTransfer);
-                setSelectedAction(null);
-                setCode(createEmptyCode());
-                setErrors({});
-                setFeedback("");
-                setListActionFeedback({ error: "", success: "" });
-              }}
-              total={transferList.total}
-            />
 
             <section aria-labelledby="new-transfer-title" className={styles.newTransferSection}>
               {!selectedAction ? (
@@ -430,24 +411,24 @@ function BuyerTransferContent() {
                   <div className={styles.choiceGrid}>
                     <button className={styles.choiceCard} onClick={() => chooseAction("request")} type="button">
                       <span className={styles.choiceIcon}>
-                        <IdentificationCard aria-hidden size={25} weight="duotone" />
+                        <IdentificationCardIcon aria-hidden size={25} weight="duotone" />
                       </span>
                       <span>
                         <strong>Solicitar transferência de um veículo</strong>
                         <small>Tenho a placa e o RENAVAM de um veículo e quero pedir a transferência do mesmo</small>
                       </span>
-                      <CaretRight aria-hidden size={19} weight="bold" />
+                      <CaretRightIcon aria-hidden size={19} weight="bold" />
                     </button>
 
                     <button className={styles.choiceCard} onClick={() => chooseAction("code")} type="button">
                       <span className={styles.choiceIcon}>
-                        <Key aria-hidden size={25} weight="duotone" />
+                        <KeyIcon aria-hidden size={25} weight="duotone" />
                       </span>
                       <span>
                         <strong>Confirmar uma transferência já iniciada</strong>
                         <small>O proprietário já iniciou o processo e me passou um código de confirmação</small>
                       </span>
-                      <CaretRight aria-hidden size={19} weight="bold" />
+                      <CaretRightIcon aria-hidden size={19} weight="bold" />
                     </button>
                   </div>
                 </>
@@ -459,7 +440,7 @@ function BuyerTransferContent() {
                     onClick={() => chooseAction(null)}
                     type="button"
                   >
-                    <ArrowLeft aria-hidden size={17} weight="bold" />
+                    <ArrowLeftIcon aria-hidden size={17} weight="bold" />
                     Escolher outra opção
                   </button>
 
@@ -467,7 +448,7 @@ function BuyerTransferContent() {
                     <>
                       <header className={styles.panelHeader}>
                         <span className={styles.introIcon}>
-                          <Key aria-hidden size={27} weight="duotone" />
+                          <KeyIcon aria-hidden size={27} weight="duotone" />
                         </span>
                         <div>
                           <h2>Confirmar com um código</h2>
@@ -489,7 +470,7 @@ function BuyerTransferContent() {
                         {errors.code && <p className="app-error-text">{errors.code}</p>}
                         {feedback && (
                           <p className="app-feedback app-feedback--error" role="alert">
-                            <WarningCircle aria-hidden size={18} weight="fill" />
+                            <WarningCircleIcon aria-hidden size={18} weight="fill" />
                             {feedback}
                           </p>
                         )}
@@ -502,7 +483,7 @@ function BuyerTransferContent() {
                     <>
                       <header className={styles.panelHeader}>
                         <span className={styles.introIcon}>
-                          <ArrowsLeftRight aria-hidden size={27} weight="duotone" />
+                          <ArrowsLeftRightIcon aria-hidden size={27} weight="duotone" />
                         </span>
                         <div>
                           <h2>Solicitar transferência de um veículo</h2>
@@ -511,7 +492,7 @@ function BuyerTransferContent() {
                       </header>
 
                       <div className={styles.panelNotice}>
-                        <ShieldCheck aria-hidden size={22} weight="duotone" />
+                        <ShieldCheckIcon aria-hidden size={22} weight="duotone" />
                         <p>A transferência só termina após as duas confirmações e não substitui o processo legal no DETRAN</p>
                       </div>
 
@@ -519,7 +500,7 @@ function BuyerTransferContent() {
                         <FormField
                           autoComplete="off"
                           error={errors.plate}
-                          Icon={IdentificationCard}
+                          Icon={IdentificationCardIcon}
                           label="Placa do veículo"
                           maxLength={8}
                           name="plate"
@@ -538,7 +519,7 @@ function BuyerTransferContent() {
                         <FormField
                           autoComplete="off"
                           error={errors.renavam}
-                          Icon={HashStraight}
+                          Icon={HashStraightIcon}
                           inputMode="numeric"
                           label="RENAVAM"
                           maxLength={11}
@@ -565,7 +546,7 @@ function BuyerTransferContent() {
                             type="checkbox"
                           />
                           <span className="app-checkbox-control">
-                            <Check aria-hidden size={15} weight="bold" />
+                            <CheckIcon aria-hidden size={15} weight="bold" />
                           </span>
                           <span>Confirmo que desejo solicitar a transferência deste veículo para minha garagem</span>
                         </label>
@@ -573,15 +554,15 @@ function BuyerTransferContent() {
 
                         {feedback && (
                           <p className="app-feedback app-feedback--error" role="alert">
-                            <WarningCircle aria-hidden size={18} weight="fill" />
+                            <WarningCircleIcon aria-hidden size={18} weight="fill" />
                             {feedback}
                           </p>
                         )}
 
                         <ActionButton disabled={pending} type="submit">
                           {pending
-                            ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                            : <ArrowsLeftRight aria-hidden size={20} weight="bold" />}
+                            ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                            : <ArrowsLeftRightIcon aria-hidden size={20} weight="bold" />}
                           {pending ? "Enviando solicitação..." : "Solicitar transferência"}
                         </ActionButton>
                       </form>
@@ -590,17 +571,36 @@ function BuyerTransferContent() {
                 </section>
               )}
             </section>
+
+            <ActiveTransferList
+              error={transferList.error}
+              hasMore={transferList.hasMore}
+              items={transferList.items}
+              loading={transferList.loading}
+              loadingMore={transferList.loadingMore}
+              onLoadMore={() => void loadMoreTransfers()}
+              onRetry={() => setListRevision((revision) => revision + 1)}
+              onSelect={(selectedTransfer) => {
+                setTransfer(selectedTransfer);
+                setSelectedAction(null);
+                setCode(createEmptyCode());
+                setErrors({});
+                setFeedback("");
+                setListActionFeedback({ error: "", success: "" });
+              }}
+              total={transferList.total}
+            />
           </>
         ) : transfer.status === "completed" ? (
           <section className={"app-card " + styles.resultState}>
-            <CheckCircle aria-hidden size={38} weight="fill" />
+            <CheckCircleIcon aria-hidden size={38} weight="fill" />
             <h2>Transferência concluída</h2>
             <p>O veículo já foi vinculado à sua garagem</p>
             <ActionButton onClick={clearTransfer} type="button">Voltar às solicitações</ActionButton>
           </section>
         ) : terminalStatus ? (
           <section className={"app-card " + styles.resultState + " " + styles.expiredState}>
-            <ClockCountdown aria-hidden size={38} weight="duotone" />
+            <ClockCountdownIcon aria-hidden size={38} weight="duotone" />
             <h2>Transferência encerrada</h2>
             <p>Esta solicitação não está mais disponível para confirmação</p>
             <ActionButton onClick={clearTransfer} type="button">Fazer nova solicitação</ActionButton>
@@ -608,13 +608,13 @@ function BuyerTransferContent() {
         ) : (
           <>
             <button className={styles.detailBack} onClick={closeTransferDetails} type="button">
-              <ArrowLeft aria-hidden size={17} weight="bold" />
+              <ArrowLeftIcon aria-hidden size={17} weight="bold" />
               Voltar para transferências
             </button>
 
             <header className={styles.intro}>
               <span className={styles.introIcon}>
-                <ArrowsLeftRight aria-hidden size={28} weight="duotone" />
+                <ArrowsLeftRightIcon aria-hidden size={28} weight="duotone" />
               </span>
               <div>
                 <h2>Transferência em andamento</h2>
@@ -627,7 +627,7 @@ function BuyerTransferContent() {
 
             <section className={"app-card " + styles.pendingCard}>
               <div className={styles.deadline}>
-                <CalendarBlank aria-hidden size={21} weight="duotone" />
+                <CalendarBlankIcon aria-hidden size={21} weight="duotone" />
                 <div>
                   <span>Prazo para confirmação</span>
                   <strong>{formatDeadline(transfer.expiresAt)}</strong>
@@ -667,14 +667,14 @@ function BuyerTransferContent() {
                 </form>
               ) : (
                 <p className="app-feedback app-feedback--success" role="status">
-                  <CheckCircle aria-hidden size={18} weight="fill" />
+                  <CheckCircleIcon aria-hidden size={18} weight="fill" />
                   Sua participação foi confirmada. Agora aguardamos o proprietário atual.
                 </p>
               )}
 
               {feedback && (
                 <p className="app-feedback app-feedback--error" role="alert">
-                  <WarningCircle aria-hidden size={18} weight="fill" />
+                  <WarningCircleIcon aria-hidden size={18} weight="fill" />
                   {feedback}
                 </p>
               )}

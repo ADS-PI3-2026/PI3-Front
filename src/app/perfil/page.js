@@ -4,14 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  DownloadSimple,
-  PencilSimple,
-  ShieldCheck,
-  SignOut,
-  Trash,
-  UserCircle,
-  WarningCircle,
-  X,
+  DownloadSimpleIcon,
+  PencilSimpleIcon,
+  ShieldCheckIcon,
+  SignOutIcon,
+  TrashIcon,
+  UserCircleIcon,
+  WarningCircleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../components/action-button";
 import AppShell, { useAuthUser } from "../components/app-shell";
@@ -22,18 +22,24 @@ import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
 import { deleteAccount, requestAccountDeletionCode, validateAccountDeletionCode } from "../account-api";
 import { logoutAuthSession } from "../session-api";
 import { CODE_RESEND_WAIT_SECONDS, createEmptyCode, formatCpf, formatCnpj } from "../lib/form-validation";
+import {
+  clearPendingOtpRequest,
+  readPendingOtpRequest,
+  savePendingOtpRequest,
+} from "../lib/otp-request-state";
 import EmailChangeDialog from "./email-change-dialog";
 import { startProfileSync } from "./profile-sync";
 import styles from "./page.module.css";
 
 const PROFILE_TABS = [
-  { id: "settings", label: "Dados pessoais", Icon: UserCircle },
-  { id: "privacy", label: "Privacidade e termos", Icon: ShieldCheck },
-  { id: "access", label: "Acesso à conta", Icon: SignOut },
-  { id: "deletion", label: "Excluir conta", Icon: Trash },
+  { id: "settings", label: "Dados pessoais", Icon: UserCircleIcon },
+  { id: "privacy", label: "Privacidade e termos", Icon: ShieldCheckIcon },
+  { id: "access", label: "Acesso à conta", Icon: SignOutIcon },
+  { id: "deletion", label: "Excluir conta", Icon: TrashIcon },
 ];
 
 const PWA_INSTALL_PROMOTION_DISMISSED_KEY = "legadocar:pwa-install-promotion-dismissed";
+const ACCOUNT_DELETION_OTP_PURPOSE = "account_deletion";
 
 function wasInstallPromotionDismissed() {
   if (typeof window === "undefined") return false;
@@ -82,6 +88,20 @@ function ProfileContent() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const pendingRequest = readPendingOtpRequest(ACCOUNT_DELETION_OTP_PURPOSE);
+      if (!pendingRequest) return;
+      setActiveTab("deletion");
+      setDeletionStep("code");
+      setDeletionCode(createEmptyCode());
+      setSentAt(pendingRequest.requestedAt);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if (!sentAt) return;
     const timer = window.setInterval(() => {
       setDeletionTimeLeft(Math.max(0, CODE_RESEND_WAIT_SECONDS - Math.floor((Date.now() - sentAt) / 1000)));
@@ -113,6 +133,7 @@ function ProfileContent() {
     setDeletionMessage("");
     try {
       await requestAccountDeletionCode();
+      savePendingOtpRequest(ACCOUNT_DELETION_OTP_PURPOSE);
       setDeletionCode(createEmptyCode());
       setActionToken("");
       setSentAt(Date.now());
@@ -130,12 +151,24 @@ function ProfileContent() {
     setDeletionMessage("");
     try {
       const token = await validateAccountDeletionCode(deletionCode.join(""));
+      clearPendingOtpRequest(ACCOUNT_DELETION_OTP_PURPOSE);
       setActionToken(token);
       setDeletionCode(createEmptyCode());
       setDeletionStep("confirm");
     } catch (error) {
       setDeletionMessage(getAuthFieldErrors(error).code ?? getAuthErrorMessage(error, "O código não pôde ser validado. Tente novamente."));
     } finally { setPending(false); }
+  };
+
+  const cancelAccountDeletion = () => {
+    clearPendingOtpRequest(ACCOUNT_DELETION_OTP_PURPOSE);
+    setDeletionCode(createEmptyCode());
+    setActionToken("");
+    setDeletionConfirmation("");
+    setDeletionMessage("");
+    setDeletionTimeLeft(0);
+    setSentAt(0);
+    setDeletionStep("request");
   };
 
   const submitDeletionRequest = async (event) => {
@@ -213,7 +246,7 @@ function ProfileContent() {
           <p>Conta e privacidade</p>
           <h1 className="app-page-title">Configurações do perfil</h1>
         </div>
-        <UserCircle aria-hidden size={36} weight="fill" />
+        <UserCircleIcon aria-hidden size={36} weight="fill" />
       </header>
 
       {profileMessage && (
@@ -226,7 +259,7 @@ function ProfileContent() {
       <div className={styles.profileLayout}>
         <section className={`app-card ${styles.profileSummary}`}>
           <div className={styles.avatar}>
-            <UserCircle aria-hidden size={58} weight="duotone" />
+            <UserCircleIcon aria-hidden size={58} weight="duotone" />
           </div>
           <div className={styles.profileIdentity}>
             <h2>{user.name}</h2>
@@ -238,7 +271,7 @@ function ProfileContent() {
                 title="Instalar aplicativo"
                 type="button"
               >
-                <DownloadSimple aria-hidden size={20} weight="bold" />
+                <DownloadSimpleIcon aria-hidden size={20} weight="bold" />
               </button>
             )}
           </div>
@@ -250,17 +283,17 @@ function ProfileContent() {
                 onClick={dismissInstallPromotion}
                 type="button"
               >
-                <X aria-hidden size={18} weight="bold" />
+                <XIcon aria-hidden size={18} weight="bold" />
               </button>
               <div className={styles.installPromotionContent}>
-                <DownloadSimple aria-hidden size={28} weight="duotone" />
+                <DownloadSimpleIcon aria-hidden size={28} weight="duotone" />
                 <div>
                   <strong>Instale o LegadoCar</strong>
                   <p>Acesse sua garagem como um aplicativo, sem precisar abrir o navegador</p>
                 </div>
               </div>
               <ActionButton onClick={() => void installApp()} type="button" variant="secondary">
-                <DownloadSimple aria-hidden size={20} weight="bold" />
+                <DownloadSimpleIcon aria-hidden size={20} weight="bold" />
                 Instalar aplicativo
               </ActionButton>
             </section>
@@ -306,10 +339,10 @@ function ProfileContent() {
               </div>
 
               <div className={styles.form}>
-                <FormField autoComplete="name" Icon={UserCircle} label="Nome" name="name" readOnly value={user.name} />
+                <FormField autoComplete="name" Icon={UserCircleIcon} label="Nome" name="name" readOnly value={user.name} />
                 <FormField
                   actionLabel="Alterar e-mail"
-                  ActionIcon={PencilSimple}
+                  ActionIcon={PencilSimpleIcon}
                   autoComplete="email"
                   emphasized
                   icon="envelope"
@@ -331,7 +364,7 @@ function ProfileContent() {
                   <p>Transparência</p>
                   <h2>Privacidade e termos</h2>
                 </div>
-                <ShieldCheck aria-hidden size={27} weight="duotone" />
+                <ShieldCheckIcon aria-hidden size={27} weight="duotone" />
               </div>
               <p className={styles.panelDescription}>Consulte os documentos que explicam o uso da plataforma e o tratamento dos seus dados</p>
               <div className={styles.linkList}>
@@ -348,11 +381,11 @@ function ProfileContent() {
                   <p>Sessão</p>
                   <h2>Acesso à conta</h2>
                 </div>
-                <SignOut aria-hidden size={27} weight="duotone" />
+                <SignOutIcon aria-hidden size={27} weight="duotone" />
               </div>
               <p className={styles.panelDescription}>Encerre com segurança a sessão atual neste dispositivo</p>
               <ActionButton disabled={pending} onClick={logout} type="button" variant="secondary">
-                <SignOut aria-hidden size={20} weight="bold" />
+                <SignOutIcon aria-hidden size={20} weight="bold" />
                 {pending ? "Saindo..." : "Sair da conta"}
               </ActionButton>
             </section>
@@ -364,7 +397,7 @@ function ProfileContent() {
                 <div>
                   <h2>Excluir minha conta</h2>
                 </div>
-                <Trash aria-hidden size={27} weight="duotone" />
+                <TrashIcon aria-hidden size={27} weight="duotone" />
               </div>
 
               {deletionStep === "request" && (
@@ -380,6 +413,7 @@ function ProfileContent() {
               {deletionStep === "code" && (
                 <form className={styles.deletionForm} noValidate onSubmit={verifyDeletionCode}>
                   <p>Digite o código de seis dígitos enviado para o e-mail cadastrado</p>
+                  <p>O código permanece válido por até 10 minutos após o envio.</p>
                   <VerificationCodeFields
                     code={deletionCode}
                     error={Boolean(deletionMessage)}
@@ -399,6 +433,15 @@ function ProfileContent() {
                   <ActionButton disabled={pending} type="submit" variant="danger">
                     {pending ? "Validando..." : "Validar código"}
                   </ActionButton>
+                  <ActionButton
+                    disabled={pending}
+                    onClick={cancelAccountDeletion}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XIcon aria-hidden size={20} weight="bold" />
+                    Cancelar exclusão
+                  </ActionButton>
                 </form>
               )}
 
@@ -407,7 +450,7 @@ function ProfileContent() {
                   <p>Código confirmado. Para concluir a exclusão da sua conta, digite DELETAR. Seus dados pessoais serão removidos e você perderá o acesso à conta</p>
                   <FormField
                     autoComplete="off"
-                    Icon={WarningCircle}
+                    Icon={WarningCircleIcon}
                     label="Digite DELETAR para continuar"
                     name="deletion-confirmation"
                     onChange={(event) => {
@@ -418,8 +461,17 @@ function ProfileContent() {
                   />
                   {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
                   <ActionButton disabled={pending} type="submit" variant="danger">
-                    <Trash aria-hidden size={20} weight="bold" />
+                    <TrashIcon aria-hidden size={20} weight="bold" />
                     {pending ? "Excluindo..." : "Confirmar exclusão"}
+                  </ActionButton>
+                  <ActionButton
+                    disabled={pending}
+                    onClick={cancelAccountDeletion}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XIcon aria-hidden size={20} weight="bold" />
+                    Cancelar exclusão
                   </ActionButton>
                 </form>
               )}

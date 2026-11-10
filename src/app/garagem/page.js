@@ -1,14 +1,16 @@
 "use client";
 
 import {
-  ArrowsLeftRight,
-  CalendarBlank,
-  Car,
-  CaretRight,
-  CircleNotch,
-  Gauge,
-  Plus,
-  WarningCircle,
+  ArrowsLeftRightIcon,
+  CalendarBlankIcon,
+  CarIcon,
+  CaretRightIcon,
+  CircleNotchIcon,
+  GaugeIcon,
+  MotorcycleIcon,
+  PlusIcon,
+  TruckIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +37,26 @@ const mileageFormatter = new Intl.NumberFormat("pt-BR");
 
 function formatMileage(value) {
   return mileageFormatter.format(value);
+}
+
+function VehicleTypeIcon({ type }) {
+  const vehicleTypes = {
+    cars: { icon: CarIcon, label: "Automóvel" },
+    motorcycles: { icon: MotorcycleIcon, label: "Motocicleta" },
+    trucks: { icon: TruckIcon, label: "Caminhão" },
+  };
+  const vehicleType = vehicleTypes[type] ?? vehicleTypes.cars;
+  const Icon = vehicleType.icon;
+
+  return (
+    <span
+      aria-label={`Tipo do veículo: ${vehicleType.label}`}
+      className={styles.vehicleTypeIcon}
+      role="img"
+    >
+      <Icon aria-hidden size={29} weight="duotone" />
+    </span>
+  );
 }
 
 export default function GaragePage() {
@@ -218,7 +240,7 @@ function GarageContent() {
           {pendingTransferCount > 0 && (
             <Link className={styles.transferNotice} href="/garagem/transferencia">
               <span className={styles.transferNoticeIcon}>
-                <ArrowsLeftRight aria-hidden size={24} weight="duotone" />
+                <ArrowsLeftRightIcon aria-hidden size={24} weight="duotone" />
               </span>
               <span>
                 <strong>
@@ -228,7 +250,7 @@ function GarageContent() {
                 </strong>
                 <small>Acompanhe, confirme ou cancele suas solicitações</small>
               </span>
-              <CaretRight aria-hidden size={19} weight="bold" />
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
             </Link>
           )}
 
@@ -239,7 +261,7 @@ function GarageContent() {
           <div aria-busy={requestState.loading || requestState.loadingMore} aria-live="polite" className={styles.vehicleList}>
             {requestState.loading ? (
               <div className={styles.loadingState} role="status">
-                <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+                <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
                 <span>Carregando seus veículos...</span>
               </div>
             ) : requestState.error ? (
@@ -271,20 +293,21 @@ function GarageContent() {
                         />
                         <div className={styles.vehicleCopy}>
                           <h3>{vehicle.model}</h3>
-                          <div className={styles.vehicleDetails}>
-                            <span>{vehicle.brand}</span>
-                            <span>{vehicle.version}</span>
-                          </div>
                         </div>
                       </div>
+                      <VehicleTypeIcon type={vehicle.type} />
                     </div>
 
-                    <div className={styles.mileage}>
-                      <span className={styles.mileageValue}>
-                        <Gauge aria-hidden size={21} weight="regular" />
-                        <span>{formatMileage(vehicle.mileage)} km</span>
-                      </span>
-                      <VehiclePlate plate={vehicle.plate} />
+                    <div className={styles.vehicleOverview}>
+                      <div className={styles.vehicleMetadata}>
+                        <strong>{vehicle.brand}</strong>
+                        <span>{vehicle.version}</span>
+                        <span className={styles.mileageValue}>
+                          <GaugeIcon aria-hidden size={19} weight="regular" />
+                          <span>{formatMileage(vehicle.mileage)} km</span>
+                        </span>
+                      </div>
+                      <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
                     </div>
 
                     {(maintenanceSummaries[vehicle.id]?.nextDateLabel
@@ -293,7 +316,7 @@ function GarageContent() {
                         {maintenanceSummaries[vehicle.id].nextDateLabel && (
                           <div className={styles.maintenanceRow}>
                             <span>
-                              <CalendarBlank aria-hidden size={17} weight="duotone" />
+                              <CalendarBlankIcon aria-hidden size={17} weight="duotone" />
                               Próxima manutenção
                             </span>
                             <strong>{maintenanceSummaries[vehicle.id].nextDateLabel}</strong>
@@ -302,7 +325,7 @@ function GarageContent() {
                         {maintenanceSummaries[vehicle.id].overdueCount > 0 && (
                           <div className={`${styles.maintenanceRow} ${styles.overdueRow}`}>
                             <span>
-                              <WarningCircle aria-hidden size={17} weight="fill" />
+                              <WarningCircleIcon aria-hidden size={17} weight="fill" />
                               Manutenções atrasadas
                             </span>
                             <strong>
@@ -328,7 +351,7 @@ function GarageContent() {
                     type="button"
                   >
                     {requestState.loadingMore && (
-                      <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                      <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
                     )}
                     {requestState.loadingMore ? "Carregando..." : "Carregar mais veículos"}
                   </button>
@@ -366,23 +389,23 @@ function GarageContent() {
                 </header>
                 <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
                   <span className={styles.addMenuIcon}>
-                    <Car aria-hidden size={23} weight="duotone" />
+                    <CarIcon aria-hidden size={23} weight="duotone" />
                   </span>
                   <span>
                     <strong>Cadastrar novo</strong>
                     <small>Adicionar um veículo que ainda não possui histórico</small>
                   </span>
-                  <CaretRight aria-hidden size={18} weight="bold" />
+                  <CaretRightIcon aria-hidden size={18} weight="bold" />
                 </Link>
                 <Link href="/garagem/transferencia" onClick={() => setAddMenuOpen(false)}>
                   <span className={styles.addMenuIcon}>
-                    <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
+                    <ArrowsLeftRightIcon aria-hidden size={23} weight="duotone" />
                   </span>
                   <span>
                     <strong>Transferências</strong>
                     <small>Acompanhar solicitações ou transferir um veículo existente</small>
                   </span>
-                  <CaretRight aria-hidden size={18} weight="bold" />
+                  <CaretRightIcon aria-hidden size={18} weight="bold" />
                 </Link>
               </div>
             </>
@@ -397,7 +420,7 @@ function GarageContent() {
               onClick={() => setAddMenuOpen((open) => !open)}
               type="button"
             >
-              <Plus aria-hidden size={28} weight="regular" />
+              <PlusIcon aria-hidden size={28} weight="regular" />
             </button>
           )}
         </section>
