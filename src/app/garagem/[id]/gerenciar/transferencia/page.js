@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  ArrowsLeftRight,
-  CalendarBlank,
-  Check,
-  CheckCircle,
-  CircleNotch,
-  ClockCountdown,
-  IdentificationCard,
-  ShieldWarning,
+  ArrowsLeftRightIcon,
+  CalendarBlankIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  CircleNotchIcon,
+  ClockCountdownIcon,
+  IdentificationCardIcon,
+  ShieldWarningIcon,
 } from "@phosphor-icons/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -52,8 +52,8 @@ function ParticipantStatus({ confirmed, description, label }) {
     <div className="app-process-status-row">
       <span className="app-action-icon">
         {confirmed
-          ? <CheckCircle aria-hidden size={22} weight="fill" />
-          : <ClockCountdown aria-hidden size={22} weight="duotone" />}
+          ? <CheckCircleIcon aria-hidden size={22} weight="fill" />
+          : <ClockCountdownIcon aria-hidden size={22} weight="duotone" />}
       </span>
       <span className="app-process-status-copy">
         <strong>{label}</strong>
@@ -359,7 +359,7 @@ function VehicleTransferContent() {
       <>
         <PageTopBar title="Transferir veículo" />
         <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <p>Carregando veículo...</p>
         </section>
       </>
@@ -414,7 +414,7 @@ function VehicleTransferContent() {
             <h2>{vehicle.name}</h2>
             <p>{vehicle.version}</p>
           </div>
-          <VehiclePlate plate={vehicle.plate} />
+          <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
         </section>
 
         {feedback && (
@@ -422,14 +422,14 @@ function VehicleTransferContent() {
         )}
         {successFeedback && (
           <p className="app-feedback app-feedback--success" role="status">
-            <CheckCircle aria-hidden size={18} weight="fill" />
+            <CheckCircleIcon aria-hidden size={18} weight="fill" />
             {successFeedback}
           </p>
         )}
 
         {!ready ? (
           <div className={styles.loadingState} role="status">
-            <CircleNotch aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
+            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
             Carregando transferência...
           </div>
         ) : !transfer ? (
@@ -440,7 +440,7 @@ function VehicleTransferContent() {
             </header>
 
             <section className="app-notice app-notice--danger">
-              <ShieldWarning aria-hidden size={25} weight="fill" />
+              <ShieldWarningIcon aria-hidden size={25} weight="fill" />
               <div>
                 <h2>Atenção importante</h2>
                 <p>A transferência será concluída somente após a confirmação das duas pessoas</p>
@@ -511,7 +511,7 @@ function VehicleTransferContent() {
               <FormField
                 autoComplete="email"
                 error={errors.recipient}
-                Icon={IdentificationCard}
+                Icon={IdentificationCardIcon}
                 label="E-mail do novo proprietário"
                 name="new-owner"
                 onChange={(event) => {
@@ -534,7 +534,7 @@ function VehicleTransferContent() {
                   type="checkbox"
                 />
                 <span className="app-checkbox-control">
-                  <Check aria-hidden size={15} weight="bold" />
+                  <CheckIcon aria-hidden size={15} weight="bold" />
                 </span>
                 <span>
                   Estou ciente de que, após as duas confirmações, o veículo e seu histórico serão transferidos para a outra pessoa.
@@ -545,8 +545,8 @@ function VehicleTransferContent() {
               <div className={styles.formActions}>
                 <ActionButton disabled={pending} type="submit">
                   {pending
-                    ? <CircleNotch aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                    : <ArrowsLeftRight aria-hidden size={20} weight="bold" />}
+                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <ArrowsLeftRightIcon aria-hidden size={20} weight="bold" />}
                   {pending ? "Iniciando..." : "Iniciar transferência"}
                 </ActionButton>
                 <ActionButton disabled={pending} onClick={() => router.back()} type="button" variant="secondary">
@@ -557,7 +557,7 @@ function VehicleTransferContent() {
           </>
         ) : terminalStatus ? (
           <section className={`app-card ${styles.expiredState}`}>
-            <ClockCountdown aria-hidden size={30} weight="duotone" />
+            <ClockCountdownIcon aria-hidden size={30} weight="duotone" />
             <h2>Transferência encerrada</h2>
             <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações</p>
             <ActionButton onClick={clearTransfer} type="button">
@@ -566,7 +566,7 @@ function VehicleTransferContent() {
           </section>
         ) : transfer.status === "completed" ? (
           <section className={`app-card ${styles.completedState}`}>
-            <CheckCircle aria-hidden size={34} weight="fill" />
+            <CheckCircleIcon aria-hidden size={34} weight="fill" />
             <h2>Transferência concluída</h2>
             <p>As duas confirmações foram realizadas e o veículo foi transferido</p>
             <ActionButton onClick={() => router.replace("/garagem")} type="button">
@@ -581,7 +581,7 @@ function VehicleTransferContent() {
             </header>
 
             <section className="app-notice app-notice--info">
-              <ClockCountdown aria-hidden size={25} weight="duotone" />
+              <ClockCountdownIcon aria-hidden size={25} weight="duotone" />
               <div>
                 <h2>Troque os códigos com o novo proprietário</h2>
                 <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele</p>
@@ -590,7 +590,7 @@ function VehicleTransferContent() {
 
             <section className={`app-card ${styles.pendingCard}`}>
               <div className={styles.deadline}>
-                <CalendarBlank aria-hidden size={21} weight="duotone" />
+                <CalendarBlankIcon aria-hidden size={21} weight="duotone" />
                 <div>
                   <span>Prazo para as duas confirmações</span>
                   <strong>{formatDeadline(transfer.expiresAt)}</strong>
@@ -632,7 +632,7 @@ function VehicleTransferContent() {
                 </form>
               ) : (
                 <p className="app-feedback app-feedback--success" role="status">
-                  <CheckCircle aria-hidden size={18} weight="fill" />
+                  <CheckCircleIcon aria-hidden size={18} weight="fill" />
                   Sua confirmação foi realizada. Agora falta a confirmação da outra pessoa.
                 </p>
               )}

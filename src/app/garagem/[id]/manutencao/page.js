@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import AppShell, { useAuthUser } from "../../../components/app-shell";
 import MaintenanceForm from "../../_components/maintenance-form";
 import PageTopBar from "../../_components/page-top-bar";
@@ -169,7 +169,7 @@ function NewMaintenanceContent() {
 
       {requestState.loading ? (
         <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotch aria-hidden size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden size={25} weight="bold" />
           <p>Carregando formulário de manutenção...</p>
         </section>
       ) : !requestState.vehicle ? (

@@ -5,6 +5,7 @@ import { clearAuthSession, getAuthSession, saveAuthSession } from "../src/app/au
 const originalWindow = globalThis.window;
 const key = "legado-car-session";
 let stored;
+let legacyStored;
 const user = { id: 1, name: "Pessoa Teste", email: "pessoa@example.test" };
 
 function jwt(exp) {
@@ -13,11 +14,19 @@ function jwt(exp) {
 
 beforeEach(() => {
   stored = new Map();
-  globalThis.window = { sessionStorage: {
-    getItem: (name) => stored.get(name) ?? null,
-    setItem: (name, value) => stored.set(name, value),
-    removeItem: (name) => stored.delete(name),
-  } };
+  legacyStored = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (name) => stored.get(name) ?? null,
+      setItem: (name, value) => stored.set(name, value),
+      removeItem: (name) => stored.delete(name),
+    },
+    sessionStorage: {
+      getItem: (name) => legacyStored.get(name) ?? null,
+      setItem: (name, value) => legacyStored.set(name, value),
+      removeItem: (name) => legacyStored.delete(name),
+    },
+  };
 });
 
 afterEach(() => {
@@ -51,6 +60,15 @@ test("sessões anteriores só continuam se forem reais e ainda válidas", () => 
   assert.equal(getAuthSession().expiresAt, expires * 1000);
 });
 
+test("migra uma sessão válida do armazenamento temporário para o persistente", () => {
+  const expires = Math.floor(Date.now() / 1000) + 3600;
+  legacyStored.set(key, JSON.stringify({ mode: "api", accessToken: jwt(expires), user }));
+
+  assert.equal(getAuthSession().expiresAt, expires * 1000);
+  assert.equal(stored.has(key), true);
+  assert.equal(legacyStored.has(key), false);
+});
+
 test("descarta sessão demonstrativa, inválida, corrompida ou expirada", () => {
   const expires = Math.floor(Date.now() / 1000) + 3600;
   const valid = { mode: "api", accessToken: jwt(expires), user };
@@ -80,6 +98,7 @@ test("não cria sessão sem dados válidos ou com token vencido", () => {
 });
 
 test("armazenamento bloqueado não libera acesso e exibe erro compreensível ao salvar", () => {
+  Object.defineProperty(globalThis.window, "localStorage", { get() { throw new Error("SecurityError"); } });
   Object.defineProperty(globalThis.window, "sessionStorage", { get() { throw new Error("SecurityError"); } });
   assert.equal(getAuthSession(), null);
   assert.doesNotThrow(clearAuthSession);

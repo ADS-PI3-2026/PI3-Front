@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import {
-  CircleNotch,
-  DownloadSimple,
-  File,
-  FileImage,
-  FilePdf,
-  LockKey,
-  Trash,
-  UploadSimple,
+  CircleNotchIcon,
+  DownloadSimpleIcon,
+  FileIcon,
+  FileImageIcon,
+  FilePdfIcon,
+  FloppyDiskIcon,
+  LockKeyIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import { getAuthErrorMessage } from "../../auth-api";
@@ -58,9 +58,9 @@ function isAcceptedFile(file) {
 }
 
 function AttachmentIcon({ mimeType }) {
-  if (mimeType === "application/pdf") return <FilePdf aria-hidden size={23} weight="duotone" />;
-  if (mimeType.startsWith("image/")) return <FileImage aria-hidden size={23} weight="duotone" />;
-  return <File aria-hidden size={23} weight="duotone" />;
+  if (mimeType === "application/pdf") return <FilePdfIcon aria-hidden size={23} weight="duotone" />;
+  if (mimeType.startsWith("image/")) return <FileImageIcon aria-hidden size={23} weight="duotone" />;
+  return <FileIcon aria-hidden size={23} weight="duotone" />;
 }
 
 export default function MaintenanceReceiptForm({ maintenance, onRefresh, serviceFields = [] }) {
@@ -201,7 +201,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
 
       <section className={`app-form-card ${styles.receiptForm}`}>
         <div className={styles.lockNotice}>
-          <LockKey aria-hidden size={20} weight="fill" />
+          <LockKeyIcon aria-hidden size={20} weight="fill" />
           <span>
             {maintenance.readonly
               ? "Registro de proprietário anterior disponível somente para consulta"
@@ -274,7 +274,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
                               onClick={() => void deleteAttachment(attachment)}
                               type="button"
                             >
-                              {busy ? <CircleNotch aria-hidden className={styles.loadingIcon} size={17} /> : null}
+                              {busy ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={17} /> : null}
                               Remover
                             </button>
                           </>
@@ -289,8 +289,8 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
                               type="button"
                             >
                               {busy
-                                ? <CircleNotch aria-hidden className={styles.loadingIcon} size={19} />
-                                : <DownloadSimple aria-hidden size={19} weight="bold" />}
+                                ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={19} />
+                                : <DownloadSimpleIcon aria-hidden size={19} weight="bold" />}
                             </button>
                             <button
                               aria-label={`Remover ${attachment.name}`}
@@ -300,7 +300,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
                               title="Remover comprovante"
                               type="button"
                             >
-                              <Trash aria-hidden size={19} weight="bold" />
+                              <TrashIcon aria-hidden size={19} weight="bold" />
                             </button>
                           </>
                         )}
@@ -336,9 +336,9 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
 
             <ActionButton disabled={uploading || Boolean(fileError)} type="submit">
               {uploading
-                ? <CircleNotch aria-hidden className={styles.loadingIcon} size={21} />
-                : <UploadSimple aria-hidden size={21} weight="bold" />}
-              {uploading ? "Enviando..." : "Enviar comprovantes"}
+                ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} />
+                : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
+              {uploading ? "Salvando..." : "Salvar alterações"}
             </ActionButton>
           </form>
         )}

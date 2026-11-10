@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
+import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import styles from "./searchable-select.module.css";
 
 function normalizeText(value) {
@@ -175,7 +175,7 @@ export default function SearchableSelect({
           </span>
         </span>
 
-        <CaretDown aria-hidden size={18} weight="bold" />
+        <CaretDownIcon aria-hidden size={18} weight="bold" />
       </button>
 
       {error ? (
@@ -189,7 +189,7 @@ export default function SearchableSelect({
       {open && (
         <div className={styles.dropdown}>
           <label className={styles.searchShell}>
-            <MagnifyingGlass
+            <MagnifyingGlassIcon
               aria-hidden
               size={18}
               weight="bold"

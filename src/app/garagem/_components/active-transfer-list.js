@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  ArrowsLeftRight,
-  CaretRight,
-  CircleNotch,
-  ClockCountdown,
-  WarningCircle,
+  ArrowsLeftRightIcon,
+  CaretRightIcon,
+  CircleNotchIcon,
+  ClockCountdownIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import styles from "./active-transfer-list.module.css";
@@ -37,7 +37,7 @@ function TransferRowContent({ transfer }) {
   return (
     <>
       <span className={styles.icon}>
-        <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
+        <ArrowsLeftRightIcon aria-hidden size={23} weight="duotone" />
       </span>
 
       <span className={styles.copy}>
@@ -52,12 +52,12 @@ function TransferRowContent({ transfer }) {
       <span className={styles.summary}>
         <span className={`${styles.progress} ${styles[progress.tone]}`}>{progress.label}</span>
         <small>
-          <ClockCountdown aria-hidden size={15} weight="duotone" />
+          <ClockCountdownIcon aria-hidden size={15} weight="duotone" />
           Até {formatDeadline(transfer.expiresAt)}
         </small>
       </span>
 
-      <CaretRight aria-hidden className={styles.caret} size={19} weight="bold" />
+      <CaretRightIcon aria-hidden className={styles.caret} size={19} weight="bold" />
     </>
   );
 }
@@ -85,12 +85,12 @@ export default function ActiveTransferList({
 
       {loading ? (
         <div className={styles.requestState} role="status">
-          <CircleNotch aria-hidden className={styles.loadingIcon} size={22} weight="bold" />
+          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={22} weight="bold" />
           Carregando transferências...
         </div>
       ) : error ? (
         <div className={styles.requestState} role="alert">
-          <WarningCircle aria-hidden size={23} weight="duotone" />
+          <WarningCircleIcon aria-hidden size={23} weight="duotone" />
           <strong>Não foi possível carregar as transferências</strong>
           <p>{error}</p>
           <button onClick={onRetry} type="button">Tentar novamente</button>
@@ -124,7 +124,7 @@ export default function ActiveTransferList({
 
           {hasMore && (
             <button className={styles.loadMore} disabled={loadingMore} onClick={onLoadMore} type="button">
-              {loadingMore && <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />}
+              {loadingMore && <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />}
               {loadingMore ? "Carregando..." : "Carregar mais"}
             </button>
           )}

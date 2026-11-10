@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ShieldCheck } from "@phosphor-icons/react";
+import { FileTextIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import AdminShell from "../../components/admin-shell";
 import styles from "./page.module.css";
 
@@ -25,7 +25,7 @@ export default function LegalContentPage() {
             <h1>Textos legais</h1>
             <span>Gerencie os documentos apresentados aos usuários do LegadoCar</span>
           </div>
-          <FileText aria-hidden size={34} weight="duotone" />
+          <FileTextIcon aria-hidden size={34} weight="duotone" />
         </header>
 
         <section aria-labelledby="legal-documents-title" className={styles.documentsSection}>
@@ -34,14 +34,14 @@ export default function LegalContentPage() {
               <p>Documentos utilizados atualmente</p>
               <h2 id="legal-documents-title">Publicação e edição</h2>
             </div>
-            <ShieldCheck aria-hidden size={27} weight="duotone" />
+            <ShieldCheckIcon aria-hidden size={27} weight="duotone" />
           </div>
 
           <div className={styles.documentList}>
             {documents.map((document) => (
               <article className={styles.documentCard} key={document.title}>
                 <span className={styles.documentIcon}>
-                  <FileText aria-hidden size={24} weight="duotone" />
+                  <FileTextIcon aria-hidden size={24} weight="duotone" />
                 </span>
                 <div>
                   <h3>{document.title}</h3>
@@ -54,7 +54,7 @@ export default function LegalContentPage() {
         </section>
 
         <section className={styles.information}>
-          <ShieldCheck aria-hidden size={26} weight="duotone" />
+          <ShieldCheckIcon aria-hidden size={26} weight="duotone" />
           <div>
             <h2>Área em preparação</h2>
             <p>

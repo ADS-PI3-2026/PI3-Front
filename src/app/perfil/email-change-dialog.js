@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { EnvelopeSimple, X } from "@phosphor-icons/react";
+import { EnvelopeSimpleIcon, XIcon } from "@phosphor-icons/react";
 import ActionButton from "../components/action-button";
 import FormField from "../components/form-field";
 import VerificationCodeFields from "../components/verification-code-fields";
@@ -76,9 +76,9 @@ export default function EmailChangeDialog({ user, onClose }) {
     <div className={styles.overlay} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal="true" className={styles.dialog} ref={dialogRef} role="dialog">
         <button aria-label="Fechar alteração de e-mail" className={styles.closeButton} onClick={onClose} type="button">
-          <X aria-hidden size={20} weight="bold" />
+          <XIcon aria-hidden size={20} weight="bold" />
         </button>
-        <span className={styles.icon}><EnvelopeSimple aria-hidden size={26} weight="duotone" /></span>
+        <span className={styles.icon}><EnvelopeSimpleIcon aria-hidden size={26} weight="duotone" /></span>
         <p className={styles.eyebrow}>Dados pessoais</p>
         <h2 id={titleId} ref={titleRef} tabIndex={-1}>{step === "email" ? "Alterar e-mail" : requiresCurrentCode ? "Confirme os dois e-mails" : "Confirme o novo e-mail"}</h2>
         <p className={styles.description} id={descriptionId}>

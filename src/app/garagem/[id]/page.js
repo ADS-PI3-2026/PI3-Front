@@ -4,20 +4,20 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BellRinging,
-  CalendarBlank,
-  CaretRight,
-  CheckCircle,
-  CircleNotch,
-  FilePdf,
-  Gauge,
-  LockKey,
-  Eye,
-  PencilSimple,
-  Plus,
-  GearSix,
-  WarningCircle,
-  Wrench,
+  BellRingingIcon,
+  CalendarBlankIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  CircleNotchIcon,
+  FilePdfIcon,
+  GaugeIcon,
+  LockKeyIcon,
+  EyeIcon,
+  PencilSimpleIcon,
+  PlusIcon,
+  GearSixIcon,
+  WarningCircleIcon,
+  WrenchIcon,
   ClockCounterClockwiseIcon,
   CardsIcon,
 } from "@phosphor-icons/react";
@@ -203,7 +203,7 @@ export default function VehicleHistoryPage() {
       <AppShell>
         <PageTopBar backHref="/garagem" title="Manutenções" />
         <section className={styles.loadingState} role="status">
-          <CircleNotch aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
+          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <span>Carregando dados do veículo...</span>
         </section>
       </AppShell>
@@ -259,6 +259,7 @@ export default function VehicleHistoryPage() {
           <VehicleBrandLogo
             brandId={vehicle.brandId}
             className={styles.brandLogo}
+            imageSize={160}
             type={vehicle.type}
           />
           <span className={styles.vehicleBrand}>{vehicle.brand}</span>
@@ -276,7 +277,7 @@ export default function VehicleHistoryPage() {
               <dd>{vehicle.color || "Não informada"}</dd>
             </div>
           </dl>
-          <VehiclePlate plate={vehicle.plate} />
+          <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
         </div>
 
         <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
@@ -294,9 +295,9 @@ export default function VehicleHistoryPage() {
           className={styles.manageButton}
           href={`/garagem/${vehicle.id}/gerenciar`}
         >
-          <GearSix aria-hidden className={styles.manageIcon} size={19} weight="bold" />
+          <GearSixIcon aria-hidden className={styles.manageIcon} size={19} weight="bold" />
           <span>Gerenciar veículo</span>
-          <CaretRight aria-hidden className={styles.manageArrow} size={18} weight="bold" />
+          <CaretRightIcon aria-hidden className={styles.manageArrow} size={18} weight="bold" />
         </Link>
       </section>
 
@@ -319,22 +320,25 @@ export default function VehicleHistoryPage() {
                   <h2>Histórico de manutenção</h2>
                 </div>
                 <div className={styles.sectionHeadingActions}>
-                  {pagination.maintenances.total > 0 && (
-                    <button
-                      className={styles.pdfButton}
-                      disabled={pdfState.loading}
-                      onClick={() => void downloadHistory()}
-                      type="button"
-                    >
-                      {pdfState.loading
-                        ? <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
-                        : <FilePdf aria-hidden size={18} weight="bold" />}
-                      {pdfState.loading ? "Preparando..." : "Baixar PDF"}
-                    </button>
-                  )}
                   <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
                 </div>
               </header>
+
+              {pagination.maintenances.total > 0 && (
+                <div className={styles.pdfActionRow}>
+                  <button
+                    className={styles.pdfButton}
+                    disabled={pdfState.loading}
+                    onClick={() => void downloadHistory()}
+                    type="button"
+                  >
+                    {pdfState.loading
+                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                      : <FilePdfIcon aria-hidden size={18} weight="bold" />}
+                    {pdfState.loading ? "Preparando seu histórico..." : "Baixar histórico em PDF"}
+                  </button>
+                </div>
+              )}
 
               {pdfState.error && (
                 <p className={styles.pdfError} role="alert">{pdfState.error}</p>
@@ -353,8 +357,8 @@ export default function VehicleHistoryPage() {
                       >
                         <span className={`${styles.timelineMarker} ${toneClass}`}>
                           {item.readonly
-                            ? <LockKey aria-hidden size={16} weight="bold" />
-                            : <CheckCircle aria-hidden size={16} weight="fill" />}
+                            ? <LockKeyIcon aria-hidden size={16} weight="bold" />
+                            : <CheckCircleIcon aria-hidden size={16} weight="fill" />}
                         </span>
 
                         <div className={`app-card ${styles.historyCard}`}>
@@ -362,12 +366,12 @@ export default function VehicleHistoryPage() {
                             <h3>{item.title}</h3>
                             <div className={styles.badges}>
                               <span className={`${styles.statusBadge} ${toneClass}`}>
-                                <CheckCircle aria-hidden size={14} weight="fill" />
+                                <CheckCircleIcon aria-hidden size={14} weight="fill" />
                                 Realizada
                               </span>
                               {item.readonly && (
                                 <span className={styles.readonlyBadge}>
-                                  <LockKey aria-hidden size={13} weight="fill" />
+                                  <LockKeyIcon aria-hidden size={13} weight="fill" />
                                   Apenas leitura
                                 </span>
                               )}
@@ -376,11 +380,11 @@ export default function VehicleHistoryPage() {
 
                           <div className={styles.itemMeta}>
                             <span>
-                              <CalendarBlank aria-hidden size={18} weight="bold" />
+                              <CalendarBlankIcon aria-hidden size={18} weight="bold" />
                               {item.date}
                             </span>
                             <span>
-                              <Gauge aria-hidden size={18} weight="regular" />
+                              <GaugeIcon aria-hidden size={18} weight="regular" />
                               {formatMileage(item.mileage)} km
                             </span>
                             <Link
@@ -388,15 +392,15 @@ export default function VehicleHistoryPage() {
                               href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
                             >
                               {item.readonly
-                                ? <Eye aria-hidden size={14} weight="bold" />
-                                : <PencilSimple aria-hidden size={14} weight="bold" />}
-                              {item.readonly ? "Detalhes" : "Comprovantes"}
+                                ? <EyeIcon aria-hidden size={14} weight="bold" />
+                                : <PencilSimpleIcon aria-hidden size={14} weight="bold" />}
+                              Ver detalhes
                             </Link>
                           </div>
 
                           {item.attachment && (
                             <span className={styles.attachmentLink}>
-                              <FilePdf aria-hidden size={18} weight="bold" />
+                              <FilePdfIcon aria-hidden size={18} weight="bold" />
                               {item.attachment}
                             </span>
                           )}
@@ -417,7 +421,7 @@ export default function VehicleHistoryPage() {
                           type="button"
                         >
                           {loadMoreState.loading === "maintenances" && (
-                            <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
                           )}
                           {loadMoreState.loading === "maintenances"
                             ? "Carregando..."
@@ -442,7 +446,7 @@ export default function VehicleHistoryPage() {
                   <span>Prazos e lembretes</span>
                   <h2>Alertas de manutenção</h2>
                 </div>
-                <BellRinging aria-hidden size={27} weight="duotone" />
+                <BellRingingIcon aria-hidden size={27} weight="duotone" />
               </header>
 
               {alertItems.length > 0 ? (
@@ -459,7 +463,7 @@ export default function VehicleHistoryPage() {
                             <h3>{item.title}</h3>
                           </div>
                           <span className={`${styles.statusBadge} ${toneClass}`}>
-                            <WarningCircle aria-hidden size={14} weight="fill" />
+                            <WarningCircleIcon aria-hidden size={14} weight="fill" />
                             {item.status}
                           </span>
                         </div>
@@ -468,14 +472,14 @@ export default function VehicleHistoryPage() {
 
                         <div className={styles.alertFooter}>
                           <span>
-                            <Wrench aria-hidden size={18} weight="bold" />
+                            <WrenchIcon aria-hidden size={18} weight="bold" />
                             {item.category}
                           </span>
                           <Link
                             className={styles.editLink}
                             href={`/garagem/${vehicle.id}/alerta/${item.id}`}
                           >
-                            <PencilSimple aria-hidden size={14} weight="bold" />
+                            <PencilSimpleIcon aria-hidden size={14} weight="bold" />
                             Abrir alerta
                           </Link>
                         </div>
@@ -495,7 +499,7 @@ export default function VehicleHistoryPage() {
                           type="button"
                         >
                           {loadMoreState.loading === "alerts" && (
-                            <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
                           )}
                           {loadMoreState.loading === "alerts"
                             ? "Carregando..."
@@ -507,7 +511,7 @@ export default function VehicleHistoryPage() {
                 </>
               ) : (
                 <div className={styles.inlineEmptyState}>
-                  <BellRinging aria-hidden size={30} weight="duotone" />
+                  <BellRingingIcon aria-hidden size={30} weight="duotone" />
                   <h3>Nenhuma manutenção pendente</h3>
                   <p>Novos lembretes de manutenção aparecerão nesta visualização</p>
                 </div>
@@ -522,7 +526,7 @@ export default function VehicleHistoryPage() {
         className={`app-floating-action ${styles.addMaintenanceButton}`}
         href={`/garagem/${vehicle.id}/manutencao`}
       >
-        <Plus aria-hidden size={28} weight="regular" />
+        <PlusIcon aria-hidden size={28} weight="regular" />
       </Link>
     </AppShell>
   );

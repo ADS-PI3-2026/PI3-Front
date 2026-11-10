@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  CaretDown,
-  CircleNotch,
-  CloudArrowUp,
-  FloppyDisk,
-  Gauge,
-  WifiSlash,
+  CaretDownIcon,
+  CircleNotchIcon,
+  CloudArrowUpIcon,
+  FloppyDiskIcon,
+  GaugeIcon,
+  WifiSlashIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import SegmentedControl from "../../components/segmented-control";
@@ -85,7 +85,7 @@ function DynamicField({ disabled, error, field, onChange, value }) {
             <option value="true">Sim</option>
             <option value="false">Não</option>
           </select>
-          <CaretDown aria-hidden size={18} weight="bold" />
+          <CaretDownIcon aria-hidden size={18} weight="bold" />
         </span>
         {field.description && <small id={descriptionId}>{field.description}</small>}
         {error && <small className="app-error-text" id={errorId}>{error}</small>}
@@ -110,7 +110,7 @@ function DynamicField({ disabled, error, field, onChange, value }) {
               <option key={option} value={option}>{option}</option>
             ))}
           </select>
-          <CaretDown aria-hidden size={18} weight="bold" />
+          <CaretDownIcon aria-hidden size={18} weight="bold" />
         </span>
         {field.description && <small id={descriptionId}>{field.description}</small>}
         {error && <small className="app-error-text" id={errorId}>{error}</small>}
@@ -488,8 +488,8 @@ export default function MaintenanceForm({
       {syncMessage && !readOnly && (
         <div className={styles.draftStatus} data-offline={!isOnline || queuedForSync} role="status">
           {!isOnline || queuedForSync
-            ? <WifiSlash aria-hidden size={20} weight="duotone" />
-            : <CloudArrowUp aria-hidden size={20} weight="duotone" />}
+            ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
+            : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
           <p>{syncMessage}</p>
         </div>
       )}
@@ -523,7 +523,7 @@ export default function MaintenanceForm({
                 </option>
               ))}
             </select>
-            <CaretDown aria-hidden size={18} weight="bold" />
+            <CaretDownIcon aria-hidden size={18} weight="bold" />
           </span>
           {selectedServiceType?.description && <small>{selectedServiceType.description}</small>}
           {errors.category && <small className="app-error-text">{errors.category}</small>}
@@ -531,7 +531,7 @@ export default function MaintenanceForm({
 
         {fieldsLoading && (
           <p className={styles.loadingFields} role="status">
-            <CircleNotch aria-hidden size={18} weight="bold" />
+            <CircleNotchIcon aria-hidden size={18} weight="bold" />
             {form.status === "Realizada"
               ? "Carregando detalhes do serviço..."
               : "Preparando categoria do alerta..."}
@@ -557,7 +557,7 @@ export default function MaintenanceForm({
           <label className="app-field">
             <span>Quilometragem no serviço (km)</span>
             <span className={`app-control-shell ${styles.inputShell}`} data-error={Boolean(errors.mileage)}>
-              <Gauge aria-hidden size={20} weight="regular" />
+              <GaugeIcon aria-hidden size={20} weight="regular" />
               <input
                 disabled={submitting || readOnly}
                 inputMode="numeric"
@@ -594,7 +594,7 @@ export default function MaintenanceForm({
               className={`app-control-shell ${styles.inputShell}`}
               data-error={Boolean(errors.mileageDue || errors.deadline)}
             >
-              <Gauge aria-hidden size={20} weight="regular" />
+              <GaugeIcon aria-hidden size={20} weight="regular" />
               <input
                 disabled={submitting || readOnly}
                 inputMode="numeric"
@@ -693,8 +693,8 @@ export default function MaintenanceForm({
             type="submit"
           >
             {submitting
-              ? <CircleNotch aria-hidden className={styles.loadingIcon} size={21} weight="bold" />
-              : <FloppyDisk aria-hidden size={21} weight="bold" />}
+              ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} weight="bold" />
+              : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
             {submissionCompleted
               ? "Manutenção registrada"
               : queuedForSync

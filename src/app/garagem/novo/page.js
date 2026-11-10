@@ -4,13 +4,13 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Car,
-  CircleNotch,
-  Gauge,
-  IdentificationCard,
-  Motorcycle,
-  Palette,
-  Truck,
+  CarIcon,
+  CircleNotchIcon,
+  GaugeIcon,
+  IdentificationCardIcon,
+  MotorcycleIcon,
+  PaletteIcon,
+  TruckIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
@@ -55,9 +55,9 @@ const initialForm = {
 };
 
 const vehicleTypeIcons = {
-  cars: Car,
-  motorcycles: Motorcycle,
-  trucks: Truck,
+  cars: CarIcon,
+  motorcycles: MotorcycleIcon,
+  trucks: TruckIcon,
 };
 
 const vehicleTypeShortLabels = {
@@ -325,7 +325,7 @@ export default function NewVehiclePage() {
       {garageState.loading ? (
         <main className={styles.limitScreen}>
           <section className="app-empty-state app-empty-state--narrow" role="status">
-            <CircleNotch aria-hidden className={styles.submitIcon} size={26} weight="bold" />
+            <CircleNotchIcon aria-hidden className={styles.submitIcon} size={26} weight="bold" />
             <p>Verificando disponibilidade da garagem...</p>
           </section>
         </main>
@@ -360,7 +360,7 @@ export default function NewVehiclePage() {
               className={styles.brandLogo}
             />
           ) : (
-            <Car aria-hidden size={36} weight="fill" className={styles.icon} />
+            <CarIcon aria-hidden size={36} weight="fill" className={styles.icon} />
           )}
         </div>
         <div className={`app-form-heading ${styles.heading}`}>
@@ -453,7 +453,7 @@ export default function NewVehiclePage() {
               className={`app-control-shell ${styles.inputShell}`}
               data-error={Boolean(errors.color)}
             >
-              <Palette aria-hidden size={20} weight="regular" />
+              <PaletteIcon aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
                 disabled={submitting}
@@ -475,7 +475,7 @@ export default function NewVehiclePage() {
               className={`app-control-shell ${styles.inputShell}`}
               data-error={Boolean(errors.plate)}
             >
-              <IdentificationCard aria-hidden size={20} weight="regular" />
+              <IdentificationCardIcon aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
                 autoCapitalize="characters"
@@ -503,7 +503,7 @@ export default function NewVehiclePage() {
               className={`app-control-shell ${styles.inputShell}`}
               data-error={Boolean(errors.renavam)}
             >
-              <IdentificationCard aria-hidden size={20} weight="regular" />
+              <IdentificationCardIcon aria-hidden size={20} weight="regular" />
               <input
                 autoComplete="off"
                 disabled={submitting}
@@ -531,7 +531,7 @@ export default function NewVehiclePage() {
               className={`app-control-shell ${styles.inputShell}`}
               data-error={Boolean(errors.mileage)}
             >
-              <Gauge aria-hidden size={20} weight="regular" />
+              <GaugeIcon aria-hidden size={20} weight="regular" />
               <input
                 disabled={submitting}
                 inputMode="numeric"
@@ -564,8 +564,8 @@ export default function NewVehiclePage() {
           ) : (
             <ActionButton disabled={submitting} form="new-vehicle-form" type="submit">
               {submitting
-                ? <CircleNotch aria-hidden className={styles.submitIcon} size={21} weight="bold" />
-                : <Car aria-hidden size={21} weight="bold" />}
+                ? <CircleNotchIcon aria-hidden className={styles.submitIcon} size={21} weight="bold" />
+                : <CarIcon aria-hidden size={21} weight="bold" />}
               {submitting ? "Adicionando veículo..." : "Adicionar veículo à garagem"}
             </ActionButton>
           )}

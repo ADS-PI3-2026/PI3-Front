@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Car, CheckCircle, UserCircle, X } from "@phosphor-icons/react";
+import { CarIcon, CheckCircleIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
 import { recheckSession, useSession } from "./session-provider";
 import { isAdminUser } from "../lib/user-access";
 import { consumeNavigationFeedback } from "../lib/navigation-feedback";
@@ -11,8 +11,8 @@ import LoadingScreen from "./loading-screen";
 import styles from "./app-shell.module.css";
 
 const navigationItems = [
-  { href: "/garagem", label: "Garagem", Icon: Car },
-  { href: "/perfil", label: "Perfil", Icon: UserCircle },
+  { href: "/garagem", label: "Garagem", Icon: CarIcon },
+  { href: "/perfil", label: "Perfil", Icon: UserCircleIcon },
 ];
 
 const AuthUserContext = createContext(null);
@@ -50,14 +50,14 @@ export default function AppShell({ children }) {
         <div className={styles.content}>
           {navigationFeedback && (
             <div className={styles.navigationFeedback} role="status">
-              <CheckCircle aria-hidden size={21} weight="fill" />
+              <CheckCircleIcon aria-hidden size={21} weight="fill" />
               <p>{navigationFeedback}</p>
               <button
                 aria-label="Fechar mensagem"
                 onClick={() => setNavigationFeedback("")}
                 type="button"
               >
-                <X aria-hidden size={18} weight="bold" />
+                <XIcon aria-hidden size={18} weight="bold" />
               </button>
             </div>
           )}

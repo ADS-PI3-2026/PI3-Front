@@ -1,13 +1,21 @@
 export const AUTH_SESSION_EVENT = "legado-car-session-changed";
 
-const SESSION_STORAGE_KEY = "legado-car-session";
+const AUTH_STORAGE_KEY = "legado-car-session";
 
-function getSessionStorage() {
+function getBrowserStorage(name) {
   try {
-    return typeof window !== "undefined" ? window.sessionStorage : null;
+    return typeof window !== "undefined" ? window[name] : null;
   } catch {
     return null;
   }
+}
+
+function getAuthStorage() {
+  return getBrowserStorage("localStorage") ?? getBrowserStorage("sessionStorage");
+}
+
+function getLegacySessionStorage() {
+  return getBrowserStorage("sessionStorage");
 }
 
 function isValidUser(user) {
@@ -54,9 +62,12 @@ export function saveAuthSession({ authResult, sessionId }) {
     user: data.user,
   };
   try {
-    const storage = getSessionStorage();
+    const storage = getAuthStorage();
     if (!storage) throw new Error("Armazenamento indisponível.");
-    storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+    if (storage !== getLegacySessionStorage()) {
+      getLegacySessionStorage()?.removeItem(AUTH_STORAGE_KEY);
+    }
   } catch {
     throw new Error("Não foi possível salvar sua sessão neste navegador. Permita o armazenamento do site e tente novamente.");
   }
@@ -65,10 +76,18 @@ export function saveAuthSession({ authResult, sessionId }) {
 }
 
 export function getAuthSession() {
-  const storage = getSessionStorage();
+  const storage = getAuthStorage();
   if (!storage) return null;
   try {
-    const stored = storage.getItem(SESSION_STORAGE_KEY);
+    const legacyStorage = getLegacySessionStorage();
+    let stored = storage.getItem(AUTH_STORAGE_KEY);
+    if (!stored && legacyStorage && legacyStorage !== storage) {
+      stored = legacyStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        storage.setItem(AUTH_STORAGE_KEY, stored);
+        legacyStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    }
     if (!stored) return null;
     const session = JSON.parse(stored);
     const tokenExpiration = typeof session?.accessToken === "string"
@@ -79,7 +98,7 @@ export function getAuthSession() {
     if (session?.mode !== "api" || typeof session.accessToken !== "string"
       || !session.accessToken.trim() || !isValidUser(session.user)
       || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-      storage.removeItem(SESSION_STORAGE_KEY);
+      storage.removeItem(AUTH_STORAGE_KEY);
       return null;
     }
     return { ...session, sessionId: session.sessionId ?? session.createdAt ?? session.accessToken, expiresAt, tokenType: "bearer" };
@@ -91,7 +110,8 @@ export function getAuthSession() {
 
 export function clearAuthSession() {
   try {
-    getSessionStorage()?.removeItem(SESSION_STORAGE_KEY);
+    getAuthStorage()?.removeItem(AUTH_STORAGE_KEY);
+    getLegacySessionStorage()?.removeItem(AUTH_STORAGE_KEY);
     if (typeof window !== "undefined") window.dispatchEvent?.(new Event(AUTH_SESSION_EVENT));
   } catch {
     // O navegador pode bloquear o armazenamento; a leitura já recusa a sessão.
@@ -102,7 +122,7 @@ export function updateAuthSessionUser(user, expectedSessionId) {
   const session = getAuthSession();
   if (!session || session.sessionId !== expectedSessionId || !isValidUser(user)) return;
   const next = { ...session, email: user.email, user };
-  getSessionStorage().setItem(SESSION_STORAGE_KEY, JSON.stringify(next));
+  getAuthStorage().setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
   window.dispatchEvent?.(new Event(AUTH_SESSION_EVENT));
   return next;
 }

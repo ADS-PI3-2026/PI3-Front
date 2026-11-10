@@ -1,11 +1,11 @@
 "use client";
 
-import { Car } from "@phosphor-icons/react";
+import { CarIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useState } from "react";
 import styles from "./vehicle-brand-logo.module.css";
 
-export default function VehicleBrandLogo({ brandId, className = "", type = "cars" }) {
+export default function VehicleBrandLogo({ brandId, className = "", imageSize = 48, type = "cars" }) {
   const logoSrc = brandId ? `/brandLogos/${type}/${brandId}.webp` : "";
   const [failedLogoSrc, setFailedLogoSrc] = useState("");
   const showLogo = logoSrc && failedLogoSrc !== logoSrc;
@@ -19,13 +19,13 @@ export default function VehicleBrandLogo({ brandId, className = "", type = "cars
         <Image
           alt=""
           className={styles.logo}
-          height={48}
+          height={imageSize}
           onError={() => setFailedLogoSrc(logoSrc)}
           src={logoSrc}
-          width={48}
+          width={imageSize}
         />
       ) : (
-        <Car className={styles.fallbackIcon} size={22} weight="fill" />
+        <CarIcon className={styles.fallbackIcon} size={22} weight="fill" />
       )}
     </span>
   );

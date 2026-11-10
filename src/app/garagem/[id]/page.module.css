@@ -190,6 +190,12 @@
   opacity: 0.72;
 }
 
+.pdfActionRow {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 16px;
+}
+
 .pdfError {
   background: #fff0ef;
   border: 1px solid #f4cfca;
@@ -197,7 +203,7 @@
   color: var(--app-danger, #b42318);
   font-size: 0.8rem;
   line-height: 1.45;
-  margin: -9px 0 16px;
+  margin: 0 0 16px;
   padding: 10px 12px;
 }
 
@@ -353,6 +359,11 @@
 .editLink {
   background: #eef4ff;
   color: #074793;
+}
+
+.itemMeta .editLink,
+.alertFooter .editLink {
+  margin-left: auto;
 }
 
 .editLink:hover {

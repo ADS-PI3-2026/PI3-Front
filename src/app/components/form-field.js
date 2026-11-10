@@ -2,20 +2,20 @@
 
 import { useId } from "react";
 import {
-  EnvelopeSimple,
-  Eye,
-  EyeSlash,
-  IdentificationCard,
-  LockKey,
-  UserCircle,
+  EnvelopeSimpleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  IdentificationCardIcon,
+  LockKeyIcon,
+  UserCircleIcon,
 } from "@phosphor-icons/react";
 import styles from "./form-field.module.css";
 
 const ICONS = {
-  envelope: EnvelopeSimple,
-  idCard: IdentificationCard,
-  lock: LockKey,
-  user: UserCircle,
+  envelope: EnvelopeSimpleIcon,
+  idCard: IdentificationCardIcon,
+  lock: LockKeyIcon,
+  user: UserCircleIcon,
 };
 
 export default function FormField({
@@ -35,7 +35,7 @@ export default function FormField({
   const generatedId = useId();
   const errorId = `${generatedId}-error`;
   const LeadingIcon = Icon ?? ICONS[icon];
-  const VisibilityIcon = type === "password" ? Eye : EyeSlash;
+  const VisibilityIcon = type === "password" ? EyeIcon : EyeSlashIcon;
 
   return (
     <label className={`app-field ${styles.field}`}>
