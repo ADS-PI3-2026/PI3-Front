@@ -1,16 +1,13 @@
 "use client";
 
 import {
-  ArrowRight,
-  CalendarBlank,
-  CheckCircle,
+  ArrowsLeftRight,
+  CaretRight,
   CircleNotch,
   ClockCountdown,
   WarningCircle,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import ActionButton from "../../components/action-button";
-import TransferCancelControl from "./transfer-cancel-control";
 import styles from "./active-transfer-list.module.css";
 
 function formatDeadline(value) {
@@ -22,25 +19,55 @@ function formatDeadline(value) {
   }).format(date);
 }
 
-function ConfirmationStatus({ confirmed, label }) {
+function getProgress(transfer) {
+  const isOwner = transfer.role === "owner";
+  const userConfirmed = isOwner ? transfer.ownerValidated : transfer.recipientValidated;
+  const counterpartConfirmed = isOwner ? transfer.recipientValidated : transfer.ownerValidated;
+
+  if (!userConfirmed) return { label: "Sua confirmação está pendente", tone: "action" };
+  if (!counterpartConfirmed) return { label: "Aguardando a outra pessoa", tone: "waiting" };
+  return { label: "Confirmações recebidas", tone: "confirmed" };
+}
+
+function TransferRowContent({ transfer }) {
+  const isOwner = transfer.role === "owner";
+  const progress = getProgress(transfer);
+  const counterpart = transfer.counterpart?.name || transfer.counterpart?.email;
+
   return (
-    <span className={confirmed ? styles.confirmed : styles.waiting}>
-      {confirmed
-        ? <CheckCircle aria-hidden size={17} weight="fill" />
-        : <ClockCountdown aria-hidden size={17} weight="duotone" />}
-      {label}: {confirmed ? "confirmado" : "aguardando"}
-    </span>
+    <>
+      <span className={styles.icon}>
+        <ArrowsLeftRight aria-hidden size={23} weight="duotone" />
+      </span>
+
+      <span className={styles.copy}>
+        <span className={styles.role}>{isOwner ? "Você está enviando" : "Você está recebendo"}</span>
+        <strong>{transfer.vehicle?.model || "Veículo"}</strong>
+        <small>
+          {transfer.vehicle?.plate || "Placa não informada"}
+          {counterpart ? ` · ${counterpart}` : ""}
+        </small>
+      </span>
+
+      <span className={styles.summary}>
+        <span className={`${styles.progress} ${styles[progress.tone]}`}>{progress.label}</span>
+        <small>
+          <ClockCountdown aria-hidden size={15} weight="duotone" />
+          Até {formatDeadline(transfer.expiresAt)}
+        </small>
+      </span>
+
+      <CaretRight aria-hidden className={styles.caret} size={19} weight="bold" />
+    </>
   );
 }
 
 export default function ActiveTransferList({
-  cancellingId,
   error,
   hasMore,
   items,
   loading,
   loadingMore,
-  onCancel,
   onLoadMore,
   onRetry,
   onSelect,
@@ -50,8 +77,8 @@ export default function ActiveTransferList({
     <section aria-labelledby="active-transfers-title" className={styles.section}>
       <header className={styles.header}>
         <div>
-          <h2 id="active-transfers-title">Transferências em andamento</h2>
-          <p>Acompanhe as confirmações ou cancele uma solicitação pendente.</p>
+          <h2 id="active-transfers-title">Em andamento</h2>
+          <p>Abra uma transferência para ver os detalhes e continuar</p>
         </div>
         {!loading && !error && total > 0 && <span>{total}</span>}
       </header>
@@ -70,81 +97,38 @@ export default function ActiveTransferList({
         </div>
       ) : items.length === 0 ? (
         <div className={styles.emptyState}>
-          <CheckCircle aria-hidden size={25} weight="duotone" />
-          <div>
-            <strong>Nenhuma transferência em andamento</strong>
-            <p>Quando houver uma solicitação pendente, ela aparecerá aqui.</p>
-          </div>
+          <strong>Nenhuma transferência em andamento</strong>
         </div>
       ) : (
-        <div className={styles.list}>
-          {items.map((transfer) => {
-            const isOwner = transfer.role === "owner";
-            const counterpartLabel = isOwner ? "Novo proprietário" : "Proprietário atual";
-            const continueHref = `/garagem/${transfer.vehicleId}/gerenciar/transferencia`;
+        <>
+          <ul className={styles.list}>
+            {items.map((transfer) => {
+              const isOwner = transfer.role === "owner";
+              const continueHref = `/garagem/${transfer.vehicleId}/gerenciar/transferencia`;
 
-            return (
-              <article className={`app-card ${styles.card}`} key={transfer.id}>
-                <div className={styles.cardHeading}>
-                  <div>
-                    <span className={styles.role}>{isOwner ? "Você está enviando" : "Você está recebendo"}</span>
-                    <h3>{transfer.vehicle?.model || "Veículo"}</h3>
-                    <p>{transfer.vehicle?.plate || "Placa não informada"}</p>
-                  </div>
-                  <span className={styles.status}>Em andamento</span>
-                </div>
-
-                {transfer.counterpart && (
-                  <div className={styles.counterpart}>
-                    <span>{counterpartLabel}</span>
-                    <strong>{transfer.counterpart.name || transfer.counterpart.email}</strong>
-                    {transfer.counterpart.name && transfer.counterpart.email && <small>{transfer.counterpart.email}</small>}
-                  </div>
-                )}
-
-                <div className={styles.confirmations}>
-                  <ConfirmationStatus confirmed={transfer.ownerValidated} label="Proprietário" />
-                  <ConfirmationStatus confirmed={transfer.recipientValidated} label="Destinatário" />
-                </div>
-
-                <div className={styles.deadline}>
-                  <CalendarBlank aria-hidden size={18} weight="duotone" />
-                  <span>Prazo</span>
-                  <strong>{formatDeadline(transfer.expiresAt)}</strong>
-                </div>
-
-                <div className={styles.actions}>
+              return (
+                <li key={transfer.id}>
                   {isOwner ? (
-                    <Link className={styles.continueLink} href={continueHref}>
-                      Continuar
-                      <ArrowRight aria-hidden size={18} weight="bold" />
+                    <Link className={styles.row} href={continueHref}>
+                      <TransferRowContent transfer={transfer} />
                     </Link>
                   ) : (
-                    <ActionButton
-                      disabled={cancellingId === transfer.id}
-                      onClick={() => onSelect(transfer)}
-                      type="button"
-                    >
-                      Continuar
-                      <ArrowRight aria-hidden size={18} weight="bold" />
-                    </ActionButton>
+                    <button className={styles.row} onClick={() => onSelect(transfer)} type="button">
+                      <TransferRowContent transfer={transfer} />
+                    </button>
                   )}
-                  <TransferCancelControl
-                    disabled={cancellingId === transfer.id}
-                    onConfirm={() => onCancel(transfer)}
-                  />
-                </div>
-              </article>
-            );
-          })}
+                </li>
+              );
+            })}
+          </ul>
 
           {hasMore && (
             <button className={styles.loadMore} disabled={loadingMore} onClick={onLoadMore} type="button">
               {loadingMore && <CircleNotch aria-hidden className={styles.loadingIcon} size={18} weight="bold" />}
-              {loadingMore ? "Carregando..." : "Carregar mais transferências"}
+              {loadingMore ? "Carregando..." : "Carregar mais"}
             </button>
           )}
-        </div>
+        </>
       )}
     </section>
   );

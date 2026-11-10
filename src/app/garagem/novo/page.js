@@ -493,7 +493,7 @@ export default function NewVehiclePage() {
             {errors.plate ? (
               <small className="app-error-text">{errors.plate}</small>
             ) : (
-              <small>Padrão Mercosul ou antigo.</small>
+              <small>Padrão Mercosul ou antigo</small>
             )}
           </label>
 
@@ -521,7 +521,7 @@ export default function NewVehiclePage() {
             {errors.renavam ? (
               <small className="app-error-text">{errors.renavam}</small>
             ) : (
-              <small>O RENAVAM pode possuir 9 ou 11 dígitos.</small>
+              <small>O RENAVAM pode possuir 9 ou 11 dígitos</small>
             )}
           </label>
 

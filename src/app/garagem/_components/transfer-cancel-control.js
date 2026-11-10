@@ -33,7 +33,7 @@ export default function TransferCancelControl({ disabled = false, onConfirm }) {
       <WarningCircle aria-hidden size={24} weight="fill" />
       <div>
         <strong id={titleId}>Cancelar esta transferência?</strong>
-        <p>O veículo continuará com o proprietário atual.</p>
+        <p>O veículo continuará com o proprietário atual</p>
       </div>
       <div className={styles.actions}>
         <ActionButton disabled={disabled} onClick={() => void confirmCancellation()} type="button" variant="danger">

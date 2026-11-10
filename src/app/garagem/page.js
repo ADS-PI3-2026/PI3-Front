@@ -226,22 +226,14 @@ function GarageContent() {
                     ? "transferência em andamento"
                     : "transferências em andamento"}
                 </strong>
-                <small>Acompanhe, confirme ou cancele suas solicitações.</small>
+                <small>Acompanhe, confirme ou cancele suas solicitações</small>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
             </Link>
           )}
 
           <div className={styles.sectionHeader}>
-            <div>
-              <h2 id="vehicles-title">Meus veículos</h2>
-              {showRemainingRegistrations && (
-                <p>
-                  Você ainda pode cadastrar {remainingRegistrations}{" "}
-                  {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
-                </p>
-              )}
-            </div>
+            <h2 id="vehicles-title">Meus veículos</h2>
           </div>
 
           <div aria-busy={requestState.loading || requestState.loadingMore} aria-live="polite" className={styles.vehicleList}>
@@ -259,7 +251,7 @@ function GarageContent() {
             ) : requestState.vehicles.length === 0 ? (
               <div className={styles.requestState}>
                 <h3>Sua garagem está vazia</h3>
-                <p>Cadastre seu primeiro veículo para começar a registrar manutenções e alertas.</p>
+                <p>Cadastre seu primeiro veículo para começar a registrar manutenções e alertas</p>
               </div>
             ) : (
               <>
@@ -345,6 +337,13 @@ function GarageContent() {
             )}
           </div>
 
+          {showRemainingRegistrations && (
+            <p className={styles.registrationAvailability}>
+              Você ainda pode cadastrar {remainingRegistrations}{" "}
+              {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
+            </p>
+          )}
+
           {registrationLimitReached && <VehicleRegistrationLimit />}
 
           {addMenuOpen && showAddVehicleButton && (
@@ -363,7 +362,7 @@ function GarageContent() {
               >
                 <header>
                   <strong>Adicionar veículo</strong>
-                  <span>Escolha como deseja continuar.</span>
+                  <span>Escolha como deseja continuar</span>
                 </header>
                 <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
                   <span className={styles.addMenuIcon}>
@@ -371,7 +370,7 @@ function GarageContent() {
                   </span>
                   <span>
                     <strong>Cadastrar novo</strong>
-                    <small>Adicionar um veículo que ainda não possui histórico.</small>
+                    <small>Adicionar um veículo que ainda não possui histórico</small>
                   </span>
                   <CaretRight aria-hidden size={18} weight="bold" />
                 </Link>
@@ -381,7 +380,7 @@ function GarageContent() {
                   </span>
                   <span>
                     <strong>Transferências</strong>
-                    <small>Acompanhar solicitações ou transferir um veículo existente.</small>
+                    <small>Acompanhar solicitações ou transferir um veículo existente</small>
                   </span>
                   <CaretRight aria-hidden size={18} weight="bold" />
                 </Link>

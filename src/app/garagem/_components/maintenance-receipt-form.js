@@ -196,7 +196,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
     <main className={`app-form-screen ${styles.formScreen}`}>
       <div className="app-form-heading">
         <h2>Detalhes da manutenção</h2>
-        <p>Consulte os dados registrados e os comprovantes deste serviço.</p>
+        <p>Consulte os dados registrados e os comprovantes deste serviço</p>
       </div>
 
       <section className={`app-form-card ${styles.receiptForm}`}>
@@ -239,7 +239,7 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
           </div>
 
           {maintenance.attachments.length === 0 ? (
-            <p className={styles.emptyAttachments}>Nenhum comprovante anexado.</p>
+            <p className={styles.emptyAttachments}>Nenhum comprovante anexado</p>
           ) : (
             <ul className={styles.attachmentList}>
               {maintenance.attachments.map((attachment) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretDown } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthErrorMessage } from "../auth-api";
 import { listMaintenanceExpenses, listVehicles } from "../garagem/_lib/garage-api";
 import {
@@ -32,6 +32,7 @@ function formatCurrency(value) {
 }
 
 export default function ExpenseSummary() {
+  const detailsRef = useRef(null);
   const [expenses, setExpenses] = useState([]);
   const [period, setPeriod] = useState("year");
   const [requestState, setRequestState] = useState({ error: "", loading: true });
@@ -49,7 +50,7 @@ export default function ExpenseSummary() {
   const periodLabel = expensePeriods.find((item) => item.value === period)?.label ?? "Período";
   const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === selectedVehicleId);
   const vehicleLabel = selectedVehicle
-    ? `${selectedVehicle.name} · ${selectedVehicle.plate}`
+    ? `${selectedVehicle.plate} · ${selectedVehicle.name}`
     : "todos os veículos";
   const chartCategories = useMemo(() => (
     summary.categories.map((category, index, categories) => {
@@ -68,6 +69,12 @@ export default function ExpenseSummary() {
       };
     })
   ), [summary]);
+
+  useEffect(() => {
+    if (detailsRef.current) {
+      detailsRef.current.open = window.matchMedia("(min-width: 760px)").matches;
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -102,7 +109,7 @@ export default function ExpenseSummary() {
   }, [retryRevision]);
 
   return (
-    <details className={`app-card ${styles.card}`}>
+    <details className={`app-card ${styles.card}`} ref={detailsRef}>
       <summary
         aria-label={`Ver resumo de gastos de ${vehicleLabel}, no período: ${periodLabel.toLowerCase()}`}
         className={styles.trigger}
@@ -134,7 +141,7 @@ export default function ExpenseSummary() {
               <option value="all">Todos os veículos</option>
               {vehicles.map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name} · {vehicle.plate}
+                  {vehicle.plate} · {vehicle.name}
                 </option>
               ))}
             </select>
@@ -156,7 +163,7 @@ export default function ExpenseSummary() {
         ) : summary.count === 0 ? (
           <div className={styles.requestState} role="status">
             <strong>Nenhuma despesa neste período</strong>
-            <p>Os valores aparecerão aqui quando houver manutenções para os filtros selecionados.</p>
+            <p>Os valores aparecerão aqui quando houver manutenções para os filtros selecionados</p>
           </div>
         ) : (
           <>

@@ -256,7 +256,7 @@ function ProfileContent() {
                 <DownloadSimple aria-hidden size={28} weight="duotone" />
                 <div>
                   <strong>Instale o LegadoCar</strong>
-                  <p>Acesse sua garagem como um aplicativo, sem precisar abrir o navegador.</p>
+                  <p>Acesse sua garagem como um aplicativo, sem precisar abrir o navegador</p>
                 </div>
               </div>
               <ActionButton onClick={() => void installApp()} type="button" variant="secondary">
@@ -333,7 +333,7 @@ function ProfileContent() {
                 </div>
                 <ShieldCheck aria-hidden size={27} weight="duotone" />
               </div>
-              <p className={styles.panelDescription}>Consulte os documentos que explicam o uso da plataforma e o tratamento dos seus dados.</p>
+              <p className={styles.panelDescription}>Consulte os documentos que explicam o uso da plataforma e o tratamento dos seus dados</p>
               <div className={styles.linkList}>
                 <Link href="/?legal=terms&returnTo=%2Fperfil">Termos de Uso</Link>
                 <Link href="/?legal=privacy&returnTo=%2Fperfil">Política de Privacidade</Link>
@@ -350,7 +350,7 @@ function ProfileContent() {
                 </div>
                 <SignOut aria-hidden size={27} weight="duotone" />
               </div>
-              <p className={styles.panelDescription}>Encerre com segurança a sessão atual neste dispositivo.</p>
+              <p className={styles.panelDescription}>Encerre com segurança a sessão atual neste dispositivo</p>
               <ActionButton disabled={pending} onClick={logout} type="button" variant="secondary">
                 <SignOut aria-hidden size={20} weight="bold" />
                 {pending ? "Saindo..." : "Sair da conta"}
@@ -369,7 +369,7 @@ function ProfileContent() {
 
               {deletionStep === "request" && (
                 <div className={styles.deletionForm}>
-                  <p>Antes da exclusão, enviaremos um código de confirmação para o e-mail cadastrado da conta.</p>
+                  <p>Antes da exclusão, enviaremos um código de confirmação para o e-mail cadastrado da conta</p>
                   {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
                   <ActionButton disabled={pending || deletionTimeLeft > 0} onClick={requestDeletionCode} type="button" variant="danger">
                     {pending ? "Enviando código..." : deletionTimeLeft > 0 ? `Aguarde ${deletionMinutes}:${deletionSeconds}` : "Enviar código de confirmação"}
@@ -379,7 +379,7 @@ function ProfileContent() {
 
               {deletionStep === "code" && (
                 <form className={styles.deletionForm} noValidate onSubmit={verifyDeletionCode}>
-                  <p>Digite o código de seis dígitos enviado para o e-mail cadastrado.</p>
+                  <p>Digite o código de seis dígitos enviado para o e-mail cadastrado</p>
                   <VerificationCodeFields
                     code={deletionCode}
                     error={Boolean(deletionMessage)}
@@ -404,7 +404,7 @@ function ProfileContent() {
 
               {deletionStep === "confirm" && (
                 <form className={styles.deletionForm} onSubmit={submitDeletionRequest}>
-                  <p>Código confirmado. Para concluir a exclusão da sua conta, digite DELETAR. Seus dados pessoais serão removidos e você perderá o acesso à conta.</p>
+                  <p>Código confirmado. Para concluir a exclusão da sua conta, digite DELETAR. Seus dados pessoais serão removidos e você perderá o acesso à conta</p>
                   <FormField
                     autoComplete="off"
                     Icon={WarningCircle}

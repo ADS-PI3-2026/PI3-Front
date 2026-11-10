@@ -23,7 +23,7 @@ export default function LegalContentPage() {
           <div>
             <p>Conteúdo institucional</p>
             <h1>Textos legais</h1>
-            <span>Gerencie os documentos apresentados aos usuários do LegadoCar.</span>
+            <span>Gerencie os documentos apresentados aos usuários do LegadoCar</span>
           </div>
           <FileText aria-hidden size={34} weight="duotone" />
         </header>

@@ -192,7 +192,7 @@ export default function MaintenanceAlertPage() {
                 <XCircle aria-hidden size={25} weight="duotone" />
                 <div>
                   <h2>Cancelar alerta</h2>
-                  <p>O alerta sairá da lista de manutenções pendentes.</p>
+                  <p>O alerta sairá da lista de manutenções pendentes</p>
                 </div>
               </div>
 

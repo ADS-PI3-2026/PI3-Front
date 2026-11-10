@@ -431,7 +431,7 @@ export default function VehicleHistoryPage() {
                 <div className={styles.inlineEmptyState}>
                   <CardsIcon  aria-hidden size={30} weight="duotone" />
                   <h3>Nenhuma manutenção concluída</h3>
-                  <p>Os serviços aparecerão aqui depois que forem marcados como realizados.</p>
+                  <p>Os serviços aparecerão aqui depois que forem marcados como realizados</p>
                 </div>
               )}
             </>
@@ -509,7 +509,7 @@ export default function VehicleHistoryPage() {
                 <div className={styles.inlineEmptyState}>
                   <BellRinging aria-hidden size={30} weight="duotone" />
                   <h3>Nenhuma manutenção pendente</h3>
-                  <p>Novos lembretes de manutenção aparecerão nesta visualização.</p>
+                  <p>Novos lembretes de manutenção aparecerão nesta visualização</p>
                 </div>
               )}
             </>

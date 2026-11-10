@@ -604,7 +604,7 @@ export default function MaintenanceForm({
                 value={form.mileageDue}
               />
             </span>
-            <small>Informe a data, a quilometragem ou ambas.</small>
+            <small>Informe a data, a quilometragem ou ambas</small>
             {errors.mileageDue && <small className="app-error-text">{errors.mileageDue}</small>}
             {errors.deadline && <small className="app-error-text">{errors.deadline}</small>}
           </label>

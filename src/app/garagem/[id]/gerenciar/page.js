@@ -450,7 +450,7 @@ export default function ManageVehiclePage() {
         <section aria-labelledby="management-options-title" className={styles.optionsSection}>
           <header className={styles.sectionHeading}>
             <h2 id="management-options-title">Opções do veículo</h2>
-            <p>Selecione a operação que deseja realizar.</p>
+            <p>Selecione a operação que deseja realizar</p>
           </header>
 
           <div className="app-action-list">
@@ -465,7 +465,7 @@ export default function ManageVehiclePage() {
               </span>
               <span className="app-action-copy">
                 <strong>Atualizar quilometragem</strong>
-                <span>Odômetro atual: {mileageFormatter.format(vehicle.mileage)} km.</span>
+                <span>Odômetro atual: {mileageFormatter.format(vehicle.mileage)} km</span>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
             </button>
@@ -481,7 +481,7 @@ export default function ManageVehiclePage() {
               </span>
               <span className="app-action-copy">
                 <strong>Alterar cor</strong>
-                <span>Cor atual: {vehicle.color || "não informada"}.</span>
+                <span>Cor atual: {vehicle.color || "não informada"}</span>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
             </button>
@@ -495,7 +495,7 @@ export default function ManageVehiclePage() {
               </span>
               <span className="app-action-copy">
                 <strong>Transferência</strong>
-                <span>Alterar o proprietário responsável pelo veículo.</span>
+                <span>Alterar o proprietário responsável pelo veículo</span>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
             </Link>
@@ -541,7 +541,7 @@ export default function ManageVehiclePage() {
               </span>
               <span className="app-action-copy">
                 <strong>Remover da garagem</strong>
-                <span>Remover o veículo e seu histórico da garagem.</span>
+                <span>Remover o veículo e seu histórico da garagem</span>
               </span>
               <CaretRight aria-hidden size={19} weight="bold" />
             </button>
@@ -556,7 +556,7 @@ export default function ManageVehiclePage() {
               </span>
               <div>
                 <h2>Atualizar quilometragem</h2>
-                <p>O odômetro não pode ser reduzido depois da atualização.</p>
+                <p>O odômetro não pode ser reduzido depois da atualização</p>
               </div>
             </div>
 
@@ -603,7 +603,7 @@ export default function ManageVehiclePage() {
               </span>
               <div>
                 <h2>Alterar cor do veículo</h2>
-                <p>Informe a cor atual do veículo.</p>
+                <p>Informe a cor atual do veículo</p>
               </div>
             </div>
 
@@ -649,7 +649,7 @@ export default function ManageVehiclePage() {
               </span>
               <div>
                 <h2>Converter para o padrão Mercosul</h2>
-                <p>A nova combinação é calculada automaticamente.</p>
+                <p>A nova combinação é calculada automaticamente</p>
               </div>
             </div>
 
@@ -676,7 +676,7 @@ export default function ManageVehiclePage() {
                   <ShieldCheck aria-hidden size={22} weight="duotone" />
                   <div>
                     <strong>Confirmação de segurança</strong>
-                    <p>Enviaremos um código OTP para o e-mail cadastrado antes de alterar a placa.</p>
+                    <p>Enviaremos um código OTP para o e-mail cadastrado antes de alterar a placa</p>
                   </div>
                 </div>
                 <ActionButton disabled={platePending} onClick={sendPlateChangeCode} type="button">
@@ -689,7 +689,7 @@ export default function ManageVehiclePage() {
               <form className={styles.verificationForm} noValidate onSubmit={confirmPlateChange}>
                 <div className={styles.verificationHeading}>
                   <h3>Confirme a alteração</h3>
-                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado.</p>
+                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado</p>
                 </div>
                 <VerificationCodeFields
                   code={plateCode}
@@ -730,7 +730,7 @@ export default function ManageVehiclePage() {
               </span>
               <div>
                 <h2>Remover veículo da garagem</h2>
-                <p>O veículo será removido da garagem juntamente com todo o seu histórico.</p>
+                <p>O veículo será removido da garagem juntamente com todo o seu histórico</p>
               </div>
             </div>
 
@@ -765,7 +765,7 @@ export default function ManageVehiclePage() {
                   <ShieldCheck aria-hidden size={22} weight="duotone" />
                   <div>
                     <strong>Confirmação de segurança</strong>
-                    <p>Enviaremos um código para o seu e-mail antes de remover o veículo.</p>
+                    <p>Enviaremos um código para o seu e-mail antes de remover o veículo</p>
                   </div>
                 </div>
 
@@ -781,7 +781,7 @@ export default function ManageVehiclePage() {
               <form className={styles.verificationForm} noValidate onSubmit={confirmVehicleDeletion}>
                 <div className={styles.verificationHeading}>
                   <h3>Confirme a remoção</h3>
-                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado.</p>
+                  <p>Digite o código de seis dígitos enviado para o seu e-mail cadastrado</p>
                 </div>
                 <VerificationCodeFields
                   code={deleteCode}

@@ -85,6 +85,14 @@
   gap: 14px;
 }
 
+.registrationAvailability {
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  margin-top: 14px;
+  text-align: center;
+}
+
 .loadingState,
 .requestState {
   align-items: center;

@@ -436,15 +436,15 @@ function VehicleTransferContent() {
           <>
             <header className={styles.intro}>
               <h2>Transferir histórico do veículo</h2>
-              <p>Informe quem receberá o veículo e o histórico registrado no LegadoCar.</p>
+              <p>Informe quem receberá o veículo e o histórico registrado no LegadoCar</p>
             </header>
 
             <section className="app-notice app-notice--danger">
               <ShieldWarning aria-hidden size={25} weight="fill" />
               <div>
                 <h2>Atenção importante</h2>
-                <p>A transferência será concluída somente após a confirmação das duas pessoas.</p>
-                <p>Esta operação não substitui a transferência legal junto ao DETRAN.</p>
+                <p>A transferência será concluída somente após a confirmação das duas pessoas</p>
+                <p>Esta operação não substitui a transferência legal junto ao DETRAN</p>
               </div>
             </section>
 
@@ -452,7 +452,7 @@ function VehicleTransferContent() {
               <div className={styles.receivedTransferHeader}>
                 <div>
                   <h2>O comprador solicitou a transferência?</h2>
-                  <p>Confirme aqui usando o código que ele recebeu e forneceu a você.</p>
+                  <p>Confirme aqui usando o código que ele recebeu e forneceu a você</p>
                 </div>
                 {!receivedCodeOpen && (
                   <ActionButton
@@ -559,7 +559,7 @@ function VehicleTransferContent() {
           <section className={`app-card ${styles.expiredState}`}>
             <ClockCountdown aria-hidden size={30} weight="duotone" />
             <h2>Transferência encerrada</h2>
-            <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações.</p>
+            <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações</p>
             <ActionButton onClick={clearTransfer} type="button">
               Iniciar nova transferência
             </ActionButton>
@@ -568,7 +568,7 @@ function VehicleTransferContent() {
           <section className={`app-card ${styles.completedState}`}>
             <CheckCircle aria-hidden size={34} weight="fill" />
             <h2>Transferência concluída</h2>
-            <p>As duas confirmações foram realizadas e o veículo foi transferido.</p>
+            <p>As duas confirmações foram realizadas e o veículo foi transferido</p>
             <ActionButton onClick={() => router.replace("/garagem")} type="button">
               Voltar para a garagem
             </ActionButton>
@@ -577,14 +577,14 @@ function VehicleTransferContent() {
           <>
             <header className={styles.intro}>
               <h2>Transferência em andamento</h2>
-              <p>O processo aguarda a confirmação do proprietário atual e do novo proprietário.</p>
+              <p>O processo aguarda a confirmação do proprietário atual e do novo proprietário</p>
             </header>
 
             <section className="app-notice app-notice--info">
               <ClockCountdown aria-hidden size={25} weight="duotone" />
               <div>
                 <h2>Troque os códigos com o novo proprietário</h2>
-                <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele.</p>
+                <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele</p>
               </div>
             </section>
 
@@ -614,7 +614,7 @@ function VehicleTransferContent() {
                 <form className={styles.codeForm} noValidate onSubmit={confirmOwnerCode}>
                   <div>
                     <h2>Código recebido pelo novo proprietário</h2>
-                    <p>Digite o código que a outra pessoa recebeu por e-mail e forneceu a você.</p>
+                    <p>Digite o código que a outra pessoa recebeu por e-mail e forneceu a você</p>
                   </div>
                   <VerificationCodeFields
                     autoFocus={false}

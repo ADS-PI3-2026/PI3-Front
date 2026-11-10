@@ -83,7 +83,7 @@ function Brand({ compact = false }) {
       />
       <div>
         <p className={styles.brandName}>LegadoCar</p>
-        {!compact && <p className={styles.brandTagline}>Seu carro. Sua história.</p>}
+        {!compact && <p className={styles.brandTagline}>Seu carro. Sua história</p>}
       </div>
     </div>
   );
@@ -138,7 +138,7 @@ function LegalDialog({ type, onClose }) {
             {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </section>
         ))}
-        <p className={styles.legalUpdated}>Última atualização: {content.updatedAt}.</p>
+        <p className={styles.legalUpdated}>Última atualização: {content.updatedAt}</p>
       </div>
       <ActionButton onClick={onClose} type="button">Entendi</ActionButton>
     </Dialog>
@@ -278,7 +278,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
             <span className={styles.dialogIcon}><Icon name="envelope" size={24} /></span>
             <p className={styles.eyebrow}>Recuperação de acesso</p>
             <h2>Esqueceu sua senha?</h2>
-            <p>Informe o e-mail da sua conta. Enviaremos um código para confirmar sua identidade.</p>
+            <p>Informe o e-mail da sua conta. Enviaremos um código para confirmar sua identidade</p>
           </div>
           <FormField
             autoComplete="email"
@@ -308,7 +308,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
             <span className={styles.dialogIcon}><Icon name="lock" size={24} /></span>
             <p className={styles.eyebrow}>Verifique seu e-mail</p>
             <h2>Digite o código</h2>
-            <p>Enviamos um código de 6 dígitos para <strong>{email}</strong>.</p>
+            <p>Enviamos um código de 6 dígitos para <strong>{email}</strong></p>
           </div>
           <VerificationCodeFields
             code={code}
@@ -346,7 +346,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
             <span className={styles.dialogIcon}><Icon name="shield" size={24} /></span>
             <p className={styles.eyebrow}>Última etapa</p>
             <h2>Crie uma nova senha</h2>
-            <p>Use pelo menos 8 caracteres, incluindo letra, número e símbolo.</p>
+            <p>Use pelo menos 8 caracteres, incluindo letra, número e símbolo</p>
           </div>
           <FormField
             autoComplete="new-password"
@@ -394,7 +394,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
           <span className={styles.successIcon}><Icon name="check" size={34} /></span>
           <p className={styles.eyebrow}>Tudo certo</p>
           <h2>Senha redefinida!</h2>
-          <p>Sua nova senha foi salva. Você já pode acessar o LegadoCar.</p>
+          <p>Sua nova senha foi salva. Você já pode acessar o LegadoCar</p>
           <ActionButton className={styles.successAction} onClick={onClose} type="button">Voltar para o login</ActionButton>
         </div>
       )}
@@ -479,7 +479,7 @@ function EmailConfirmationDialog({ email, name, sentAt, onCodeSent, onClose, onC
             <span className={styles.dialogIcon}><Icon name="envelope" size={24} /></span>
             <p className={styles.eyebrow}>Confirme seu cadastro</p>
             <h2>Verifique seu e-mail</h2>
-            <p>Enviamos um código de 6 dígitos para <strong>{email}</strong>.</p>
+            <p>Enviamos um código de 6 dígitos para <strong>{email}</strong></p>
           </div>
           <VerificationCodeFields
             code={code}
@@ -519,7 +519,7 @@ function EmailConfirmationDialog({ email, name, sentAt, onCodeSent, onClose, onC
           <span className={styles.successIcon}><Icon name="check" size={34} /></span>
           <p className={styles.eyebrow}>Identidade confirmada</p>
           <h2>E-mail confirmado!</h2>
-          <p>Agora você pode completar os dados necessários para criar sua conta.</p>
+          <p>Agora você pode completar os dados necessários para criar sua conta</p>
           <ActionButton className={styles.successAction} onClick={onConfirmed} type="button">Continuar cadastro</ActionButton>
         </div>
       )}
@@ -580,11 +580,11 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
           <div className={styles.cardHeading}>
             <p className={styles.eyebrow}>Bem-vindo de volta</p>
             <h1>Acesse sua conta</h1>
-            <p>Entre para cuidar dos registros e histórias dos seus veículos.</p>
+            <p>Entre para cuidar dos registros e histórias dos seus veículos</p>
           </div>
-          {logoutUnconfirmed && <p className="app-feedback" role="status">Você saiu deste navegador. Não foi possível confirmar o encerramento no servidor. Entre novamente quando a conexão voltar.</p>}
-          {accountDeleted && <p className="app-feedback" role="status">Sua conta foi excluída.</p>}
-          {sessionExpired && <p className="app-feedback" role="status">Sua sessão expirou. Faça login novamente para continuar.</p>}
+          {logoutUnconfirmed && <p className="app-feedback" role="status">Você saiu deste navegador. Não foi possível confirmar o encerramento no servidor. Entre novamente quando a conexão voltar</p>}
+          {accountDeleted && <p className="app-feedback" role="status">Sua conta foi excluída</p>}
+          {sessionExpired && <p className="app-feedback" role="status">Sua sessão expirou. Faça login novamente para continuar</p>}
           <form
             className={styles.authForm}
             noValidate
@@ -935,7 +935,7 @@ function RegisterScreen({ onLogin, onLegal }) {
                 {" "}e a{" "}
                 <button onClick={(event) => { event.preventDefault(); onLegal("privacy"); }} type="button">Política de Privacidade</button>
                 <span aria-hidden="true" className={styles.requiredMark}> *</span>
-                <span className={styles.srOnly}> Campo obrigatório.</span>
+                <span className={styles.srOnly}> Campo obrigatório</span>
               </span>
             </label>
             {errors.terms && <p className="app-feedback app-feedback--error">{errors.terms}</p>}
