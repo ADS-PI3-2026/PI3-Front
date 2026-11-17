@@ -141,3 +141,64 @@
     animation-duration: 1600ms;
   }
 }
+
+@media (min-width: 1200px) {
+  .formScreen {
+    --app-form-desktop-width: 1160px;
+    --app-form-heading-width: none;
+    align-items: start;
+    display: grid;
+    gap: 44px;
+    grid-template-columns: 280px minmax(0, 1fr);
+    padding-bottom: 40px;
+  }
+
+  .formContext {
+    min-width: 0;
+    padding-top: 8px;
+  }
+
+  .formContext :global(.app-form-heading) {
+    --app-form-heading-size: 2rem;
+    --app-form-heading-line-height: 1.15;
+  }
+
+  .draftStatus {
+    margin-top: 24px;
+    max-width: none;
+  }
+
+  .maintenanceForm {
+    --app-form-card-desktop-padding: 28px;
+    align-items: start;
+    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .maintenanceForm > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .maintenanceForm > button {
+    justify-self: center;
+  }
+
+  .maintenanceForm > label {
+    grid-column: auto;
+  }
+
+  .maintenanceForm > label:first-of-type,
+  .maintenanceForm > label:has(textarea) {
+    grid-column: 1 / -1;
+  }
+
+  .maintenanceForm textarea {
+    min-height: 126px;
+  }
+
+  .choiceList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

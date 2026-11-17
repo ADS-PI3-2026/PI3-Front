@@ -37,3 +37,16 @@
 .inputs input[aria-invalid="true"] {
   border-color: var(--app-danger-border);
 }
+
+@media (min-width: 1200px) {
+  .fieldset {
+    margin-inline: auto;
+    max-width: 380px;
+    width: 100%;
+  }
+
+  .fieldset legend {
+    text-align: center;
+    width: 100%;
+  }
+}

@@ -26,6 +26,10 @@
   outline-offset: 2px;
 }
 
+.desktopNavigation {
+  display: none;
+}
+
 @media (min-width: 760px) {
   .topBar {
     margin-left: -28px;
@@ -36,5 +40,56 @@
 
   .topBar h1 {
     font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .topBar {
+    gap: 16px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    margin: 0 0 28px;
+    min-height: 118px;
+    padding: 24px 0;
+  }
+
+  .topBar h1 {
+    font-size: 1.9rem;
+    text-align: left;
+  }
+
+  .backButton {
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 11px;
+  }
+
+  .desktopNavigation {
+    display: flex;
+    gap: 12px;
+  }
+
+  .desktopNavigation a {
+    align-items: center;
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 11px;
+    color: var(--app-blue);
+    display: inline-flex;
+    font-size: 0.85rem;
+    font-weight: 700;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 14px;
+  }
+
+  .backButton:hover,
+  .desktopNavigation a:hover {
+    background: var(--app-blue-soft);
+    border-color: #c9d4e6;
+  }
+
+  .desktopNavigation a:focus-visible {
+    outline: 3px solid var(--app-focus-ring);
+    outline-offset: 2px;
   }
 }

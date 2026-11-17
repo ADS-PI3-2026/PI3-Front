@@ -262,3 +262,30 @@
     animation: none;
   }
 }
+
+@media (min-width: 1200px) {
+  .section {
+    align-content: start;
+    min-width: 0;
+  }
+
+  .header h2 {
+    font-size: 1.3rem;
+  }
+
+  .row {
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 18px;
+  }
+
+  .summary {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .caret {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}

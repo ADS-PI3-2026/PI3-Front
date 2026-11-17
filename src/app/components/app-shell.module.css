@@ -16,6 +16,14 @@
   padding: 0 14px 34px;
 }
 
+.contentEntering {
+  animation: page-enter 220ms ease-out;
+}
+
+.navigationIndicator {
+  display: none;
+}
+
 .navigationFeedback {
   align-items: center;
   background: var(--app-success-soft);
@@ -119,5 +127,121 @@
   .navigationLink,
   .activeLink {
     width: 150px;
+  }
+}
+
+@media (max-width: 1199px) {
+  .shell {
+    --app-floating-action-bottom: calc(102px + env(safe-area-inset-bottom));
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .content {
+    min-height: calc(100svh - 104px - env(safe-area-inset-bottom));
+  }
+
+  .bottomNavigation {
+    background: #f8f8fd;
+    border: 1px solid #dfe2ec;
+    border-radius: 999px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    box-shadow: 0 8px 30px rgba(30, 42, 70, 0.16);
+    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 360px;
+    min-height: 72px;
+    padding: 6px;
+    width: calc(100% - 32px);
+  }
+
+  .navigationLink,
+  .activeLink {
+    border-radius: 999px;
+    position: relative;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .activeLink {
+    background: transparent;
+  }
+
+  .navigationIndicator {
+    background: #dfeafb;
+    border-radius: 999px;
+    bottom: 6px;
+    display: block;
+    left: 6px;
+    pointer-events: none;
+    position: absolute;
+    top: 6px;
+    transform: translateX(calc(var(--navigation-active-index) * (100% + 6px)));
+    width: calc((100% - 18px) / 2);
+  }
+
+  .navigationTransition .navigationIndicator {
+    animation: navigation-slide 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .bottomNavigation {
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+      background: rgba(248, 248, 253, 0.48);
+      border-color: rgba(185, 199, 224, 0.7);
+      box-shadow: 0 8px 30px rgba(30, 42, 70, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .navigationIndicator {
+      background: rgba(7, 71, 147, 0.14);
+    }
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes navigation-slide {
+  from {
+    transform: translateX(calc(var(--navigation-from-index) * (100% + 6px)));
+  }
+  to {
+    transform: translateX(calc(var(--navigation-active-index) * (100% + 6px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contentEntering,
+  .navigationTransition .navigationIndicator {
+    animation: none;
+  }
+
+  .navigationLink,
+  .activeLink {
+    transition: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .desktopShell {
+    --app-content-width: 1440px;
+    --app-floating-action-bottom: 32px;
+    padding-bottom: 0;
+  }
+
+  .desktopShell .content {
+    max-width: 1440px;
+    min-height: 100svh;
+    padding: 0 clamp(28px, 3vw, 56px) 48px;
+  }
+
+  .desktopShell .bottomNavigation {
+    display: none;
   }
 }

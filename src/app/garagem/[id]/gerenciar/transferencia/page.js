@@ -417,80 +417,48 @@ function VehicleTransferContent() {
           <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
         </section>
 
-        {feedback && (
-          <p className="app-feedback app-feedback--error" role="alert">{feedback}</p>
-        )}
-        {successFeedback && (
-          <p className="app-feedback app-feedback--success" role="status">
-            <CheckCircleIcon aria-hidden size={18} weight="fill" />
-            {successFeedback}
-          </p>
-        )}
+        <div className={styles.transferContent}>
+          {feedback && (
+            <p className="app-feedback app-feedback--error" role="alert">{feedback}</p>
+          )}
+          {successFeedback && (
+            <p className="app-feedback app-feedback--success" role="status">
+              <CheckCircleIcon aria-hidden size={18} weight="fill" />
+              {successFeedback}
+            </p>
+          )}
 
-        {!ready ? (
-          <div className={styles.loadingState} role="status">
-            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
-            Carregando transferência...
-          </div>
-        ) : !transfer ? (
-          <>
-            <header className={styles.intro}>
-              <h2>Transferir histórico do veículo</h2>
-              <p>Informe quem receberá o veículo e o histórico registrado no LegadoCar</p>
-            </header>
+          {!ready ? (
+            <div className={styles.loadingState} role="status">
+              <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
+              Carregando transferência...
+            </div>
+          ) : !transfer ? (
+            <>
+              <header className={styles.intro}>
+                <h2>Transferir histórico do veículo</h2>
+                <p>Informe quem receberá o veículo e o histórico registrado no LegadoCar</p>
+              </header>
 
-            <section className="app-notice app-notice--danger">
-              <ShieldWarningIcon aria-hidden size={25} weight="fill" />
-              <div>
-                <h2>Atenção importante</h2>
-                <p>A transferência será concluída somente após a confirmação das duas pessoas</p>
-                <p>Esta operação não substitui a transferência legal junto ao DETRAN</p>
-              </div>
-            </section>
-
-            <section className={`app-card ${styles.receivedTransferCard}`}>
-              <div className={styles.receivedTransferHeader}>
+              <section className="app-notice app-notice--danger">
+                <ShieldWarningIcon aria-hidden size={25} weight="fill" />
                 <div>
-                  <h2>O comprador solicitou a transferência?</h2>
-                  <p>Confirme aqui usando o código que ele recebeu e forneceu a você</p>
+                  <h2>Atenção importante</h2>
+                  <p>A transferência será concluída somente após a confirmação das duas pessoas</p>
+                  <p>Esta operação não substitui a transferência legal junto ao DETRAN</p>
                 </div>
-                {!receivedCodeOpen && (
-                  <ActionButton
-                    onClick={() => {
-                      setReceivedCodeOpen(true);
-                      setCode(createEmptyCode());
-                      setErrors({});
-                      setFeedback("");
-                    }}
-                    type="button"
-                    variant="secondary"
-                  >
-                    Informar código
-                  </ActionButton>
-                )}
-              </div>
+              </section>
 
-              {receivedCodeOpen && (
-                <form className={styles.receivedCodeForm} noValidate onSubmit={confirmBuyerRequest}>
-                  <VerificationCodeFields
-                    autoFocus={false}
-                    code={code}
-                    error={errors.code}
-                    onChange={(nextCode) => {
-                      setCode(nextCode);
-                      setErrors((current) => ({ ...current, code: "" }));
-                      setFeedback("");
-                    }}
-                  />
-                  {errors.code && <p className="app-error-text">{errors.code}</p>}
-                  <div className={styles.receivedTransferActions}>
-                    <ActionButton disabled={pending} type="submit">
-                      {pending ? "Confirmando..." : "Confirmar transferência"}
-                    </ActionButton>
+              <section className={`app-card ${styles.receivedTransferCard}`}>
+                <div className={styles.receivedTransferHeader}>
+                  <div>
+                    <h2>O comprador solicitou a transferência?</h2>
+                    <p>Confirme aqui usando o código que ele recebeu e forneceu a você</p>
+                  </div>
+                  {!receivedCodeOpen && (
                     <ActionButton
-                      disabled={pending}
                       onClick={() => {
-                        setReceivedCodeOpen(false);
+                        setReceivedCodeOpen(true);
                         setCode(createEmptyCode());
                         setErrors({});
                         setFeedback("");
@@ -498,156 +466,190 @@ function VehicleTransferContent() {
                       type="button"
                       variant="secondary"
                     >
-                      Voltar
+                      Informar código
                     </ActionButton>
-                  </div>
-                </form>
-              )}
-            </section>
-
-            <div className={styles.optionDivider}><span>ou inicie a transferência</span></div>
-
-            <form className={`app-form-card ${styles.transferForm}`} noValidate onSubmit={startTransfer}>
-              <FormField
-                autoComplete="email"
-                error={errors.recipient}
-                Icon={IdentificationCardIcon}
-                label="E-mail do novo proprietário"
-                name="new-owner"
-                onChange={(event) => {
-                  setRecipient(event.target.value.slice(0, 255));
-                  setErrors((current) => ({ ...current, recipient: "" }));
-                  setFeedback("");
-                }}
-                placeholder="nome@exemplo.com"
-                type="email"
-                value={recipient}
-              />
-
-              <label className="app-checkbox-field">
-                <input
-                  checked={accepted}
-                  onChange={(event) => {
-                    setAccepted(event.target.checked);
-                    setErrors((current) => ({ ...current, consent: "" }));
-                  }}
-                  type="checkbox"
-                />
-                <span className="app-checkbox-control">
-                  <CheckIcon aria-hidden size={15} weight="bold" />
-                </span>
-                <span>
-                  Estou ciente de que, após as duas confirmações, o veículo e seu histórico serão transferidos para a outra pessoa.
-                </span>
-              </label>
-              {errors.consent && <p className="app-error-text">{errors.consent}</p>}
-
-              <div className={styles.formActions}>
-                <ActionButton disabled={pending} type="submit">
-                  {pending
-                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                    : <ArrowsLeftRightIcon aria-hidden size={20} weight="bold" />}
-                  {pending ? "Iniciando..." : "Iniciar transferência"}
-                </ActionButton>
-                <ActionButton disabled={pending} onClick={() => router.back()} type="button" variant="secondary">
-                  Cancelar
-                </ActionButton>
-              </div>
-            </form>
-          </>
-        ) : terminalStatus ? (
-          <section className={`app-card ${styles.expiredState}`}>
-            <ClockCountdownIcon aria-hidden size={30} weight="duotone" />
-            <h2>Transferência encerrada</h2>
-            <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações</p>
-            <ActionButton onClick={clearTransfer} type="button">
-              Iniciar nova transferência
-            </ActionButton>
-          </section>
-        ) : transfer.status === "completed" ? (
-          <section className={`app-card ${styles.completedState}`}>
-            <CheckCircleIcon aria-hidden size={34} weight="fill" />
-            <h2>Transferência concluída</h2>
-            <p>As duas confirmações foram realizadas e o veículo foi transferido</p>
-            <ActionButton onClick={() => router.replace("/garagem")} type="button">
-              Voltar para a garagem
-            </ActionButton>
-          </section>
-        ) : (
-          <>
-            <header className={styles.intro}>
-              <h2>Transferência em andamento</h2>
-              <p>O processo aguarda a confirmação do proprietário atual e do novo proprietário</p>
-            </header>
-
-            <section className="app-notice app-notice--info">
-              <ClockCountdownIcon aria-hidden size={25} weight="duotone" />
-              <div>
-                <h2>Troque os códigos com o novo proprietário</h2>
-                <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele</p>
-              </div>
-            </section>
-
-            <section className={`app-card ${styles.pendingCard}`}>
-              <div className={styles.deadline}>
-                <CalendarBlankIcon aria-hidden size={21} weight="duotone" />
-                <div>
-                  <span>Prazo para as duas confirmações</span>
-                  <strong>{formatDeadline(transfer.expiresAt)}</strong>
+                  )}
                 </div>
-              </div>
 
-              <div className="app-process-status">
-                <ParticipantStatus
-                  confirmed={transfer.ownerValidated}
-                  description="Proprietário atual"
-                  label="Sua confirmação"
-                />
-                <ParticipantStatus
-                  confirmed={transfer.recipientValidated}
-                  description="Novo proprietário"
-                  label="Outra confirmação"
-                />
-              </div>
+                {receivedCodeOpen && (
+                  <form className={styles.receivedCodeForm} noValidate onSubmit={confirmBuyerRequest}>
+                    <VerificationCodeFields
+                      autoFocus={false}
+                      code={code}
+                      error={errors.code}
+                      onChange={(nextCode) => {
+                        setCode(nextCode);
+                        setErrors((current) => ({ ...current, code: "" }));
+                        setFeedback("");
+                      }}
+                    />
+                    {errors.code && <p className="app-error-text">{errors.code}</p>}
+                    <div className={styles.receivedTransferActions}>
+                      <ActionButton disabled={pending} type="submit">
+                        {pending ? "Confirmando..." : "Confirmar transferência"}
+                      </ActionButton>
+                      <ActionButton
+                        disabled={pending}
+                        onClick={() => {
+                          setReceivedCodeOpen(false);
+                          setCode(createEmptyCode());
+                          setErrors({});
+                          setFeedback("");
+                        }}
+                        type="button"
+                        variant="secondary"
+                      >
+                        Voltar
+                      </ActionButton>
+                    </div>
+                  </form>
+                )}
+              </section>
 
-              {!transfer.ownerValidated ? (
-                <form className={styles.codeForm} noValidate onSubmit={confirmOwnerCode}>
-                  <div>
-                    <h2>Código recebido pelo novo proprietário</h2>
-                    <p>Digite o código que a outra pessoa recebeu por e-mail e forneceu a você</p>
-                  </div>
-                  <VerificationCodeFields
-                    autoFocus={false}
-                    code={code}
-                    error={errors.code}
-                    onChange={(nextCode) => {
-                      setCode(nextCode);
-                      setErrors((current) => ({ ...current, code: "" }));
+              <div className={styles.optionDivider}><span>ou inicie a transferência</span></div>
+
+              <form className={`app-form-card ${styles.transferForm}`} noValidate onSubmit={startTransfer}>
+                <FormField
+                  autoComplete="email"
+                  error={errors.recipient}
+                  Icon={IdentificationCardIcon}
+                  label="E-mail do novo proprietário"
+                  name="new-owner"
+                  onChange={(event) => {
+                    setRecipient(event.target.value.slice(0, 255));
+                    setErrors((current) => ({ ...current, recipient: "" }));
+                    setFeedback("");
+                  }}
+                  placeholder="nome@exemplo.com"
+                  type="email"
+                  value={recipient}
+                />
+
+                <label className="app-checkbox-field">
+                  <input
+                    checked={accepted}
+                    onChange={(event) => {
+                      setAccepted(event.target.checked);
+                      setErrors((current) => ({ ...current, consent: "" }));
                     }}
+                    type="checkbox"
                   />
-                  {errors.code && <p className="app-error-text">{errors.code}</p>}
+                  <span className="app-checkbox-control">
+                    <CheckIcon aria-hidden size={15} weight="bold" />
+                  </span>
+                  <span>
+                    Estou ciente de que, após as duas confirmações, o veículo e seu histórico serão transferidos para a outra pessoa.
+                  </span>
+                </label>
+                {errors.consent && <p className="app-error-text">{errors.consent}</p>}
+
+                <div className={styles.formActions}>
                   <ActionButton disabled={pending} type="submit">
-                    {pending ? "Confirmando..." : "Confirmar código"}
+                    {pending
+                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                      : <ArrowsLeftRightIcon aria-hidden size={20} weight="bold" />}
+                    {pending ? "Iniciando..." : "Iniciar transferência"}
                   </ActionButton>
-                </form>
-              ) : (
-                <p className="app-feedback app-feedback--success" role="status">
-                  <CheckCircleIcon aria-hidden size={18} weight="fill" />
-                  Sua confirmação foi realizada. Agora falta a confirmação da outra pessoa.
-                </p>
-              )}
-
-              <ActionButton disabled={pending} onClick={refreshTransfer} type="button" variant="secondary">
-                {pending ? "Atualizando..." : "Atualizar andamento"}
+                  <ActionButton disabled={pending} onClick={() => router.back()} type="button" variant="secondary">
+                    Cancelar
+                  </ActionButton>
+                </div>
+              </form>
+            </>
+          ) : terminalStatus ? (
+            <section className={`app-card ${styles.expiredState}`}>
+              <ClockCountdownIcon aria-hidden size={30} weight="duotone" />
+              <h2>Transferência encerrada</h2>
+              <p>Essa solicitação expirou ou foi cancelada antes das duas confirmações</p>
+              <ActionButton onClick={clearTransfer} type="button">
+                Iniciar nova transferência
               </ActionButton>
-
-              <TransferCancelControl
-                disabled={pending}
-                onConfirm={cancelTransfer}
-              />
             </section>
-          </>
-        )}
+          ) : transfer.status === "completed" ? (
+            <section className={`app-card ${styles.completedState}`}>
+              <CheckCircleIcon aria-hidden size={34} weight="fill" />
+              <h2>Transferência concluída</h2>
+              <p>As duas confirmações foram realizadas e o veículo foi transferido</p>
+              <ActionButton onClick={() => router.replace("/garagem")} type="button">
+                Voltar para a garagem
+              </ActionButton>
+            </section>
+          ) : (
+            <>
+              <header className={styles.intro}>
+                <h2>Transferência em andamento</h2>
+                <p>O processo aguarda a confirmação do proprietário atual e do novo proprietário</p>
+              </header>
+
+              <section className="app-notice app-notice--info">
+                <ClockCountdownIcon aria-hidden size={25} weight="duotone" />
+                <div>
+                  <h2>Troque os códigos com o novo proprietário</h2>
+                  <p>Envie a ele o código recebido no seu e-mail e peça o código que foi enviado ao e-mail dele</p>
+                </div>
+              </section>
+
+              <section className={`app-card ${styles.pendingCard}`}>
+                <div className={styles.deadline}>
+                  <CalendarBlankIcon aria-hidden size={21} weight="duotone" />
+                  <div>
+                    <span>Prazo para as duas confirmações</span>
+                    <strong>{formatDeadline(transfer.expiresAt)}</strong>
+                  </div>
+                </div>
+
+                <div className="app-process-status">
+                  <ParticipantStatus
+                    confirmed={transfer.ownerValidated}
+                    description="Proprietário atual"
+                    label="Sua confirmação"
+                  />
+                  <ParticipantStatus
+                    confirmed={transfer.recipientValidated}
+                    description="Novo proprietário"
+                    label="Outra confirmação"
+                  />
+                </div>
+
+                {!transfer.ownerValidated ? (
+                  <form className={styles.codeForm} noValidate onSubmit={confirmOwnerCode}>
+                    <div>
+                      <h2>Código recebido pelo novo proprietário</h2>
+                      <p>Digite o código que a outra pessoa recebeu por e-mail e forneceu a você</p>
+                    </div>
+                    <VerificationCodeFields
+                      autoFocus={false}
+                      code={code}
+                      error={errors.code}
+                      onChange={(nextCode) => {
+                        setCode(nextCode);
+                        setErrors((current) => ({ ...current, code: "" }));
+                      }}
+                    />
+                    {errors.code && <p className="app-error-text">{errors.code}</p>}
+                    <ActionButton disabled={pending} type="submit">
+                      {pending ? "Confirmando..." : "Confirmar código"}
+                    </ActionButton>
+                  </form>
+                ) : (
+                  <p className="app-feedback app-feedback--success" role="status">
+                    <CheckCircleIcon aria-hidden size={18} weight="fill" />
+                    Sua confirmação foi realizada. Agora falta a confirmação da outra pessoa.
+                  </p>
+                )}
+
+                <ActionButton disabled={pending} onClick={refreshTransfer} type="button" variant="secondary">
+                  {pending ? "Atualizando..." : "Atualizar andamento"}
+                </ActionButton>
+
+                <TransferCancelControl
+                  disabled={pending}
+                  onConfirm={cancelTransfer}
+                />
+              </section>
+            </>
+          )}
+        </div>
       </main>
     </>
   );

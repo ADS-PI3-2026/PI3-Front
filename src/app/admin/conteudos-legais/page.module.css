@@ -129,3 +129,35 @@
     justify-self: start;
   }
 }
+
+@media (min-width: 1200px) {
+  .page {
+    gap: 32px;
+    margin-inline: auto;
+    max-width: 1280px;
+  }
+
+  .documentsSection {
+    padding: 28px;
+  }
+
+  .documentList {
+    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .documentCard {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 22px;
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .information {
+    padding: 24px;
+  }
+}

@@ -34,7 +34,7 @@
 }
 
 .trigger strong {
-  font-size: 1.3rem;
+  font-size: var(--expense-trigger-size, 1.3rem);
   letter-spacing: -0.03em;
 }
 
@@ -54,6 +54,7 @@
 
 .detailsTitle {
   color: #232630;
+  display: var(--expense-title-display, block);
   font-size: 1.08rem;
   letter-spacing: -0.02em;
   line-height: 1.3;
@@ -178,7 +179,7 @@
 }
 
 .chartWrap {
-  height: 190px;
+  height: var(--expense-chart-height, 190px);
   margin: 0 auto;
   max-width: 220px;
   position: relative;
@@ -288,11 +289,11 @@
 
 @media (min-width: 560px) {
   .filters {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: var(--expense-filter-columns, minmax(0, 0.8fr) minmax(0, 1.2fr));
   }
 
   .chartGrid {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: var(--expense-chart-columns, minmax(0, 0.8fr) minmax(0, 1.2fr));
   }
 }
 

@@ -10,6 +10,7 @@ import {
   MotorcycleIcon,
   PlusIcon,
   TruckIcon,
+  UserCircleIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -60,7 +61,7 @@ function VehicleTypeIcon({ type }) {
 }
 
 export default function GaragePage() {
-  return <AppShell><GarageContent /></AppShell>;
+  return <AppShell desktopLayout><GarageContent /></AppShell>;
 }
 
 function GarageContent() {
@@ -226,6 +227,68 @@ function GarageContent() {
     <>
       <header className={`app-page-header ${styles.pageHeader}`}>
         <h1 className="app-page-title">Olá, {firstName}</h1>
+        <div className={styles.headerActions}>
+          {showAddVehicleButton && (
+            <button
+              aria-label="Cadastrar / Transferir veículo"
+              aria-controls="add-vehicle-menu"
+              aria-expanded={addMenuOpen}
+              aria-haspopup="dialog"
+              className={`app-floating-action ${styles.addVehicleButton} ${addMenuOpen ? styles.addVehicleButtonOpen : ""}`}
+              onClick={() => setAddMenuOpen((open) => !open)}
+              type="button"
+            >
+              <PlusIcon aria-hidden size={28} weight="regular" />
+              <span className={styles.addVehicleLabel}>Cadastrar / Transferir</span>
+            </button>
+          )}
+          <Link className={styles.profileLink} href="/perfil">
+            <UserCircleIcon aria-hidden size={23} weight="regular" />
+            <span>Perfil</span>
+          </Link>
+        </div>
+
+        {addMenuOpen && showAddVehicleButton && (
+          <>
+            <button
+              aria-label="Fechar opções de veículo"
+              className={styles.addMenuBackdrop}
+              onClick={() => setAddMenuOpen(false)}
+              type="button"
+            />
+            <div
+              aria-label="Cadastro e transferências de veículos"
+              className={styles.addVehicleMenu}
+              id="add-vehicle-menu"
+              role="dialog"
+            >
+              <header>
+                <strong>Cadastro e transferências</strong>
+                <span>Escolha como deseja continuar</span>
+              </header>
+              <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
+                <span className={styles.addMenuIcon}>
+                  <CarIcon aria-hidden size={23} weight="duotone" />
+                </span>
+                <span>
+                  <strong>Cadastrar novo</strong>
+                  <small>Adicionar um veículo que ainda não possui histórico</small>
+                </span>
+                <CaretRightIcon aria-hidden size={18} weight="bold" />
+              </Link>
+              <Link href="/garagem/transferencia" onClick={() => setAddMenuOpen(false)}>
+                <span className={styles.addMenuIcon}>
+                  <ArrowsLeftRightIcon aria-hidden size={23} weight="duotone" />
+                </span>
+                <span>
+                  <strong>Transferências</strong>
+                  <small>Acompanhar solicitações ou transferir um veículo existente</small>
+                </span>
+                <CaretRightIcon aria-hidden size={18} weight="bold" />
+              </Link>
+            </div>
+          </>
+        )}
       </header>
 
       <div className={styles.dashboardGrid}>
@@ -233,7 +296,7 @@ function GarageContent() {
           <div className={styles.sectionHeader}>
             <h2 id="expense-title">Resumo de gastos</h2>
           </div>
-          <ExpenseSummary />
+          <ExpenseSummary className={styles.expenseCard} />
         </section>
 
         <section aria-labelledby="vehicles-title" className={styles.vehiclesSection}>
@@ -369,60 +432,6 @@ function GarageContent() {
 
           {registrationLimitReached && <VehicleRegistrationLimit />}
 
-          {addMenuOpen && showAddVehicleButton && (
-            <>
-              <button
-                aria-label="Fechar opções de veículo"
-                className={styles.addMenuBackdrop}
-                onClick={() => setAddMenuOpen(false)}
-                type="button"
-              />
-              <div
-                aria-label="Opções para adicionar veículo"
-                className={styles.addVehicleMenu}
-                id="add-vehicle-menu"
-                role="dialog"
-              >
-                <header>
-                  <strong>Adicionar veículo</strong>
-                  <span>Escolha como deseja continuar</span>
-                </header>
-                <Link href="/garagem/novo" onClick={() => setAddMenuOpen(false)}>
-                  <span className={styles.addMenuIcon}>
-                    <CarIcon aria-hidden size={23} weight="duotone" />
-                  </span>
-                  <span>
-                    <strong>Cadastrar novo</strong>
-                    <small>Adicionar um veículo que ainda não possui histórico</small>
-                  </span>
-                  <CaretRightIcon aria-hidden size={18} weight="bold" />
-                </Link>
-                <Link href="/garagem/transferencia" onClick={() => setAddMenuOpen(false)}>
-                  <span className={styles.addMenuIcon}>
-                    <ArrowsLeftRightIcon aria-hidden size={23} weight="duotone" />
-                  </span>
-                  <span>
-                    <strong>Transferências</strong>
-                    <small>Acompanhar solicitações ou transferir um veículo existente</small>
-                  </span>
-                  <CaretRightIcon aria-hidden size={18} weight="bold" />
-                </Link>
-              </div>
-            </>
-          )}
-
-          {showAddVehicleButton && (
-            <button
-              aria-label="Adicionar veículo"
-              aria-controls="add-vehicle-menu"
-              aria-expanded={addMenuOpen}
-              className={`app-floating-action ${styles.addVehicleButton} ${addMenuOpen ? styles.addVehicleButtonOpen : ""}`}
-              onClick={() => setAddMenuOpen((open) => !open)}
-              type="button"
-            >
-              <PlusIcon aria-hidden size={28} weight="regular" />
-            </button>
-          )}
         </section>
       </div>
     </>

@@ -1,4 +1,4 @@
-const FIPE_API_BASE_URL = "https://fipe.parallelum.com.br/api/v2";
+const FIPE_API_BASE_URL = process.env.NEXT_PUBLIC_FIPE_API_URL || "https://fipe.parallelum.com.br/api/v2";
 
 export const vehicleTypes = [
   { value: "cars", label: "Carro ou utilitário pequeno" },

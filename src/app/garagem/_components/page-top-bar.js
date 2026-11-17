@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeftIcon } from "@phosphor-icons/react";
+import Link from "next/link";
+import { ArrowLeftIcon, CarIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import styles from "./page-top-bar.module.css";
 
@@ -22,7 +23,16 @@ export default function PageTopBar({ backHref = "", title }) {
         <ArrowLeftIcon aria-hidden size={24} weight="bold" />
       </button>
       <h1 className="app-page-title">{title}</h1>
-      <span />
+      <nav aria-label="Navegação principal" className={styles.desktopNavigation}>
+        <Link href="/garagem">
+          <CarIcon aria-hidden size={22} />
+          Garagem
+        </Link>
+        <Link href="/perfil">
+          <UserCircleIcon aria-hidden size={22} />
+          Perfil
+        </Link>
+      </nav>
     </header>
   );
 }

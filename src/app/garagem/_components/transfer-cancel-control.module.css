@@ -41,3 +41,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (min-width: 1200px) {
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .actions button {
+    font-size: 0.82rem;
+    padding-inline: 18px;
+  }
+}

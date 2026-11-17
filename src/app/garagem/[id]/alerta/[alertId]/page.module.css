@@ -45,3 +45,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (min-width: 1200px) {
+  .cancellationCard {
+    --app-card-padding: 24px 28px;
+    margin: 0 max(0px, calc((100% - 1160px) / 2)) 40px auto;
+    max-width: 836px;
+    width: calc(100% - 324px);
+  }
+
+  .cancellationActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: flex-end;
+  }
+}

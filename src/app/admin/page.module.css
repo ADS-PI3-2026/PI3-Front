@@ -162,3 +162,29 @@
     justify-self: start;
   }
 }
+
+@media (min-width: 1200px) {
+  .dashboard {
+    gap: 32px;
+    margin-inline: auto;
+    max-width: 1280px;
+  }
+
+  .modulesSection {
+    padding: 28px;
+  }
+
+  .moduleGrid {
+    gap: 18px;
+  }
+
+  .moduleCard {
+    min-height: 144px;
+    padding: 22px;
+  }
+
+  .nextSteps {
+    gap: 24px;
+    padding: 28px;
+  }
+}

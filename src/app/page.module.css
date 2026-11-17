@@ -116,6 +116,10 @@
   gap: 18px;
 }
 
+.authActions {
+  display: contents;
+}
+
 .accountTypeField {
   display: grid;
   gap: 7px;
@@ -286,6 +290,10 @@
   box-shadow: 0 20px 55px rgba(23, 38, 73, 0.08);
   margin: 18px auto 0;
   padding: 26px 18px 22px;
+}
+
+.registerPanel {
+  display: contents;
 }
 
 .consentBox {
@@ -566,6 +574,179 @@
   .loginContent,
   .registerContent {
     max-width: 470px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .authForm > button[type="submit"],
+  .dialogForm > button {
+    justify-self: center;
+  }
+
+  .authActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .authScreen {
+    padding: 48px 64px 28px;
+  }
+
+  .loginContent {
+    align-items: center;
+    column-gap: 96px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 500px);
+    max-width: 1120px;
+    position: relative;
+  }
+
+  .loginContent > .brand {
+    gap: 24px;
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+
+  .loginContent > .brand .brandMark {
+    height: 150px;
+    width: 150px;
+  }
+
+  .loginContent > .brand .brandName {
+    font-size: 3.5rem;
+  }
+
+  .loginContent > .brand .brandTagline {
+    font-size: 1.1rem;
+    margin-top: 14px;
+  }
+
+  .authCard {
+    border-radius: 26px;
+    padding: 40px;
+  }
+
+  .loginContent > .authSwitch {
+    grid-column: 2;
+    margin-bottom: 0;
+  }
+
+  .registerScreen {
+    padding-top: 24px;
+  }
+
+  .mobileHeader {
+    align-self: center;
+    grid-template-columns: 44px minmax(0, 1fr);
+    max-width: 1040px;
+    padding: 0;
+    width: 100%;
+  }
+
+  .mobileHeader .brandCompact {
+    justify-self: end;
+  }
+
+  .mobileHeader > span {
+    display: none;
+  }
+
+  .registerContent {
+    align-items: start;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    gap: 96px;
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 520px);
+    margin: auto;
+    max-width: 1040px;
+    padding: 32px 0;
+    position: relative;
+  }
+
+  .registerIntro {
+    padding-top: 36px;
+  }
+
+  .registerIntro .cardHeading {
+    margin-bottom: 0;
+  }
+
+  .registerIntro h1 {
+    font-size: 2.5rem;
+  }
+
+  .registerPanel {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(213, 220, 233, 0.76);
+    border-radius: 26px;
+    box-shadow: 0 22px 55px rgba(23, 38, 73, 0.09);
+    display: block;
+    min-width: 0;
+    padding: 36px;
+  }
+
+  .registerForm,
+  .passwordForm {
+    align-items: start;
+    column-gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .registerForm > *,
+  .passwordForm > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .dialog {
+    max-height: 88svh;
+    max-width: 520px;
+    padding: 40px;
+  }
+
+  .dialogWide {
+    max-width: 800px;
+  }
+
+  .dialogWide:has(.passwordForm) {
+    max-width: 520px;
+  }
+
+  .dialogForm:has(> fieldset) {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .dialogForm:has(> fieldset) .dialogIntro {
+    padding-right: 0;
+  }
+
+  .dialogForm:has(> fieldset) .dialogIcon {
+    margin-inline: auto;
+  }
+
+  .successState > button {
+    margin-inline: auto;
+  }
+
+  .legalCopy {
+    font-size: 0.94rem;
+    line-height: 1.75;
+    max-height: 55svh;
+    padding-right: 20px;
+  }
+
+  .dialogWide > button:last-child {
+    display: flex;
+    margin-inline: auto;
+    min-width: 180px;
+    width: auto;
   }
 }
 

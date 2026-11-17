@@ -274,7 +274,7 @@ a {
   align-items: center;
   background: var(--app-blue);
   border-radius: 50%;
-  bottom: calc(90px + env(safe-area-inset-bottom));
+  bottom: var(--app-floating-action-bottom, calc(90px + env(safe-area-inset-bottom)));
   box-shadow: 0 12px 24px rgba(7, 71, 147, 0.25);
   color: #fff;
   display: flex;
@@ -518,5 +518,26 @@ a {
 
   .app-form-card {
     padding: var(--app-form-card-desktop-padding, 22px);
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-empty-link {
+    justify-self: start;
+    width: fit-content;
+  }
+
+  .app-page-header {
+    margin-inline: 0;
+    min-height: 118px;
+    padding: 24px 0;
+  }
+
+  .app-page-title {
+    font-size: var(--app-page-title-size, 1.9rem);
+  }
+
+  .app-form-screen {
+    padding-top: 8px;
   }
 }

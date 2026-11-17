@@ -349,227 +349,229 @@ export default function NewVehiclePage() {
         </main>
       ) : (
         <main className={`app-form-screen ${styles.formScreen}`}>
-        <div className={styles.iconCircle}>
-          {selectedBrand && failedBrandLogoSrc !== brandLogoSrc ? (
-            <Image
-              alt={`Logo ${selectedBrand.name}`}
-              height={150}
-              width={150}
-              src={brandLogoSrc}
-              onError={() => setFailedBrandLogoSrc(brandLogoSrc)}
-              className={styles.brandLogo}
-            />
-          ) : (
-            <CarIcon aria-hidden size={36} weight="fill" className={styles.icon} />
-          )}
-        </div>
-        <div className={`app-form-heading ${styles.heading}`}>
-          <h2>Detalhes do Veículo</h2>
-          <p>Integração automática com a tabela FIPE</p>
-        </div>
-
-        <form
-          className={`app-form-card ${styles.vehicleForm}`}
-          id="new-vehicle-form"
-          noValidate
-          onSubmit={submitVehicle}
-        >
-          <fieldset className={styles.vehicleTypeField}>
-            <legend>Tipo de veículo</legend>
-            <div className={styles.vehicleTypeOptions}>
-              {vehicleTypes.map((type) => {
-                const TypeIcon = vehicleTypeIcons[type.value];
-                const selected = form.type === type.value;
-
-                return (
-                  <button
-                    aria-label={type.label}
-                    aria-pressed={selected}
-                    className={styles.vehicleTypeButton}
-                    data-selected={selected}
-                    disabled={submitting || loading.brands}
-                    key={type.value}
-                    onClick={() => updateVehicleType(type.value)}
-                    title={type.label}
-                    type="button"
-                  >
-                    <TypeIcon aria-hidden size={25} weight={selected ? "fill" : "duotone"} />
-                    <strong>{vehicleTypeShortLabels[type.value]}</strong>
-                  </button>
-                );
-              })}
+          <div className={styles.formContext}>
+            <div className={styles.iconCircle}>
+              {selectedBrand && failedBrandLogoSrc !== brandLogoSrc ? (
+                <Image
+                  alt={`Logo ${selectedBrand.name}`}
+                  height={150}
+                  width={150}
+                  src={brandLogoSrc}
+                  onError={() => setFailedBrandLogoSrc(brandLogoSrc)}
+                  className={styles.brandLogo}
+                />
+              ) : (
+                <CarIcon aria-hidden size={36} weight="fill" className={styles.icon} />
+              )}
             </div>
-            {errors.type && (
-              <small className="app-error-text">{errors.type}</small>
-            )}
-          </fieldset>
+            <div className={`app-form-heading ${styles.heading}`}>
+              <h2>Detalhes do Veículo</h2>
+              <p>Integração automática com a tabela FIPE</p>
+            </div>
+          </div>
 
-          <SearchableSelect
-            disabled={loading.brands || submitting}
-            emptyMessage="Nenhuma marca encontrada."
-            error={errors.brand}
-            getOptionImage={(brand) =>
-              `/brandLogos/${form.type}/${brand.code}.webp`
-            }
-            label="Marca"
-            loading={loading.brands}
-            onChange={updateBrand}
-            options={brands}
-            placeholder={brandPlaceholder}
-            searchPlaceholder="Buscar marca..."
-            value={form.brand}
-          />
+          <form
+            className={`app-form-card ${styles.vehicleForm}`}
+            id="new-vehicle-form"
+            noValidate
+            onSubmit={submitVehicle}
+          >
+            <fieldset className={styles.vehicleTypeField}>
+              <legend>Tipo de veículo</legend>
+              <div className={styles.vehicleTypeOptions}>
+                {vehicleTypes.map((type) => {
+                  const TypeIcon = vehicleTypeIcons[type.value];
+                  const selected = form.type === type.value;
 
-          <SearchableSelect
-            disabled={!selectedBrand || loading.years || submitting}
-            emptyMessage="Nenhum ano encontrado para a marca selecionada."
-            error={errors.year}
-            hint="A FIPE pode retornar o mesmo ano com combustíveis diferentes."
-            label="Ano / Modelo"
-            loading={loading.years}
-            onChange={updateYear}
-            options={years}
-            placeholder={yearPlaceholder}
-            searchPlaceholder="Buscar ano ou combustível..."
-            value={form.year}
-          />
+                  return (
+                    <button
+                      aria-label={type.label}
+                      aria-pressed={selected}
+                      className={styles.vehicleTypeButton}
+                      data-selected={selected}
+                      disabled={submitting || loading.brands}
+                      key={type.value}
+                      onClick={() => updateVehicleType(type.value)}
+                      title={type.label}
+                      type="button"
+                    >
+                      <TypeIcon aria-hidden size={25} weight={selected ? "fill" : "duotone"} />
+                      <strong>{vehicleTypeShortLabels[type.value]}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.type && (
+                <small className="app-error-text">{errors.type}</small>
+              )}
+            </fieldset>
 
-          <SearchableSelect
-            disabled={!selectedYear || loading.models || submitting}
-            emptyMessage="Nenhum modelo encontrado para o ano selecionado."
-            error={errors.model}
-            label="Modelo"
-            loading={loading.models}
-            onChange={updateModel}
-            options={models}
-            placeholder={modelPlaceholder}
-            searchPlaceholder="Buscar modelo..."
-            value={form.model}
-          />
-
-          <label className="app-field app-field--uppercase">
-            <span>Cor do veículo</span>
-            <span
-              className={`app-control-shell ${styles.inputShell}`}
-              data-error={Boolean(errors.color)}
-            >
-              <PaletteIcon aria-hidden size={20} weight="regular" />
-              <input
-                autoComplete="off"
-                disabled={submitting}
-                maxLength={255}
-                name="color"
-                onChange={(event) => updateField("color", event.target.value)}
-                placeholder="Ex: Prata"
-                value={form.color}
-              />
-            </span>
-            {errors.color && (
-              <small className="app-error-text">{errors.color}</small>
-            )}
-          </label>
-
-          <label className="app-field app-field--uppercase">
-            <span>Placa do veículo</span>
-            <span
-              className={`app-control-shell ${styles.inputShell}`}
-              data-error={Boolean(errors.plate)}
-            >
-              <IdentificationCardIcon aria-hidden size={20} weight="regular" />
-              <input
-                autoComplete="off"
-                autoCapitalize="characters"
-                disabled={submitting}
-                maxLength={8}
-                name="plate"
-                onChange={(event) =>
-                  updateField("plate", formatPlateInput(event.target.value))
-                }
-                placeholder="AAA-1234 ou ABC1D23"
-                spellCheck={false}
-                value={form.plate}
-              />
-            </span>
-            {errors.plate ? (
-              <small className="app-error-text">{errors.plate}</small>
-            ) : (
-              <small>Padrão Mercosul ou antigo</small>
-            )}
-          </label>
-
-          <label className="app-field app-field--uppercase">
-            <span>RENAVAM</span>
-            <span
-              className={`app-control-shell ${styles.inputShell}`}
-              data-error={Boolean(errors.renavam)}
-            >
-              <IdentificationCardIcon aria-hidden size={20} weight="regular" />
-              <input
-                autoComplete="off"
-                disabled={submitting}
-                inputMode="numeric"
-                maxLength={11}
-                name="renavam"
-                onChange={(event) =>
-                  updateField("renavam", onlyDigits(event.target.value))
-                }
-                pattern="[0-9]*"
-                placeholder="12345678900"
-                value={form.renavam}
-              />
-            </span>
-            {errors.renavam ? (
-              <small className="app-error-text">{errors.renavam}</small>
-            ) : (
-              <small>O RENAVAM pode possuir 9 ou 11 dígitos</small>
-            )}
-          </label>
-
-          <label className="app-field app-field--uppercase">
-            <span>Quilometragem inicial</span>
-            <span
-              className={`app-control-shell ${styles.inputShell}`}
-              data-error={Boolean(errors.mileage)}
-            >
-              <GaugeIcon aria-hidden size={20} weight="regular" />
-              <input
-                disabled={submitting}
-                inputMode="numeric"
-                name="mileage"
-                onChange={(event) =>
-                  updateField("mileage", onlyDigits(event.target.value))
-                }
-                placeholder="Ex: 50000"
-                value={form.mileage}
-              />
-              <em>km</em>
-            </span>
-            {errors.mileage && (
-              <small className="app-error-text">{errors.mileage}</small>
-            )}
-          </label>
-
-          {fipeError && (
-            <p className="app-feedback app-feedback--error" role="alert">{fipeError}</p>
-          )}
-          {submitError && (
-            <p className="app-feedback app-feedback--error" role="alert">{submitError}</p>
-          )}
-          {transferSuggestion ? (
-            <VehicleTransferSuggestion
-              disabled={submitting}
-              onRequest={requestTransfer}
-              ownerHint={transferSuggestion.ownerHint}
+            <SearchableSelect
+              disabled={loading.brands || submitting}
+              emptyMessage="Nenhuma marca encontrada."
+              error={errors.brand}
+              getOptionImage={(brand) =>
+                `/brandLogos/${form.type}/${brand.code}.webp`
+              }
+              label="Marca"
+              loading={loading.brands}
+              onChange={updateBrand}
+              options={brands}
+              placeholder={brandPlaceholder}
+              searchPlaceholder="Buscar marca..."
+              value={form.brand}
             />
-          ) : (
-            <ActionButton disabled={submitting} form="new-vehicle-form" type="submit">
-              {submitting
-                ? <CircleNotchIcon aria-hidden className={styles.submitIcon} size={21} weight="bold" />
-                : <CarIcon aria-hidden size={21} weight="bold" />}
-              {submitting ? "Adicionando veículo..." : "Adicionar veículo à garagem"}
-            </ActionButton>
-          )}
-        </form>
+
+            <SearchableSelect
+              disabled={!selectedBrand || loading.years || submitting}
+              emptyMessage="Nenhum ano encontrado para a marca selecionada."
+              error={errors.year}
+              hint="A FIPE pode retornar o mesmo ano com combustíveis diferentes."
+              label="Ano / Modelo"
+              loading={loading.years}
+              onChange={updateYear}
+              options={years}
+              placeholder={yearPlaceholder}
+              searchPlaceholder="Buscar ano ou combustível..."
+              value={form.year}
+            />
+
+            <SearchableSelect
+              disabled={!selectedYear || loading.models || submitting}
+              emptyMessage="Nenhum modelo encontrado para o ano selecionado."
+              error={errors.model}
+              label="Modelo"
+              loading={loading.models}
+              onChange={updateModel}
+              options={models}
+              placeholder={modelPlaceholder}
+              searchPlaceholder="Buscar modelo..."
+              value={form.model}
+            />
+
+            <label className="app-field app-field--uppercase">
+              <span>Cor do veículo</span>
+              <span
+                className={`app-control-shell ${styles.inputShell}`}
+                data-error={Boolean(errors.color)}
+              >
+                <PaletteIcon aria-hidden size={20} weight="regular" />
+                <input
+                  autoComplete="off"
+                  disabled={submitting}
+                  maxLength={255}
+                  name="color"
+                  onChange={(event) => updateField("color", event.target.value)}
+                  placeholder="Ex: Prata"
+                  value={form.color}
+                />
+              </span>
+              {errors.color && (
+                <small className="app-error-text">{errors.color}</small>
+              )}
+            </label>
+
+            <label className="app-field app-field--uppercase">
+              <span>Placa do veículo</span>
+              <span
+                className={`app-control-shell ${styles.inputShell}`}
+                data-error={Boolean(errors.plate)}
+              >
+                <IdentificationCardIcon aria-hidden size={20} weight="regular" />
+                <input
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  disabled={submitting}
+                  maxLength={8}
+                  name="plate"
+                  onChange={(event) =>
+                    updateField("plate", formatPlateInput(event.target.value))
+                  }
+                  placeholder="AAA-1234 ou ABC1D23"
+                  spellCheck={false}
+                  value={form.plate}
+                />
+              </span>
+              {errors.plate ? (
+                <small className="app-error-text">{errors.plate}</small>
+              ) : (
+                <small>Padrão Mercosul ou antigo</small>
+              )}
+            </label>
+
+            <label className="app-field app-field--uppercase">
+              <span>RENAVAM</span>
+              <span
+                className={`app-control-shell ${styles.inputShell}`}
+                data-error={Boolean(errors.renavam)}
+              >
+                <IdentificationCardIcon aria-hidden size={20} weight="regular" />
+                <input
+                  autoComplete="off"
+                  disabled={submitting}
+                  inputMode="numeric"
+                  maxLength={11}
+                  name="renavam"
+                  onChange={(event) =>
+                    updateField("renavam", onlyDigits(event.target.value))
+                  }
+                  pattern="[0-9]*"
+                  placeholder="12345678900"
+                  value={form.renavam}
+                />
+              </span>
+              {errors.renavam ? (
+                <small className="app-error-text">{errors.renavam}</small>
+              ) : (
+                <small>O RENAVAM pode possuir 9 ou 11 dígitos</small>
+              )}
+            </label>
+
+            <label className="app-field app-field--uppercase">
+              <span>Quilometragem inicial</span>
+              <span
+                className={`app-control-shell ${styles.inputShell}`}
+                data-error={Boolean(errors.mileage)}
+              >
+                <GaugeIcon aria-hidden size={20} weight="regular" />
+                <input
+                  disabled={submitting}
+                  inputMode="numeric"
+                  name="mileage"
+                  onChange={(event) =>
+                    updateField("mileage", onlyDigits(event.target.value))
+                  }
+                  placeholder="Ex: 50000"
+                  value={form.mileage}
+                />
+                <em>km</em>
+              </span>
+              {errors.mileage && (
+                <small className="app-error-text">{errors.mileage}</small>
+              )}
+            </label>
+
+            {fipeError && (
+              <p className="app-feedback app-feedback--error" role="alert">{fipeError}</p>
+            )}
+            {submitError && (
+              <p className="app-feedback app-feedback--error" role="alert">{submitError}</p>
+            )}
+            {transferSuggestion ? (
+              <VehicleTransferSuggestion
+                disabled={submitting}
+                onRequest={requestTransfer}
+                ownerHint={transferSuggestion.ownerHint}
+              />
+            ) : (
+              <ActionButton disabled={submitting} form="new-vehicle-form" type="submit">
+                {submitting
+                  ? <CircleNotchIcon aria-hidden className={styles.submitIcon} size={21} weight="bold" />
+                  : <CarIcon aria-hidden size={21} weight="bold" />}
+                {submitting ? "Adicionando veículo..." : "Adicionar veículo à garagem"}
+              </ActionButton>
+            )}
+          </form>
         </main>
       )}
     </AppShell>

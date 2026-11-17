@@ -11,6 +11,16 @@
   margin-bottom: 2px;
 }
 
+.headerActions {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+}
+
+.garageLink {
+  display: none;
+}
+
 .profileLayout {
   display: grid;
   gap: 16px;
@@ -371,5 +381,170 @@
 @media (min-width: 1080px) {
   .profileLayout {
     grid-template-columns: minmax(290px, 0.85fr) minmax(0, 2fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .pageHeader {
+    --app-page-title-size: 1.8rem;
+    margin-bottom: 32px;
+    min-height: 94px;
+  }
+
+  .pageHeader p {
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+  }
+
+  .garageLink {
+    align-items: center;
+    background: #edf4fd;
+    border: 1px solid #d4e3f6;
+    border-radius: 12px;
+    display: inline-flex;
+    font-size: 0.88rem;
+    font-weight: 720;
+    gap: 9px;
+    min-height: 44px;
+    padding: 10px 18px;
+  }
+
+  .garageLink:hover {
+    background: #dfeafb;
+  }
+
+  .garageLink:focus-visible {
+    outline: 3px solid rgba(7, 71, 147, 0.24);
+    outline-offset: 3px;
+  }
+
+  .profileLayout {
+    column-gap: 28px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    row-gap: 20px;
+  }
+
+  .profileSummary,
+  .card {
+    --app-card-padding: 28px;
+  }
+
+  .profileSummary {
+    align-items: start;
+    gap: 22px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .avatar {
+    height: 88px;
+    width: 88px;
+  }
+
+  .profileSummary h2 {
+    font-size: 1.4rem;
+  }
+
+  .tabList {
+    padding: 7px;
+  }
+
+  .tabButton,
+  .activeTab {
+    font-size: 0.84rem;
+    min-height: 52px;
+    padding: 12px;
+  }
+
+  .cardHeading {
+    margin-bottom: 28px;
+  }
+
+  .cardHeading h2 {
+    font-size: 1.35rem;
+  }
+
+  .form {
+    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .form > * {
+    min-width: 0;
+  }
+
+  .panelDescription,
+  .deletionForm > p {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    max-width: 72ch;
+  }
+
+  .linkList {
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 24px;
+  }
+
+  .linkList a {
+    background: #f6f8fc;
+    border: 1px solid #e1e7f0;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    padding: 20px;
+  }
+
+  .linkList a:last-child {
+    border-bottom: 1px solid #e1e7f0;
+  }
+
+  .linkList a:hover {
+    background: #edf4fd;
+  }
+
+  .card > button {
+    margin-top: 12px;
+    min-width: 220px;
+    width: auto;
+  }
+
+  .deletionForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-end;
+    max-width: 680px;
+  }
+
+  .deletionForm > :not(button) {
+    flex-basis: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .deletionRequest,
+  .deletionForm:has(> fieldset) {
+    justify-content: center;
+    max-width: none;
+    text-align: center;
+  }
+
+  .deletionRequest > p {
+    max-width: none;
+  }
+
+  .deletionForm > fieldset {
+    max-width: 380px;
+  }
+
+  .resendRow {
+    justify-content: center;
+  }
+
+  .deletionSuccess > button {
+    justify-self: center;
   }
 }

@@ -154,3 +154,65 @@
     transition: none;
   }
 }
+
+@media (min-width: 1200px) {
+  .formScreen {
+    --app-form-desktop-width: 1160px;
+    --app-form-padding: 30px 0 48px;
+    align-items: start;
+    display: grid;
+    gap: 44px;
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .formContext {
+    padding-top: 12px;
+    text-align: center;
+  }
+
+  .iconCircle {
+    margin: 0 auto 24px;
+  }
+
+  .brandLogo {
+    height: 120px;
+    width: 120px;
+  }
+
+  .heading {
+    --app-form-heading-size: 2rem;
+    --app-form-heading-margin: 0;
+    text-align: center;
+  }
+
+  .vehicleForm {
+    --app-form-card-desktop-padding: 28px;
+    align-items: start;
+    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .vehicleForm > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .vehicleForm > :global(.app-field) {
+    grid-column: auto;
+  }
+
+  .vehicleForm > :nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .vehicleTypeButton {
+    flex-direction: row;
+    gap: 12px;
+    min-height: 66px;
+  }
+
+  .vehicleTypeButton strong {
+    font-size: 0.85rem;
+  }
+}

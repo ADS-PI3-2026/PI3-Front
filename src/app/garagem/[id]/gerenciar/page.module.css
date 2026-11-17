@@ -232,3 +232,84 @@
     animation: none;
   }
 }
+
+@media (min-width: 1200px) {
+  .managementScreen {
+    align-items: start;
+    gap: 28px 36px;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1160px;
+    padding-bottom: 40px;
+  }
+
+  .vehicleSummary {
+    grid-column: 1 / -1;
+    padding-bottom: 24px;
+  }
+
+  .brandLogo {
+    --vehicle-brand-logo-size: 64px;
+  }
+
+  .vehicleName h2 {
+    font-size: 1.5rem;
+  }
+
+  .optionsSection > :global(.app-action-list) {
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .managementScreen:has(.actionPanel) {
+    grid-template-columns: 380px minmax(0, 1fr);
+  }
+
+  .managementScreen:has(.actionPanel) .optionsSection > :global(.app-action-list) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .optionsSection {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .actionPanel {
+    --app-card-padding: 28px;
+    gap: 24px;
+    grid-column: 2;
+    min-width: 0;
+    scroll-margin-top: 110px;
+  }
+
+  .managementScreen > :global(.app-feedback) {
+    grid-column: 1 / -1;
+  }
+
+  .plateComparison {
+    padding: 24px 20px;
+  }
+
+  .verificationForm {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .verificationHeading {
+    max-width: 48ch;
+  }
+
+  .verificationActions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .resendButton {
+    flex-basis: 100%;
+    margin-bottom: 6px;
+    min-height: 32px;
+  }
+}

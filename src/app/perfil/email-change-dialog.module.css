@@ -110,3 +110,44 @@
 @media (prefers-reduced-motion: reduce) {
   .dialog { animation: none; }
 }
+
+@media (min-width: 1200px) {
+  .dialog {
+    max-width: 560px;
+    padding: 40px;
+  }
+
+  .dialogWide {
+    max-width: 880px;
+  }
+
+  .codeColumns {
+    align-items: start;
+    column-gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .codeColumns > button {
+    grid-column: 1 / -1;
+  }
+
+  .form:has(.codeGroup) > button {
+    justify-self: center;
+  }
+
+  .codeGroup {
+    min-width: 0;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .dialog:has(.codeGroup) h2,
+  .dialog:has(.codeGroup) .description {
+    padding-right: 0;
+    text-align: center;
+  }
+
+  .dialog:has(.codeGroup) .icon {
+    margin-inline: auto;
+  }
+}

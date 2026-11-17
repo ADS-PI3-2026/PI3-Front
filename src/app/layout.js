@@ -1,6 +1,7 @@
 import "./globals.css";
 import PwaProvider from "./components/pwa-provider";
 import SessionProvider from "./components/session-provider";
+import NavigationTransitionProvider from "./components/navigation-transition-provider";
 
 export const metadata = {
   applicationName: "LegadoCar",
@@ -30,7 +31,9 @@ export default function RootLayout({ children }) {
     <html lang="pt-BR">
       <body>
         <PwaProvider>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <NavigationTransitionProvider>{children}</NavigationTransitionProvider>
+          </SessionProvider>
         </PwaProvider>
       </body>
     </html>

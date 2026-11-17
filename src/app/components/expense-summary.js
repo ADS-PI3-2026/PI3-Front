@@ -31,7 +31,7 @@ function formatCurrency(value) {
   return currencyFormatter.format(value);
 }
 
-export default function ExpenseSummary() {
+export default function ExpenseSummary({ className = "" }) {
   const detailsRef = useRef(null);
   const [expenses, setExpenses] = useState([]);
   const [period, setPeriod] = useState("year");
@@ -109,7 +109,7 @@ export default function ExpenseSummary() {
   }, [retryRevision]);
 
   return (
-    <details className={`app-card ${styles.card}`} ref={detailsRef}>
+    <details className={`app-card ${styles.card} ${className}`} ref={detailsRef}>
       <summary
         aria-label={`Ver resumo de gastos de ${vehicleLabel}, no período: ${periodLabel.toLowerCase()}`}
         className={styles.trigger}

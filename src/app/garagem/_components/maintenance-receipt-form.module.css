@@ -266,3 +266,62 @@
     animation: none;
   }
 }
+
+.serviceDetails,
+.receiptAttachments {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .formScreen {
+    --app-form-desktop-width: 1160px;
+    --app-form-heading-width: none;
+    padding-bottom: 40px;
+  }
+
+  .formScreen > :global(.app-form-heading) {
+    margin-bottom: 26px;
+    max-width: 600px;
+  }
+
+  .receiptForm {
+    --app-form-card-desktop-padding: 30px;
+    align-items: start;
+    gap: 28px 36px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lockNotice,
+  .receiptForm > :global(.app-feedback) {
+    grid-column: 1 / -1;
+  }
+
+  .serviceDetails > .details {
+    column-gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .serviceDetails > .details > .detailItem:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .receiptAttachments {
+    border-left: 1px solid var(--app-line);
+    padding-left: 30px;
+  }
+
+  .uploadForm > button {
+    justify-self: center;
+  }
+
+  .attachmentsSection {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .emptyAttachments {
+    padding: 32px 18px;
+  }
+}

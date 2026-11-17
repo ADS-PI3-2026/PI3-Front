@@ -2,6 +2,14 @@
   --app-page-header-margin: 18px;
 }
 
+.headerActions {
+  display: contents;
+}
+
+.profileLink {
+  display: none;
+}
+
 .dashboardGrid {
   display: grid;
   gap: 26px;
@@ -279,6 +287,10 @@
   transform: rotate(45deg);
 }
 
+.addVehicleLabel {
+  display: none;
+}
+
 .addMenuBackdrop {
   background: rgba(18, 26, 41, 0.32);
   border: 0;
@@ -291,7 +303,7 @@
   background: #fff;
   border: 1px solid #dfe3ec;
   border-radius: 15px;
-  bottom: calc(166px + env(safe-area-inset-bottom));
+  bottom: calc(var(--app-floating-action-bottom, 90px + env(safe-area-inset-bottom)) + 76px);
   box-shadow: 0 18px 38px rgba(24, 37, 63, 0.2);
   display: grid;
   gap: 8px;
@@ -409,9 +421,182 @@
   }
 }
 
-@media (min-width: 760px) {
+@media (min-width: 1200px) {
+  .pageHeader {
+    --app-page-title-size: 1.9rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 30px;
+    min-height: 118px;
+    padding: 24px 0;
+    position: relative;
+  }
+
   .dashboardGrid {
     align-items: start;
-    grid-template-columns: minmax(330px, 0.9fr) minmax(380px, 1.1fr);
+    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .headerActions {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  .profileLink {
+    align-items: center;
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 11px;
+    color: var(--app-blue);
+    display: inline-flex;
+    font-size: 0.85rem;
+    font-weight: 700;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 14px;
+  }
+
+  .profileLink:hover {
+    background: var(--app-blue-soft);
+    border-color: #c9d4e6;
+  }
+
+  .profileLink:focus-visible {
+    outline: 3px solid var(--app-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .vehiclesSection {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vehiclesSection .sectionHeader {
+    order: -1;
+  }
+
+  .expenseSection {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .expenseCard {
+    --expense-chart-columns: minmax(0, 1fr);
+    --expense-chart-height: 164px;
+    --expense-filter-columns: minmax(0, 1fr);
+    --expense-title-display: none;
+    --expense-trigger-size: 1rem;
+  }
+
+  .sectionHeader {
+    align-items: center;
+    min-height: 28px;
+    margin-bottom: 18px;
+  }
+
+  .sectionHeader h2 {
+    font-size: 1.2rem;
+  }
+
+  .transferNotice {
+    margin-bottom: 24px;
+    min-height: 74px;
+    padding: 14px 18px;
+  }
+
+  .vehicleList {
+    align-items: stretch;
+    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicleCard {
+    --app-card-padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 238px;
+  }
+
+  .vehicleHeading h3 {
+    font-size: 1.08rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .vehicleOverview {
+    margin-block: 16px 22px;
+  }
+
+  .maintenanceSummary {
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  .registrationAvailability {
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .addVehicleButton {
+    border-radius: 11px;
+    bottom: auto;
+    box-shadow: 0 4px 12px rgba(7, 71, 147, 0.12);
+    font-size: 0.85rem;
+    font-weight: 700;
+    gap: 9px;
+    height: 46px;
+    padding: 0 18px;
+    position: relative;
+    right: auto;
+    width: auto;
+    z-index: 24;
+  }
+
+  .addVehicleButton svg {
+    height: 21px;
+    transition: transform 180ms ease;
+    width: 21px;
+  }
+
+  .addVehicleButtonOpen {
+    transform: none;
+  }
+
+  .addVehicleButtonOpen svg {
+    transform: rotate(45deg);
+  }
+
+  .addVehicleLabel {
+    display: inline;
+  }
+
+  .addVehicleMenu {
+    bottom: auto;
+    position: absolute;
+    right: 0;
+    top: calc(100% - 20px);
+    width: 360px;
+    z-index: 23;
+  }
+
+  .addMenuBackdrop {
+    z-index: 21;
+  }
+
+  .loadingState,
+  .requestState,
+  .loadMoreError,
+  .loadMoreButton {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1600px) {
+  .dashboardGrid {
+    grid-template-columns: minmax(0, 1fr) 360px;
   }
 }

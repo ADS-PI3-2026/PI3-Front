@@ -551,3 +551,89 @@
     animation: none;
   }
 }
+
+@media (min-width: 1200px) {
+  .vehicleLayout {
+    align-items: start;
+    display: grid;
+    gap: 36px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    margin: 28px auto 0;
+    max-width: 1440px;
+  }
+
+  .vehicleHero {
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 18px;
+    margin: 0;
+    min-width: 0;
+    padding: 28px 22px;
+    position: sticky;
+    top: 100px;
+  }
+
+  .vehicleIdentity {
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .vehicleHero h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .vehicleTopDetails {
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vehicleTopDetails > :last-child {
+    justify-self: center;
+  }
+
+  .vehicleFacts > div {
+    height: auto;
+    min-height: 52px;
+  }
+
+  .vehicleFactsBottom {
+    margin-top: 14px;
+  }
+
+  .manageButton {
+    margin-top: 20px;
+    min-height: 46px;
+  }
+
+  .maintenanceSection {
+    margin: 0;
+    max-width: none;
+    min-width: 0;
+    padding: 0 0 36px;
+    width: 100%;
+  }
+
+  .viewControl {
+    margin-bottom: 30px;
+    max-width: 460px;
+  }
+
+  .alertList {
+    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cardHeader {
+    flex-wrap: wrap;
+  }
+
+  .cardHeader h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .historyCard,
+  .alertCard {
+    --app-card-padding: 22px;
+    min-width: 0;
+  }
+}

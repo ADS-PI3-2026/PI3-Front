@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  CarIcon,
   DownloadSimpleIcon,
   PencilSimpleIcon,
   ShieldCheckIcon,
@@ -246,7 +247,13 @@ function ProfileContent() {
           <p>Conta e privacidade</p>
           <h1 className="app-page-title">Configurações do perfil</h1>
         </div>
-        <UserCircleIcon aria-hidden size={36} weight="fill" />
+        <div className={styles.headerActions}>
+          <Link className={styles.garageLink} href="/garagem">
+            <CarIcon aria-hidden size={21} weight="bold" />
+            Garagem
+          </Link>
+          <UserCircleIcon aria-hidden size={36} weight="fill" />
+        </div>
       </header>
 
       {profileMessage && (
@@ -401,7 +408,7 @@ function ProfileContent() {
               </div>
 
               {deletionStep === "request" && (
-                <div className={styles.deletionForm}>
+                <div className={`${styles.deletionForm} ${styles.deletionRequest}`}>
                   <p>Antes da exclusão, enviaremos um código de confirmação para o e-mail cadastrado da conta</p>
                   {deletionMessage && <p className={styles.deletionMessage} role="alert">{deletionMessage}</p>}
                   <ActionButton disabled={pending || deletionTimeLeft > 0} onClick={requestDeletionCode} type="button" variant="danger">

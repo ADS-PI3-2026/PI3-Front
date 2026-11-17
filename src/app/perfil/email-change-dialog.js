@@ -74,7 +74,7 @@ export default function EmailChangeDialog({ user, onClose }) {
 
   return (
     <div className={styles.overlay} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal="true" className={styles.dialog} ref={dialogRef} role="dialog">
+      <section aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal="true" className={`${styles.dialog} ${step === "codes" && requiresCurrentCode ? styles.dialogWide : ""}`} ref={dialogRef} role="dialog">
         <button aria-label="Fechar alteração de e-mail" className={styles.closeButton} onClick={onClose} type="button">
           <XIcon aria-hidden size={20} weight="bold" />
         </button>
@@ -107,7 +107,7 @@ export default function EmailChangeDialog({ user, onClose }) {
             <ActionButton type="submit">Continuar</ActionButton>
           </form>
         ) : (
-          <div className={styles.form}>
+          <div className={`${styles.form} ${requiresCurrentCode ? styles.codeColumns : ""}`}>
             {requiresCurrentCode && (
               <div className={styles.codeGroup}>
                 <p>{user.email}</p>

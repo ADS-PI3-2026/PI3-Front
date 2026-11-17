@@ -209,145 +209,151 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
           </span>
         </div>
 
-        <dl className={styles.details}>
-          {details.map(([label, value]) => (
-            <div className={styles.detailItem} key={label}>
-              <dt>{label}</dt>
-              <dd>{value || "Não informado"}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className={styles.serviceDetails}>
+          <dl className={styles.details}>
+            {details.map(([label, value]) => (
+              <div className={styles.detailItem} key={label}>
+                <dt>{label}</dt>
+                <dd>{value || "Não informado"}</dd>
+              </div>
+            ))}
+          </dl>
 
-        {payloadEntries.length > 0 && (
-          <section className={styles.additionalDetails}>
-            <h3>Informações do serviço</h3>
-            <dl className={styles.details}>
-              {payloadEntries.map(([name, value]) => (
-                <div className={styles.detailItem} key={name}>
-                  <dt>{formatPayloadLabel(name, serviceFields)}</dt>
-                  <dd>{formatPayloadValue(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        )}
-
-        <section className={styles.attachmentsSection}>
-          <div className={styles.sectionHeading}>
-            <h3>Comprovantes</h3>
-            <span>{maintenance.attachments.length}</span>
-          </div>
-
-          {maintenance.attachments.length === 0 ? (
-            <p className={styles.emptyAttachments}>Nenhum comprovante anexado</p>
-          ) : (
-            <ul className={styles.attachmentList}>
-              {maintenance.attachments.map((attachment) => {
-                const busy = actionId === attachment.id;
-                const confirming = confirmDeleteId === attachment.id;
-
-                return (
-                  <li className={styles.attachmentItem} key={attachment.id}>
-                    <span className={styles.fileIcon}>
-                      <AttachmentIcon mimeType={attachment.mimeType} />
-                    </span>
-                    <span className={styles.fileInfo}>
-                      <strong>{attachment.name}</strong>
-                      <small>{formatFileSize(attachment.size)}</small>
-                    </span>
-
-                    {attachment.canDownload && (
-                      <div className={styles.fileActions}>
-                        {confirming ? (
-                          <>
-                            <button
-                              className={styles.cancelDeleteButton}
-                              disabled={busy}
-                              onClick={() => setConfirmDeleteId(null)}
-                              type="button"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              className={styles.confirmDeleteButton}
-                              disabled={busy}
-                              onClick={() => void deleteAttachment(attachment)}
-                              type="button"
-                            >
-                              {busy ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={17} /> : null}
-                              Remover
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              aria-label={`Baixar ${attachment.name}`}
-                              className={styles.fileActionButton}
-                              disabled={busy}
-                              onClick={() => void downloadAttachment(attachment)}
-                              title="Baixar comprovante"
-                              type="button"
-                            >
-                              {busy
-                                ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={19} />
-                                : <DownloadSimpleIcon aria-hidden size={19} weight="bold" />}
-                            </button>
-                            <button
-                              aria-label={`Remover ${attachment.name}`}
-                              className={`${styles.fileActionButton} ${styles.deleteButton}`}
-                              disabled={busy}
-                              onClick={() => setConfirmDeleteId(attachment.id)}
-                              title="Remover comprovante"
-                              type="button"
-                            >
-                              <TrashIcon aria-hidden size={19} weight="bold" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+          {payloadEntries.length > 0 && (
+            <section className={styles.additionalDetails}>
+              <h3>Informações do serviço</h3>
+              <dl className={styles.details}>
+                {payloadEntries.map(([name, value]) => (
+                  <div className={styles.detailItem} key={name}>
+                    <dt>{formatPayloadLabel(name, serviceFields)}</dt>
+                    <dd>{formatPayloadValue(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           )}
-        </section>
 
-        {!maintenance.readonly && remainingAttachmentSlots > 0 && (
-          <form className={styles.uploadForm} onSubmit={submitReceipt}>
-            <FileUploadField
-              accept=".png,.jpg,.jpeg,.pdf"
-              compact
-              disabled={uploading}
-              error={fileError}
-              hint={`JPG, PNG ou PDF. ${remainingAttachmentSlots === 1
-                ? "Mais 1 comprovante de até 10 MB."
-                : `Até mais ${remainingAttachmentSlots} comprovantes de 10 MB.`}`}
-              key={uploadRevision}
-              label="Adicionar comprovantes"
-              maxFiles={remainingAttachmentSlots}
-              maxFileSize={MAX_FILE_SIZE}
-              multiple
-              name="receipt"
-              onChange={selectFiles}
-              selectedFiles={files}
-              value={fileLabel || "Selecionar arquivos"}
-            />
+        </div>
 
-            <ActionButton disabled={uploading || Boolean(fileError)} type="submit">
-              {uploading
-                ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} />
-                : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
-              {uploading ? "Salvando..." : "Salvar alterações"}
-            </ActionButton>
-          </form>
-        )}
+        <div className={styles.receiptAttachments}>
+          <section className={styles.attachmentsSection}>
+            <div className={styles.sectionHeading}>
+              <h3>Comprovantes</h3>
+              <span>{maintenance.attachments.length}</span>
+            </div>
 
-        {!maintenance.readonly && remainingAttachmentSlots === 0 && (
-          <p className={styles.attachmentLimit} role="status">
-            Limite de cinco comprovantes atingido.
-          </p>
-        )}
+            {maintenance.attachments.length === 0 ? (
+              <p className={styles.emptyAttachments}>Nenhum comprovante anexado</p>
+            ) : (
+              <ul className={styles.attachmentList}>
+                {maintenance.attachments.map((attachment) => {
+                  const busy = actionId === attachment.id;
+                  const confirming = confirmDeleteId === attachment.id;
+
+                  return (
+                    <li className={styles.attachmentItem} key={attachment.id}>
+                      <span className={styles.fileIcon}>
+                        <AttachmentIcon mimeType={attachment.mimeType} />
+                      </span>
+                      <span className={styles.fileInfo}>
+                        <strong>{attachment.name}</strong>
+                        <small>{formatFileSize(attachment.size)}</small>
+                      </span>
+
+                      {attachment.canDownload && (
+                        <div className={styles.fileActions}>
+                          {confirming ? (
+                            <>
+                              <button
+                                className={styles.cancelDeleteButton}
+                                disabled={busy}
+                                onClick={() => setConfirmDeleteId(null)}
+                                type="button"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                className={styles.confirmDeleteButton}
+                                disabled={busy}
+                                onClick={() => void deleteAttachment(attachment)}
+                                type="button"
+                              >
+                                {busy ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={17} /> : null}
+                                Remover
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                aria-label={`Baixar ${attachment.name}`}
+                                className={styles.fileActionButton}
+                                disabled={busy}
+                                onClick={() => void downloadAttachment(attachment)}
+                                title="Baixar comprovante"
+                                type="button"
+                              >
+                                {busy
+                                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={19} />
+                                  : <DownloadSimpleIcon aria-hidden size={19} weight="bold" />}
+                              </button>
+                              <button
+                                aria-label={`Remover ${attachment.name}`}
+                                className={`${styles.fileActionButton} ${styles.deleteButton}`}
+                                disabled={busy}
+                                onClick={() => setConfirmDeleteId(attachment.id)}
+                                title="Remover comprovante"
+                                type="button"
+                              >
+                                <TrashIcon aria-hidden size={19} weight="bold" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {!maintenance.readonly && remainingAttachmentSlots > 0 && (
+            <form className={styles.uploadForm} onSubmit={submitReceipt}>
+              <FileUploadField
+                accept=".png,.jpg,.jpeg,.pdf"
+                compact
+                disabled={uploading}
+                error={fileError}
+                hint={`JPG, PNG ou PDF. ${remainingAttachmentSlots === 1
+                  ? "Mais 1 comprovante de até 10 MB."
+                  : `Até mais ${remainingAttachmentSlots} comprovantes de 10 MB.`}`}
+                key={uploadRevision}
+                label="Adicionar comprovantes"
+                maxFiles={remainingAttachmentSlots}
+                maxFileSize={MAX_FILE_SIZE}
+                multiple
+                name="receipt"
+                onChange={selectFiles}
+                selectedFiles={files}
+                value={fileLabel || "Selecionar arquivos"}
+              />
+
+              <ActionButton disabled={uploading || Boolean(fileError)} type="submit">
+                {uploading
+                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} />
+                  : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
+                {uploading ? "Salvando..." : "Salvar alterações"}
+              </ActionButton>
+            </form>
+          )}
+
+          {!maintenance.readonly && remainingAttachmentSlots === 0 && (
+            <p className={styles.attachmentLimit} role="status">
+              Limite de cinco comprovantes atingido.
+            </p>
+          )}
+
+        </div>
 
         {feedback.message && (
           <p

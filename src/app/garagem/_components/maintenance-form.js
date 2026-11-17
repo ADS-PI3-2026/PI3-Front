@@ -480,19 +480,21 @@ export default function MaintenanceForm({
 
   return (
     <main className={`app-form-screen ${styles.formScreen}`}>
-      <div className="app-form-heading">
-        <h2>{title}</h2>
-        <p>{intro}</p>
-      </div>
-
-      {syncMessage && !readOnly && (
-        <div className={styles.draftStatus} data-offline={!isOnline || queuedForSync} role="status">
-          {!isOnline || queuedForSync
-            ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
-            : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
-          <p>{syncMessage}</p>
+      <div className={styles.formContext}>
+        <div className="app-form-heading">
+          <h2>{title}</h2>
+          <p>{intro}</p>
         </div>
-      )}
+
+        {syncMessage && !readOnly && (
+          <div className={styles.draftStatus} data-offline={!isOnline || queuedForSync} role="status">
+            {!isOnline || queuedForSync
+              ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
+              : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
+            <p>{syncMessage}</p>
+          </div>
+        )}
+      </div>
 
       <form className={`app-form-card ${styles.maintenanceForm}`} noValidate onSubmit={submitMaintenance}>
         {!completedOnly && !alertOnly && (

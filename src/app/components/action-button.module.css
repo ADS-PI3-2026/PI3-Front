@@ -62,6 +62,18 @@
   outline-color: rgba(180, 35, 24, 0.24);
 }
 
+@media (min-width: 1200px) {
+  .button {
+    border-radius: 10px;
+    justify-self: end;
+    max-width: 100%;
+    min-height: 44px;
+    min-width: 128px;
+    padding: 10px 20px;
+    width: fit-content;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button {
     transition: none;

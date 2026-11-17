@@ -62,3 +62,10 @@
   outline: 3px solid rgba(7, 71, 147, 0.22);
   outline-offset: 2px;
 }
+
+@media (min-width: 1200px) {
+  .notice > a {
+    justify-self: end;
+    width: fit-content;
+  }
+}

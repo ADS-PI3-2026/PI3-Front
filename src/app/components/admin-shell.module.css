@@ -253,3 +253,19 @@
     transition: none;
   }
 }
+
+@media (min-width: 1200px) {
+  .layout {
+    grid-template-columns: 244px minmax(0, 1fr);
+    margin-inline: auto;
+    max-width: 1680px;
+  }
+
+  .sidebar {
+    padding: 34px 20px;
+  }
+
+  .content {
+    padding: 40px clamp(28px, 3vw, 48px) 56px;
+  }
+}

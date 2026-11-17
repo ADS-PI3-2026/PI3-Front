@@ -263,7 +263,7 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
   const stepIndex = { email: 1, code: 2, password: 3, success: 3 }[step];
 
   return (
-    <Dialog label="Recuperação de senha" onClose={() => { if (!pending) onClose(); }}>
+    <Dialog label="Recuperação de senha" onClose={() => { if (!pending) onClose(); }} wide={step === "password"}>
       {step !== "success" && (
         <div className={styles.progress} aria-label={`Etapa ${stepIndex} de 3`}>
           {[1, 2, 3].map((item) => (
@@ -295,10 +295,12 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
             value={email}
           />
           {message && <p className="app-feedback app-feedback--error" role="alert">{message}</p>}
-          <ActionButton disabled={pending} type="submit">
-            {pending ? "Enviando..." : "Enviar código"}
-          </ActionButton>
-          <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar para o login</ActionButton>
+          <div className={styles.authActions}>
+            <ActionButton disabled={pending} type="submit">
+              {pending ? "Enviando..." : "Enviar código"}
+            </ActionButton>
+            <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar para o login</ActionButton>
+          </div>
         </form>
       )}
 
@@ -333,15 +335,17 @@ function RecoveryDialog({ onClose, lastRequest, onCodeSent }) {
               </button>
             )}
           </div>
-          <ActionButton disabled={pending} type="submit">
-            {pending ? "Validando..." : "Validar código"}
-          </ActionButton>
-          <ActionButton disabled={pending} onClick={() => { setStep("email"); setMessage(""); setErrors({}); }} type="button" variant="secondary">Alterar e-mail</ActionButton>
+          <div className={styles.authActions}>
+            <ActionButton disabled={pending} type="submit">
+              {pending ? "Validando..." : "Validar código"}
+            </ActionButton>
+            <ActionButton disabled={pending} onClick={() => { setStep("email"); setMessage(""); setErrors({}); }} type="button" variant="secondary">Alterar e-mail</ActionButton>
+          </div>
         </form>
       )}
 
       {step === "password" && (
-        <form className={styles.dialogForm} noValidate onSubmit={submitPassword}>
+        <form className={`${styles.dialogForm} ${styles.passwordForm}`} noValidate onSubmit={submitPassword}>
           <div className={styles.dialogIntro}>
             <span className={styles.dialogIcon}><Icon name="shield" size={24} /></span>
             <p className={styles.eyebrow}>Última etapa</p>
@@ -507,10 +511,12 @@ function EmailConfirmationDialog({ email, name, sentAt, onCodeSent, onClose, onC
               </button>
             )}
           </div>
-          <ActionButton disabled={pending} type="submit">
-            {pending ? "Validando..." : "Confirmar e-mail"}
-          </ActionButton>
-          <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar ao cadastro</ActionButton>
+          <div className={styles.authActions}>
+            <ActionButton disabled={pending} type="submit">
+              {pending ? "Validando..." : "Confirmar e-mail"}
+            </ActionButton>
+            <ActionButton disabled={pending} onClick={onClose} type="button" variant="secondary">Voltar ao cadastro</ActionButton>
+          </div>
         </form>
       )}
 
@@ -803,149 +809,153 @@ function RegisterScreen({ onLogin, onLegal }) {
         <span aria-hidden="true" />
       </header>
       <div className={styles.registerContent}>
-        <div className={styles.cardHeading}>
-          <p className={styles.eyebrow}>Etapa {step === "identity" ? "1" : "2"} de 2</p>
-          <h1>{step === "identity" ? "Comece seu cadastro" : "Complete seu cadastro"}</h1>
-          <p>{step === "identity"
-            ? "Primeiro, informe seu nome e confirme o endereço de e-mail."
-            : "Escolha o tipo de conta e informe os dados restantes."}</p>
+        <div className={styles.registerIntro}>
+          <div className={styles.cardHeading}>
+            <p className={styles.eyebrow}>Etapa {step === "identity" ? "1" : "2"} de 2</p>
+            <h1>{step === "identity" ? "Comece seu cadastro" : "Complete seu cadastro"}</h1>
+            <p>{step === "identity"
+              ? "Primeiro, informe seu nome e confirme o endereço de e-mail."
+              : "Escolha o tipo de conta e informe os dados restantes."}</p>
+          </div>
         </div>
-        {step === "identity" ? (
-          <form className={styles.authForm} noValidate onSubmit={submitIdentity}>
-            <FormField
-              autoComplete="name"
-              error={errors.name}
-              icon="user"
-              label="Nome"
-              maxLength={REGISTRATION_TEXT_MAX_LENGTH}
-              name="name"
-              onChange={update("name")}
-              placeholder="Seu nome ou nome fantasia"
-              value={form.name}
-            />
-            <FormField
-              autoComplete="email"
-              error={errors.email}
-              icon="envelope"
-              label="E-mail"
-              maxLength={REGISTRATION_TEXT_MAX_LENGTH}
-              name="register-email"
-              onChange={update("email")}
-              placeholder="seu@email.com"
-              type="email"
-              value={form.email}
-            />
-            {message && <p className="app-feedback app-feedback--error">{message}</p>}
-            <ActionButton disabled={pending} type="submit">
-              {pending
-                ? "Enviando código..."
-                : verifiedEmail && form.email.trim().toLowerCase() === verifiedEmail
-                  ? "Salvar e continuar"
-                  : "Confirmar e avançar"}
-            </ActionButton>
-          </form>
-        ) : (
-          <form className={styles.authForm} noValidate onSubmit={submitRegistration}>
-            <div className={styles.verifiedIdentity}>
-              <div>
-                <span>E-mail confirmado</span>
-                <strong>{form.name}</strong>
-                <small>{form.email}</small>
-              </div>
-              <button onClick={() => setStep("identity")} type="button">Alterar</button>
-            </div>
-            <div className={styles.accountTypeField}>
-              <span className="app-field-label">Tipo de cadastro</span>
-              <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
-                <button
-                  aria-pressed={accountType === "person"}
-                  className={accountType === "person" ? styles.accountTypeActive : ""}
-                  onClick={() => changeAccountType("person")}
-                  type="button"
-                >
-                  Pessoa física
-                </button>
-                <button
-                  aria-pressed={accountType === "business"}
-                  className={accountType === "business" ? styles.accountTypeActive : ""}
-                  onClick={() => changeAccountType("business")}
-                  type="button"
-                >
-                  Pessoa jurídica
-                </button>
-              </div>
-            </div>
-            <FormField
-              autoComplete="off"
-              error={errors.document}
-              icon="idCard"
-              inputMode={accountType === "business" ? "text" : "numeric"}
-              label={accountType === "business" ? "CNPJ" : "CPF"}
-              maxLength={accountType === "business" ? 18 : 14}
-              name={accountType === "business" ? "cnpj" : "cpf"}
-              onChange={updateDocument}
-              placeholder={accountType === "business" ? "00.000.000/0000-00" : "000.000.000-00"}
-              value={form.document}
-            />
-            <FormField
-              autoComplete="new-password"
-              error={errors.password}
-              icon="lock"
-              label="Senha"
-              minLength={8}
-              name="register-password"
-              onChange={update("password")}
-              onToggle={() => setShowPassword((current) => !current)}
-              placeholder="8+ caracteres, letra, número e símbolo"
-              toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              type={showPassword ? "text" : "password"}
-              value={form.password}
-            />
-            <FormField
-              autoComplete="new-password"
-              error={errors.confirm}
-              icon="lock"
-              label="Confirmar senha"
-              minLength={8}
-              name="register-confirm"
-              onChange={update("confirm")}
-              onToggle={() => setShowConfirmPassword((current) => !current)}
-              placeholder="Repita sua senha"
-              toggleLabel={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
-              type={showConfirmPassword ? "text" : "password"}
-              value={form.confirm}
-            />
-            <label className={styles.consentBox}>
-              <input
-                aria-required="true"
-                checked={accepted}
-                onChange={(event) => {
-                  setAccepted(event.target.checked);
-                  if (event.target.checked) {
-                    setErrors((current) => ({ ...current, terms: "" }));
-                  }
-                }}
-                required
-                type="checkbox"
+        <div className={styles.registerPanel}>
+          {step === "identity" ? (
+            <form className={`${styles.authForm} ${styles.registerForm}`} noValidate onSubmit={submitIdentity}>
+              <FormField
+                autoComplete="name"
+                error={errors.name}
+                icon="user"
+                label="Nome"
+                maxLength={REGISTRATION_TEXT_MAX_LENGTH}
+                name="name"
+                onChange={update("name")}
+                placeholder="Seu nome ou nome fantasia"
+                value={form.name}
               />
-              <span className={styles.customCheckbox}><Icon name="check" size={16} /></span>
-              <span>
-                Li e concordo com os{" "}
-                <button onClick={(event) => { event.preventDefault(); onLegal("terms"); }} type="button">Termos de Uso</button>
-                {" "}e a{" "}
-                <button onClick={(event) => { event.preventDefault(); onLegal("privacy"); }} type="button">Política de Privacidade</button>
-                <span aria-hidden="true" className={styles.requiredMark}> *</span>
-                <span className={styles.srOnly}> Campo obrigatório</span>
-              </span>
-            </label>
-            {errors.terms && <p className="app-feedback app-feedback--error">{errors.terms}</p>}
-            {message && <p className="app-feedback app-feedback--error">{message}</p>}
-            <ActionButton disabled={pending} type="submit">
-              {pending ? "Criando conta..." : "Criar conta e entrar"}
-            </ActionButton>
-          </form>
-        )}
-        <p className={styles.authSwitch}>Já tem uma conta? <button onClick={onLogin} type="button">Fazer login</button></p>
+              <FormField
+                autoComplete="email"
+                error={errors.email}
+                icon="envelope"
+                label="E-mail"
+                maxLength={REGISTRATION_TEXT_MAX_LENGTH}
+                name="register-email"
+                onChange={update("email")}
+                placeholder="seu@email.com"
+                type="email"
+                value={form.email}
+              />
+              {message && <p className="app-feedback app-feedback--error">{message}</p>}
+              <ActionButton disabled={pending} type="submit">
+                {pending
+                  ? "Enviando código..."
+                  : verifiedEmail && form.email.trim().toLowerCase() === verifiedEmail
+                    ? "Salvar e continuar"
+                    : "Confirmar e avançar"}
+              </ActionButton>
+            </form>
+          ) : (
+            <form className={`${styles.authForm} ${styles.registerForm}`} noValidate onSubmit={submitRegistration}>
+              <div className={styles.verifiedIdentity}>
+                <div>
+                  <span>E-mail confirmado</span>
+                  <strong>{form.name}</strong>
+                  <small>{form.email}</small>
+                </div>
+                <button onClick={() => setStep("identity")} type="button">Alterar</button>
+              </div>
+              <div className={styles.accountTypeField}>
+                <span className="app-field-label">Tipo de cadastro</span>
+                <div aria-label="Tipo de cadastro" className={styles.accountTypeToggle} role="group">
+                  <button
+                    aria-pressed={accountType === "person"}
+                    className={accountType === "person" ? styles.accountTypeActive : ""}
+                    onClick={() => changeAccountType("person")}
+                    type="button"
+                  >
+                    Pessoa física
+                  </button>
+                  <button
+                    aria-pressed={accountType === "business"}
+                    className={accountType === "business" ? styles.accountTypeActive : ""}
+                    onClick={() => changeAccountType("business")}
+                    type="button"
+                  >
+                    Pessoa jurídica
+                  </button>
+                </div>
+              </div>
+              <FormField
+                autoComplete="off"
+                error={errors.document}
+                icon="idCard"
+                inputMode={accountType === "business" ? "text" : "numeric"}
+                label={accountType === "business" ? "CNPJ" : "CPF"}
+                maxLength={accountType === "business" ? 18 : 14}
+                name={accountType === "business" ? "cnpj" : "cpf"}
+                onChange={updateDocument}
+                placeholder={accountType === "business" ? "00.000.000/0000-00" : "000.000.000-00"}
+                value={form.document}
+              />
+              <FormField
+                autoComplete="new-password"
+                error={errors.password}
+                icon="lock"
+                label="Senha"
+                minLength={8}
+                name="register-password"
+                onChange={update("password")}
+                onToggle={() => setShowPassword((current) => !current)}
+                placeholder="8+ caracteres, letra, número e símbolo"
+                toggleLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+              />
+              <FormField
+                autoComplete="new-password"
+                error={errors.confirm}
+                icon="lock"
+                label="Confirmar senha"
+                minLength={8}
+                name="register-confirm"
+                onChange={update("confirm")}
+                onToggle={() => setShowConfirmPassword((current) => !current)}
+                placeholder="Repita sua senha"
+                toggleLabel={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
+                type={showConfirmPassword ? "text" : "password"}
+                value={form.confirm}
+              />
+              <label className={styles.consentBox}>
+                <input
+                  aria-required="true"
+                  checked={accepted}
+                  onChange={(event) => {
+                    setAccepted(event.target.checked);
+                    if (event.target.checked) {
+                      setErrors((current) => ({ ...current, terms: "" }));
+                    }
+                  }}
+                  required
+                  type="checkbox"
+                />
+                <span className={styles.customCheckbox}><Icon name="check" size={16} /></span>
+                <span>
+                  Li e concordo com os{" "}
+                  <button onClick={(event) => { event.preventDefault(); onLegal("terms"); }} type="button">Termos de Uso</button>
+                  {" "}e a{" "}
+                  <button onClick={(event) => { event.preventDefault(); onLegal("privacy"); }} type="button">Política de Privacidade</button>
+                  <span aria-hidden="true" className={styles.requiredMark}> *</span>
+                  <span className={styles.srOnly}> Campo obrigatório</span>
+                </span>
+              </label>
+              {errors.terms && <p className="app-feedback app-feedback--error">{errors.terms}</p>}
+              {message && <p className="app-feedback app-feedback--error">{message}</p>}
+              <ActionButton disabled={pending} type="submit">
+                {pending ? "Criando conta..." : "Criar conta e entrar"}
+              </ActionButton>
+            </form>
+          )}
+          <p className={styles.authSwitch}>Já tem uma conta? <button onClick={onLogin} type="button">Fazer login</button></p>
+        </div>
       </div>
 
       {confirmationEmail && (

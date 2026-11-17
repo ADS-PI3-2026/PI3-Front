@@ -254,273 +254,275 @@ export default function VehicleHistoryPage() {
     <AppShell>
       <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
 
-      <section className={styles.vehicleHero}>
-        <div className={styles.vehicleIdentity}>
-          <VehicleBrandLogo
-            brandId={vehicle.brandId}
-            className={styles.brandLogo}
-            imageSize={160}
-            type={vehicle.type}
-          />
-          <span className={styles.vehicleBrand}>{vehicle.brand}</span>
-          <h2>{vehicle.model}</h2>
-        </div>
+      <div className={styles.vehicleLayout}>
+        <section className={styles.vehicleHero}>
+          <div className={styles.vehicleIdentity}>
+            <VehicleBrandLogo
+              brandId={vehicle.brandId}
+              className={styles.brandLogo}
+              imageSize={160}
+              type={vehicle.type}
+            />
+            <span className={styles.vehicleBrand}>{vehicle.brand}</span>
+            <h2>{vehicle.model}</h2>
+          </div>
 
-        <div className={styles.vehicleTopDetails}>
-          <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsTop}`}>
+          <div className={styles.vehicleTopDetails}>
+            <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsTop}`}>
+              <div>
+                <dt>Ano</dt>
+                <dd>{vehicle.year || "Não informado"}</dd>
+              </div>
+              <div>
+                <dt>Cor</dt>
+                <dd>{vehicle.color || "Não informada"}</dd>
+              </div>
+            </dl>
+            <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
+          </div>
+
+          <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
             <div>
-              <dt>Ano</dt>
-              <dd>{vehicle.year || "Não informado"}</dd>
+              <dt>Quilometragem</dt>
+              <dd>{formatMileage(vehicle.mileage)} km</dd>
             </div>
             <div>
-              <dt>Cor</dt>
-              <dd>{vehicle.color || "Não informada"}</dd>
+              <dt>Cadastro</dt>
+              <dd>{formatRegistrationDate(vehicle.createdAt)}</dd>
             </div>
           </dl>
-          <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
-        </div>
 
-        <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
-          <div>
-            <dt>Quilometragem</dt>
-            <dd>{formatMileage(vehicle.mileage)} km</dd>
+          <Link
+            className={styles.manageButton}
+            href={`/garagem/${vehicle.id}/gerenciar`}
+          >
+            <GearSixIcon aria-hidden className={styles.manageIcon} size={19} weight="bold" />
+            <span>Gerenciar veículo</span>
+            <CaretRightIcon aria-hidden className={styles.manageArrow} size={18} weight="bold" />
+          </Link>
+        </section>
+
+        <section className={styles.maintenanceSection}>
+          <div className={styles.viewControl}>
+            <SegmentedControl
+              ariaLabel="Visualização das manutenções"
+              onChange={changeView}
+              options={viewOptions}
+              value={selectedView}
+            />
           </div>
-          <div>
-            <dt>Cadastro</dt>
-            <dd>{formatRegistrationDate(vehicle.createdAt)}</dd>
-          </div>
-        </dl>
 
-        <Link
-          className={styles.manageButton}
-          href={`/garagem/${vehicle.id}/gerenciar`}
-        >
-          <GearSixIcon aria-hidden className={styles.manageIcon} size={19} weight="bold" />
-          <span>Gerenciar veículo</span>
-          <CaretRightIcon aria-hidden className={styles.manageArrow} size={18} weight="bold" />
-        </Link>
-      </section>
+          <div aria-busy={Boolean(loadMoreState.loading)} aria-live="polite">
+            {selectedView === "history" ? (
+              <>
+                <header className={styles.sectionHeading}>
+                  <div>
+                    <span>Serviços concluídos</span>
+                    <h2>Histórico de manutenção</h2>
+                  </div>
+                  <div className={styles.sectionHeadingActions}>
+                    <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
+                  </div>
+                </header>
 
-      <section className={styles.maintenanceSection}>
-        <div className={styles.viewControl}>
-          <SegmentedControl
-            ariaLabel="Visualização das manutenções"
-            onChange={changeView}
-            options={viewOptions}
-            value={selectedView}
-          />
-        </div>
+                {pagination.maintenances.total > 0 && (
+                  <div className={styles.pdfActionRow}>
+                    <button
+                      className={styles.pdfButton}
+                      disabled={pdfState.loading}
+                      onClick={() => void downloadHistory()}
+                      type="button"
+                    >
+                      {pdfState.loading
+                        ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                        : <FilePdfIcon aria-hidden size={18} weight="bold" />}
+                      {pdfState.loading ? "Preparando seu histórico..." : "Baixar histórico em PDF"}
+                    </button>
+                  </div>
+                )}
 
-        <div aria-busy={Boolean(loadMoreState.loading)} aria-live="polite">
-          {selectedView === "history" ? (
-            <>
-              <header className={styles.sectionHeading}>
-                <div>
-                  <span>Serviços concluídos</span>
-                  <h2>Histórico de manutenção</h2>
-                </div>
-                <div className={styles.sectionHeadingActions}>
-                  <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
-                </div>
-              </header>
+                {pdfState.error && (
+                  <p className={styles.pdfError} role="alert">{pdfState.error}</p>
+                )}
 
-              {pagination.maintenances.total > 0 && (
-                <div className={styles.pdfActionRow}>
-                  <button
-                    className={styles.pdfButton}
-                    disabled={pdfState.loading}
-                    onClick={() => void downloadHistory()}
-                    type="button"
-                  >
-                    {pdfState.loading
-                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
-                      : <FilePdfIcon aria-hidden size={18} weight="bold" />}
-                    {pdfState.loading ? "Preparando seu histórico..." : "Baixar histórico em PDF"}
-                  </button>
-                </div>
-              )}
+                {maintenanceItems.length > 0 ? (
+                  <>
+                    <div className={styles.timeline}>
+                      {maintenanceItems.map((item) => {
+                      const toneClass = item.readonly ? styles.readonly : styles.done;
 
-              {pdfState.error && (
-                <p className={styles.pdfError} role="alert">{pdfState.error}</p>
-              )}
+                      return (
+                        <article
+                          className={styles.historyItem + (item.readonly ? ` ${styles.historyItemReadonly}` : "")}
+                          key={item.id}
+                        >
+                          <span className={`${styles.timelineMarker} ${toneClass}`}>
+                            {item.readonly
+                              ? <LockKeyIcon aria-hidden size={16} weight="bold" />
+                              : <CheckCircleIcon aria-hidden size={16} weight="fill" />}
+                          </span>
 
-              {maintenanceItems.length > 0 ? (
-                <>
-                  <div className={styles.timeline}>
-                    {maintenanceItems.map((item) => {
-                    const toneClass = item.readonly ? styles.readonly : styles.done;
-
-                    return (
-                      <article
-                        className={styles.historyItem + (item.readonly ? ` ${styles.historyItemReadonly}` : "")}
-                        key={item.id}
-                      >
-                        <span className={`${styles.timelineMarker} ${toneClass}`}>
-                          {item.readonly
-                            ? <LockKeyIcon aria-hidden size={16} weight="bold" />
-                            : <CheckCircleIcon aria-hidden size={16} weight="fill" />}
-                        </span>
-
-                        <div className={`app-card ${styles.historyCard}`}>
-                          <div className={styles.cardHeader}>
-                            <h3>{item.title}</h3>
-                            <div className={styles.badges}>
-                              <span className={`${styles.statusBadge} ${toneClass}`}>
-                                <CheckCircleIcon aria-hidden size={14} weight="fill" />
-                                Realizada
-                              </span>
-                              {item.readonly && (
-                                <span className={styles.readonlyBadge}>
-                                  <LockKeyIcon aria-hidden size={13} weight="fill" />
-                                  Apenas leitura
+                          <div className={`app-card ${styles.historyCard}`}>
+                            <div className={styles.cardHeader}>
+                              <h3>{item.title}</h3>
+                              <div className={styles.badges}>
+                                <span className={`${styles.statusBadge} ${toneClass}`}>
+                                  <CheckCircleIcon aria-hidden size={14} weight="fill" />
+                                  Realizada
                                 </span>
-                              )}
+                                {item.readonly && (
+                                  <span className={styles.readonlyBadge}>
+                                    <LockKeyIcon aria-hidden size={13} weight="fill" />
+                                    Apenas leitura
+                                  </span>
+                                )}
+                              </div>
                             </div>
+
+                            <div className={styles.itemMeta}>
+                              <span>
+                                <CalendarBlankIcon aria-hidden size={18} weight="bold" />
+                                {item.date}
+                              </span>
+                              <span>
+                                <GaugeIcon aria-hidden size={18} weight="regular" />
+                                {formatMileage(item.mileage)} km
+                              </span>
+                              <Link
+                                className={styles.editLink}
+                                href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
+                              >
+                                {item.readonly
+                                  ? <EyeIcon aria-hidden size={14} weight="bold" />
+                                  : <PencilSimpleIcon aria-hidden size={14} weight="bold" />}
+                                Ver detalhes
+                              </Link>
+                            </div>
+
+                            {item.attachment && (
+                              <span className={styles.attachmentLink}>
+                                <FilePdfIcon aria-hidden size={18} weight="bold" />
+                                {item.attachment}
+                              </span>
+                            )}
+                          </div>
+                        </article>
+                      );
+                      })}
+                    </div>
+                    {(pagination.maintenances.hasMore || loadMoreState.error) && (
+                      <div className={styles.paginationFooter}>
+                        {loadMoreState.error && selectedView === "history" && (
+                          <p role="alert">{loadMoreState.error}</p>
+                        )}
+                        {pagination.maintenances.hasMore && (
+                          <button
+                            disabled={loadMoreState.loading === "maintenances"}
+                            onClick={() => void loadMore("maintenances")}
+                            type="button"
+                          >
+                            {loadMoreState.loading === "maintenances" && (
+                              <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                            )}
+                            {loadMoreState.loading === "maintenances"
+                              ? "Carregando..."
+                              : "Carregar mais manutenções"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={styles.inlineEmptyState}>
+                    <CardsIcon  aria-hidden size={30} weight="duotone" />
+                    <h3>Nenhuma manutenção concluída</h3>
+                    <p>Os serviços aparecerão aqui depois que forem marcados como realizados</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <header className={styles.sectionHeading}>
+                  <div>
+                    <span>Prazos e lembretes</span>
+                    <h2>Alertas de manutenção</h2>
+                  </div>
+                  <BellRingingIcon aria-hidden size={27} weight="duotone" />
+                </header>
+
+                {alertItems.length > 0 ? (
+                  <>
+                    <div className={styles.alertList}>
+                      {alertItems.map((item) => {
+                      const toneClass = getAlertTone(item);
+
+                      return (
+                        <article className={`app-card ${styles.alertCard}`} key={item.id}>
+                          <div className={styles.cardHeader}>
+                            <div>
+                              <span className={styles.alertEyebrow}>Prazo: {item.date}</span>
+                              <h3>{item.title}</h3>
+                            </div>
+                            <span className={`${styles.statusBadge} ${toneClass}`}>
+                              <WarningCircleIcon aria-hidden size={14} weight="fill" />
+                              {item.status}
+                            </span>
                           </div>
 
-                          <div className={styles.itemMeta}>
+                          <p className={styles.alertDescription}>{item.description}</p>
+
+                          <div className={styles.alertFooter}>
                             <span>
-                              <CalendarBlankIcon aria-hidden size={18} weight="bold" />
-                              {item.date}
-                            </span>
-                            <span>
-                              <GaugeIcon aria-hidden size={18} weight="regular" />
-                              {formatMileage(item.mileage)} km
+                              <WrenchIcon aria-hidden size={18} weight="bold" />
+                              {item.category}
                             </span>
                             <Link
                               className={styles.editLink}
-                              href={`/garagem/${vehicle.id}/manutencao/${item.id}`}
+                              href={`/garagem/${vehicle.id}/alerta/${item.id}`}
                             >
-                              {item.readonly
-                                ? <EyeIcon aria-hidden size={14} weight="bold" />
-                                : <PencilSimpleIcon aria-hidden size={14} weight="bold" />}
-                              Ver detalhes
+                              <PencilSimpleIcon aria-hidden size={14} weight="bold" />
+                              Abrir alerta
                             </Link>
                           </div>
-
-                          {item.attachment && (
-                            <span className={styles.attachmentLink}>
-                              <FilePdfIcon aria-hidden size={18} weight="bold" />
-                              {item.attachment}
-                            </span>
-                          )}
-                        </div>
-                      </article>
-                    );
-                    })}
-                  </div>
-                  {(pagination.maintenances.hasMore || loadMoreState.error) && (
-                    <div className={styles.paginationFooter}>
-                      {loadMoreState.error && selectedView === "history" && (
-                        <p role="alert">{loadMoreState.error}</p>
-                      )}
-                      {pagination.maintenances.hasMore && (
-                        <button
-                          disabled={loadMoreState.loading === "maintenances"}
-                          onClick={() => void loadMore("maintenances")}
-                          type="button"
-                        >
-                          {loadMoreState.loading === "maintenances" && (
-                            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
-                          )}
-                          {loadMoreState.loading === "maintenances"
-                            ? "Carregando..."
-                            : "Carregar mais manutenções"}
-                        </button>
-                      )}
+                        </article>
+                      );
+                      })}
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className={styles.inlineEmptyState}>
-                  <CardsIcon  aria-hidden size={30} weight="duotone" />
-                  <h3>Nenhuma manutenção concluída</h3>
-                  <p>Os serviços aparecerão aqui depois que forem marcados como realizados</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <header className={styles.sectionHeading}>
-                <div>
-                  <span>Prazos e lembretes</span>
-                  <h2>Alertas de manutenção</h2>
-                </div>
-                <BellRingingIcon aria-hidden size={27} weight="duotone" />
-              </header>
-
-              {alertItems.length > 0 ? (
-                <>
-                  <div className={styles.alertList}>
-                    {alertItems.map((item) => {
-                    const toneClass = getAlertTone(item);
-
-                    return (
-                      <article className={`app-card ${styles.alertCard}`} key={item.id}>
-                        <div className={styles.cardHeader}>
-                          <div>
-                            <span className={styles.alertEyebrow}>Prazo: {item.date}</span>
-                            <h3>{item.title}</h3>
-                          </div>
-                          <span className={`${styles.statusBadge} ${toneClass}`}>
-                            <WarningCircleIcon aria-hidden size={14} weight="fill" />
-                            {item.status}
-                          </span>
-                        </div>
-
-                        <p className={styles.alertDescription}>{item.description}</p>
-
-                        <div className={styles.alertFooter}>
-                          <span>
-                            <WrenchIcon aria-hidden size={18} weight="bold" />
-                            {item.category}
-                          </span>
-                          <Link
-                            className={styles.editLink}
-                            href={`/garagem/${vehicle.id}/alerta/${item.id}`}
+                    {(pagination.alerts.hasMore || loadMoreState.error) && (
+                      <div className={styles.paginationFooter}>
+                        {loadMoreState.error && selectedView === "alerts" && (
+                          <p role="alert">{loadMoreState.error}</p>
+                        )}
+                        {pagination.alerts.hasMore && (
+                          <button
+                            disabled={loadMoreState.loading === "alerts"}
+                            onClick={() => void loadMore("alerts")}
+                            type="button"
                           >
-                            <PencilSimpleIcon aria-hidden size={14} weight="bold" />
-                            Abrir alerta
-                          </Link>
-                        </div>
-                      </article>
-                    );
-                    })}
+                            {loadMoreState.loading === "alerts" && (
+                              <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                            )}
+                            {loadMoreState.loading === "alerts"
+                              ? "Carregando..."
+                              : "Carregar mais alertas"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={styles.inlineEmptyState}>
+                    <BellRingingIcon aria-hidden size={30} weight="duotone" />
+                    <h3>Nenhuma manutenção pendente</h3>
+                    <p>Novos lembretes de manutenção aparecerão nesta visualização</p>
                   </div>
-                  {(pagination.alerts.hasMore || loadMoreState.error) && (
-                    <div className={styles.paginationFooter}>
-                      {loadMoreState.error && selectedView === "alerts" && (
-                        <p role="alert">{loadMoreState.error}</p>
-                      )}
-                      {pagination.alerts.hasMore && (
-                        <button
-                          disabled={loadMoreState.loading === "alerts"}
-                          onClick={() => void loadMore("alerts")}
-                          type="button"
-                        >
-                          {loadMoreState.loading === "alerts" && (
-                            <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
-                          )}
-                          {loadMoreState.loading === "alerts"
-                            ? "Carregando..."
-                            : "Carregar mais alertas"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className={styles.inlineEmptyState}>
-                  <BellRingingIcon aria-hidden size={30} weight="duotone" />
-                  <h3>Nenhuma manutenção pendente</h3>
-                  <p>Novos lembretes de manutenção aparecerão nesta visualização</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+                )}
+              </>
+            )}
+          </div>
+        </section>
 
+      </div>
       <Link
         aria-label="Adicionar manutenção"
         className={`app-floating-action ${styles.addMaintenanceButton}`}
