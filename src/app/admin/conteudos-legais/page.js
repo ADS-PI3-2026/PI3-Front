@@ -1,68 +1,88 @@
 "use client";
 
-import { FileTextIcon, ShieldCheckIcon } from "@phosphor-icons/react";
-import AdminShell from "../../components/admin-shell";
-import styles from "./page.module.css";
-
-const documents = [
-  {
-    title: "Termos de Uso",
-    description: "Condições gerais para cadastro e utilização do LegadoCar.",
-  },
-  {
-    title: "Política de Privacidade",
-    description: "Informações sobre coleta, tratamento e proteção dos dados pessoais.",
-  },
-];
+import { useState } from "react";
+import { FileTextIcon } from "@phosphor-icons/react";
+import { legalContent } from "../../lib/legal-content";
+import { PageHeading } from "../_components/admin-ui";
+import styles from "../admin.module.css";
 
 export default function LegalContentPage() {
+  const [selected, setSelected] = useState("terms");
+  const document = legalContent[selected];
+  const selectWithKeyboard = (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next =
+      event.key === "Home"
+        ? "terms"
+        : event.key === "End"
+          ? "privacy"
+          : selected === "terms"
+            ? "privacy"
+            : "terms";
+    setSelected(next);
+    event.currentTarget.parentElement
+      .querySelector(`#legal-tab-${next}`)
+      .focus();
+  };
+
   return (
-    <AdminShell>
-      <div className={styles.page}>
-        <header className={styles.heading}>
-          <div>
-            <p>Conteúdo institucional</p>
-            <h1>Textos legais</h1>
-            <span>Gerencie os documentos apresentados aos usuários do LegadoCar</span>
-          </div>
-          <FileTextIcon aria-hidden size={34} weight="duotone" />
-        </header>
-
-        <section aria-labelledby="legal-documents-title" className={styles.documentsSection}>
-          <div className={styles.sectionHeading}>
-            <div>
-              <p>Documentos utilizados atualmente</p>
-              <h2 id="legal-documents-title">Publicação e edição</h2>
-            </div>
-            <ShieldCheckIcon aria-hidden size={27} weight="duotone" />
-          </div>
-
-          <div className={styles.documentList}>
-            {documents.map((document) => (
-              <article className={styles.documentCard} key={document.title}>
-                <span className={styles.documentIcon}>
-                  <FileTextIcon aria-hidden size={24} weight="duotone" />
-                </span>
-                <div>
-                  <h3>{document.title}</h3>
-                  <p>{document.description}</p>
-                </div>
-                <span className={styles.status}>Preparando edição</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.information}>
-          <ShieldCheckIcon aria-hidden size={26} weight="duotone" />
-          <div>
-            <h2>Área em preparação</h2>
-            <p>
-              Quando a edição for habilitada, os textos publicados aqui serão exibidos automaticamente no cadastro e na área de privacidade dos usuários.
-            </p>
-          </div>
-        </section>
+    <div className={styles.page}>
+      <PageHeading
+        description="Consulte os documentos apresentados no cadastro e na área de privacidade."
+        title="Textos legais"
+      />
+      <div
+        aria-label="Documentos legais"
+        className={styles.documentTabs}
+        role="tablist"
+      >
+        {Object.entries(legalContent).map(([key, content]) => (
+          <button
+            aria-controls={`legal-panel-${key}`}
+            aria-selected={selected === key}
+            id={`legal-tab-${key}`}
+            key={key}
+            onClick={() => setSelected(key)}
+            onKeyDown={selectWithKeyboard}
+            role="tab"
+            tabIndex={selected === key ? 0 : -1}
+            type="button"
+          >
+            {content.title}
+          </button>
+        ))}
       </div>
-    </AdminShell>
+      <div className={styles.overviewLayout}>
+        <article
+          aria-labelledby={`legal-tab-${selected}`}
+          className={`${styles.panel} ${styles.document}`}
+          id={`legal-panel-${selected}`}
+          role="tabpanel"
+          tabIndex={0}
+        >
+          <h2>{document.title}</h2>
+          <p className={styles.updated}>Atualizado em {document.updatedAt}</p>
+          <p>{document.intro}</p>
+          {document.sections.map((section) => (
+            <section key={section.title}>
+              <h3>{section.title}</h3>
+              {section.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </section>
+          ))}
+        </article>
+        <aside className={`${styles.panel} ${styles.card}`}>
+          <FileTextIcon aria-hidden color="#557aa6" size={28} />
+          <h2 style={{ marginTop: 16 }}>Publicação de documentos</h2>
+          <p>
+            A edição e a publicação pelo painel ainda estão indisponíveis. Os
+            documentos exibidos aqui correspondem à versão utilizada atualmente
+            pelo aplicativo.
+          </p>
+        </aside>
+      </div>
+    </div>
   );
 }

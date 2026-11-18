@@ -2,7 +2,6 @@
 
 import {
   ArrowsLeftRightIcon,
-  ChartBarIcon,
   ClipboardTextIcon,
   FileTextIcon,
   HouseIcon,
@@ -15,26 +14,44 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { isAdminUser } from "../lib/user-access";
 import { logoutAuthSession } from "../session-api";
 import { useSession } from "./session-provider";
 import LoadingScreen from "./loading-screen";
 import styles from "./admin-shell.module.css";
 
-const plannedNavigation = [
-  { label: "Usuários", Icon: UsersThreeIcon },
-  { label: "Tipos de serviço", Icon: WrenchIcon },
-  { label: "Mediações", Icon: ArrowsLeftRightIcon },
-  { label: "Auditoria", Icon: ClipboardTextIcon },
-];
-
 const availableNavigation = [
   { href: "/admin", label: "Visão geral", Icon: HouseIcon },
-  { href: "/admin/conteudos-legais", label: "Textos legais", Icon: FileTextIcon },
+  { href: "/admin/usuarios", label: "Usuários internos", Icon: UsersThreeIcon },
+  { href: "/admin/tipos-servico", label: "Tipos de serviço", Icon: WrenchIcon },
+  {
+    href: "/admin/conteudos-legais",
+    label: "Textos legais",
+    Icon: FileTextIcon,
+  },
+  { href: "/admin/mediacoes", label: "Mediações", Icon: ArrowsLeftRightIcon },
+  { href: "/admin/auditoria", label: "Auditoria", Icon: ClipboardTextIcon },
 ];
 
 const AdminUserContext = createContext(null);
+
+function subscribeToMobileMenu(listener) {
+  const query = window.matchMedia("(max-width: 760px)");
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+
+function getMobileMenuSnapshot() {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
 
 export function useAdminUser() {
   return useContext(AdminUserContext);
@@ -47,6 +64,13 @@ export default function AdminShell({ children }) {
   const user = session?.user;
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const mobile = useSyncExternalStore(
+    subscribeToMobileMenu,
+    getMobileMenuSnapshot,
+    () => false,
+  );
+  const menuButton = useRef(null);
+  const sidebar = useRef(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -55,13 +79,34 @@ export default function AdminShell({ children }) {
   }, [ready, router, user]);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
+    if (!menuOpen || !mobile) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const links = sidebar.current.querySelectorAll("button, a[href]");
+    links[0]?.focus();
+    const handleKey = (event) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        menuButton.current?.focus();
+      }
+      if (event.key === "Tab") {
+        const first = links[0];
+        const last = links[links.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [menuOpen, mobile]);
 
   const logout = async () => {
     if (loggingOut) return;
@@ -89,6 +134,7 @@ export default function AdminShell({ children }) {
               aria-label="Abrir menu administrativo"
               className={styles.menuButton}
               onClick={() => setMenuOpen(true)}
+              ref={menuButton}
               type="button"
             >
               <ListIcon aria-hidden size={23} weight="bold" />
@@ -103,7 +149,7 @@ export default function AdminShell({ children }) {
               />
               <div>
                 <strong>LegadoCar</strong>
-                <br/>
+                <br />
                 <span>Painel administrativo</span>
               </div>
             </div>
@@ -131,8 +177,11 @@ export default function AdminShell({ children }) {
             />
           )}
           <aside
+            aria-hidden={mobile && !menuOpen ? true : undefined}
             className={`${styles.sidebar} ${menuOpen ? styles.sidebarOpen : ""}`}
             id="admin-sidebar"
+            inert={mobile && !menuOpen}
+            ref={sidebar}
           >
             <div className={styles.sidebarHeader}>
               <strong>Menu administrativo</strong>
@@ -146,35 +195,37 @@ export default function AdminShell({ children }) {
             </div>
             <nav aria-label="Navegação administrativa">
               {availableNavigation.map(({ href, label, Icon }) => {
-                const active = href === "/admin"
-                  ? pathname === href
-                  : pathname.startsWith(href);
+                const active =
+                  href === "/admin"
+                    ? pathname === href
+                    : pathname.startsWith(href);
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}
-                    className={active ? styles.activeNavigation : styles.navigation}
+                    className={
+                      active ? styles.activeNavigation : styles.navigation
+                    }
                     href={href}
                     key={href}
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Icon aria-hidden size={20} weight={active ? "fill" : "duotone"} />
+                    <Icon
+                      aria-hidden
+                      size={20}
+                      weight={active ? "fill" : "duotone"}
+                    />
                     {label}
                   </Link>
                 );
               })}
-              {plannedNavigation.map(({ label, Icon }) => (
-                <span aria-disabled="true" className={styles.plannedNavigation} key={label}>
-                  <Icon aria-hidden size={20} weight="duotone" />
-                  <span>{label}</span>
-                  <small>Em breve</small>
-                </span>
-              ))}
             </nav>
           </aside>
 
           <main className={styles.content}>
             {warning && (
-              <p className="app-feedback app-feedback--error" role="status">{warning}</p>
+              <p className="app-feedback app-feedback--error" role="status">
+                {warning}
+              </p>
             )}
             {children}
           </main>

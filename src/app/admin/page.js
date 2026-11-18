@@ -1,105 +1,209 @@
 "use client";
 
+import Link from "next/link";
+import { useCallback } from "react";
 import {
+  ArrowRightIcon,
   ArrowsLeftRightIcon,
-  ChartBarIcon,
   ClipboardTextIcon,
   FileTextIcon,
-  ShieldCheckIcon,
+  PlusIcon,
   UsersThreeIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
-import AdminShell, { useAdminUser } from "../components/admin-shell";
-import styles from "./page.module.css";
+import { useAdminUser } from "../components/admin-shell";
+import { listAdminServiceTypes, listInternalUsers } from "./admin-api";
+import {
+  PageHeading,
+  ResourceState,
+  Status,
+  useAdminResource,
+} from "./_components/admin-ui";
+import styles from "./admin.module.css";
 
-const plannedModules = [
-  {
-    title: "Usuários e moderação",
-    description: "Gerenciamento de contas internas e acompanhamento dos usuários da plataforma.",
-    Icon: UsersThreeIcon,
-  },
-  {
-    title: "Tipos de serviço",
-    description: "Organização das categorias e dos campos utilizados nos registros de manutenção.",
-    Icon: WrenchIcon,
-  },
-  {
-    title: "Textos legais",
-    description: "Edição e publicação dos Termos de Uso e da Política de Privacidade.",
-    Icon: FileTextIcon,
-  },
-  {
-    title: "Mediações técnicas",
-    description: "Acompanhamento de transferências pendentes que precisem de intervenção administrativa.",
-    Icon: ArrowsLeftRightIcon,
-  },
-  {
-    title: "Trilha de auditoria",
-    description: "Consulta futura dos registros de alterações e exclusões realizadas na plataforma.",
-    Icon: ClipboardTextIcon,
-  },
-];
-
-function AdminDashboard() {
+export default function AdminDashboard() {
   const user = useAdminUser();
-  const firstName = user.name.trim().split(/\s+/)[0];
+  const load = useCallback(async () => {
+    const [users, services, activeServices] = await Promise.all([
+      listInternalUsers(),
+      listAdminServiceTypes(),
+      listAdminServiceTypes({ status: "1" }),
+    ]);
+    return { users, services, activeServices };
+  }, []);
+  const resource = useAdminResource(load);
+  const { data } = resource;
 
   return (
-    <div className={styles.dashboard}>
-      <section className={styles.introduction}>
-        <div>
-          <p>Visão geral</p>
-          <h1>Olá, {firstName}</h1>
-          <span>Esta é a área reservada para a administração do LegadoCar</span>
-        </div>
-        <div className={styles.restrictedBadge}>
-          <ShieldCheckIcon aria-hidden size={22} weight="duotone" />
-          Acesso administrativo
-        </div>
-      </section>
-
-      <section aria-labelledby="admin-modules-title" className={styles.modulesSection}>
-        <header>
-          <div>
-            <p>Estrutura inicial</p>
-            <h2 id="admin-modules-title">Módulos previstos</h2>
-          </div>
-          <ChartBarIcon aria-hidden size={28} weight="duotone" />
-        </header>
-
-        <div className={styles.moduleGrid}>
-          {plannedModules.map(({ title, description, Icon }) => (
-            <article className={styles.moduleCard} key={title}>
-              <span className={styles.moduleIcon}>
-                <Icon aria-hidden size={25} weight="duotone" />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{description}</p>
+    <div className={styles.page}>
+      <PageHeading
+        description="Acompanhe o catálogo e gerencie os acessos da equipe."
+        title={`Olá, ${user.name.trim().split(/\s+/)[0]}`}
+      >
+        <Link
+          className={styles.secondaryButton}
+          href="/admin/tipos-servico?novo=1"
+        >
+          <PlusIcon aria-hidden size={18} />
+          Novo tipo de serviço
+        </Link>
+      </PageHeading>
+      <ResourceState {...resource} retry={resource.reload}>
+        {data && (
+          <>
+            <section
+              aria-label="Resumo administrativo"
+              className={styles.stats}
+            >
+              <Link
+                className={`${styles.panel} ${styles.stat}`}
+                href="/admin/usuarios"
+              >
+                <header>
+                  <span>Usuários internos</span>
+                  <UsersThreeIcon aria-hidden size={23} />
+                </header>
+                <strong>{data.users.total}</strong>
+              </Link>
+              <Link
+                className={`${styles.panel} ${styles.stat}`}
+                href="/admin/tipos-servico"
+              >
+                <header>
+                  <span>Tipos de serviço</span>
+                  <WrenchIcon aria-hidden size={23} />
+                </header>
+                <strong>{data.services.total}</strong>
+              </Link>
+              <Link
+                className={`${styles.panel} ${styles.stat}`}
+                href="/admin/tipos-servico?status=1"
+              >
+                <header>
+                  <span>Serviços ativos</span>
+                  <WrenchIcon aria-hidden size={23} />
+                </header>
+                <strong>{data.activeServices.total}</strong>
+              </Link>
+            </section>
+            <div className={styles.overviewLayout}>
+              <section className={styles.panel}>
+                <header className={styles.panelHeading}>
+                  <div>
+                    <h2>Catálogo de serviços</h2>
+                    <p>Categorias disponíveis para organizar as manutenções.</p>
+                  </div>
+                  <Link className={styles.textLink} href="/admin/tipos-servico">
+                    Ver todos
+                    <ArrowRightIcon aria-hidden size={16} />
+                  </Link>
+                </header>
+                {data.services.items.length ? (
+                  <div className={styles.tableScroll}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Tipo de serviço</th>
+                          <th>Status</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.services.items.slice(0, 6).map((service) => (
+                          <tr key={service.identifier}>
+                            <td>
+                              <strong>{service.name}</strong>
+                              <small>
+                                {service.description || service.identifier}
+                              </small>
+                            </td>
+                            <td>
+                              <Status active={service.is_active} />
+                            </td>
+                            <td>
+                              <Link
+                                className={styles.textLink}
+                                href={`/admin/tipos-servico/${encodeURIComponent(service.identifier)}`}
+                              >
+                                Gerenciar
+                                <ArrowRightIcon aria-hidden size={16} />
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className={styles.empty}>
+                    <WrenchIcon aria-hidden size={32} />
+                    <h3>Seu catálogo começa aqui</h3>
+                    <p>
+                      Cadastre o primeiro tipo de serviço e os campos que serão
+                      preenchidos nas manutenções.
+                    </p>
+                    <Link
+                      className={styles.textLink}
+                      href="/admin/tipos-servico?novo=1"
+                    >
+                      Cadastrar tipo de serviço
+                      <ArrowRightIcon aria-hidden size={16} />
+                    </Link>
+                  </div>
+                )}
+              </section>
+              <div className={styles.stack}>
+                <section className={`${styles.panel} ${styles.card}`}>
+                  <h2>Sua conta administrativa</h2>
+                  <p>
+                    <strong>{user.name}</strong>
+                    <br />
+                    {user.email}
+                  </p>
+                  <Link className={styles.textLink} href="/admin/usuarios">
+                    Gerenciar equipe
+                    <ArrowRightIcon aria-hidden size={16} />
+                  </Link>
+                </section>
+                <section className={styles.panel}>
+                  <header className={styles.panelHeading}>
+                    <h2>Outros módulos</h2>
+                  </header>
+                  {[
+                    {
+                      href: "/admin/conteudos-legais",
+                      title: "Textos legais",
+                      description: "Consultar documentos atuais",
+                      Icon: FileTextIcon,
+                    },
+                    {
+                      href: "/admin/mediacoes",
+                      title: "Mediações",
+                      description: "Disponibilidade do acompanhamento",
+                      Icon: ArrowsLeftRightIcon,
+                    },
+                    {
+                      href: "/admin/auditoria",
+                      title: "Auditoria",
+                      description: "Disponibilidade da consulta",
+                      Icon: ClipboardTextIcon,
+                    },
+                  ].map(({ href, title, description, Icon }) => (
+                    <Link className={styles.moduleLink} href={href} key={href}>
+                      <Icon aria-hidden size={22} />
+                      <div>
+                        <strong>{title}</strong>
+                        <small>{description}</small>
+                      </div>
+                      <ArrowRightIcon aria-hidden size={16} />
+                    </Link>
+                  ))}
+                </section>
               </div>
-              <small>Planejado</small>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.nextSteps}>
-        <div>
-          <h2>Página inicial provisória</h2>
-          <p>
-            Os indicadores e as operações administrativas serão adicionados quando seus contratos e prioridades forem definidos pela equipe.
-          </p>
-        </div>
-        <ChartBarIcon aria-hidden size={32} weight="duotone" />
-      </section>
+            </div>
+          </>
+        )}
+      </ResourceState>
     </div>
-  );
-}
-
-export default function AdminPage() {
-  return (
-    <AdminShell>
-      <AdminDashboard />
-    </AdminShell>
   );
 }

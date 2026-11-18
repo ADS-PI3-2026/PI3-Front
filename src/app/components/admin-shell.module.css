@@ -58,7 +58,17 @@
 }
 
 .account > div {
+  max-width: 260px;
+  min-width: 0;
   text-align: right;
+}
+
+.account strong,
+.account span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .account strong {
