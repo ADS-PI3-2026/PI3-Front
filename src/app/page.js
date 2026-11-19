@@ -23,8 +23,7 @@ import {
   normalizeDocument,
 } from "./lib/form-validation";
 import { getRecoveryStep } from "./lib/recovery-flow";
-import { legalContent } from "./lib/legal-content";
-import LegalDocument from "./components/legal-document";
+import LegalDialog from "./components/legal-dialog";
 import { saveNavigationFeedback } from "./lib/navigation-feedback";
 import { getAuthenticatedHomePath } from "./lib/user-access";
 import styles from "./page.module.css";
@@ -116,26 +115,6 @@ function Dialog({ children, label, onClose, wide = false }) {
         {children}
       </section>
     </div>
-  );
-}
-
-function LegalDialog({ type, onClose }) {
-  const content = legalContent[type];
-
-  return (
-    <Dialog label={content.title} onClose={onClose} wide>
-      <div className={styles.dialogHeader}>
-        <span className={styles.dialogIcon}><Icon name="shield" size={24} /></span>
-        <div>
-          <p className={styles.eyebrow}>{content.eyebrow}</p>
-          <h2>{content.title}</h2>
-        </div>
-      </div>
-      <div className={styles.legalCopy}>
-        <LegalDocument key={type} type={type} />
-      </div>
-      <ActionButton onClick={onClose} type="button">Entendi</ActionButton>
-    </Dialog>
   );
 }
 

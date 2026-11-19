@@ -180,15 +180,16 @@
   gap: 1px;
 }
 
-.linkList a {
+.linkList button {
   border-bottom: 1px solid #e8eaf0;
   color: #074793;
   font-size: 0.84rem;
   font-weight: 690;
   padding: 12px 0;
+  text-align: left;
 }
 
-.linkList a:last-child {
+.linkList button:last-child {
   border-bottom: 0;
 }
 
@@ -489,7 +490,7 @@
     margin-top: 24px;
   }
 
-  .linkList a {
+  .linkList button {
     background: #f6f8fc;
     border: 1px solid #e1e7f0;
     border-radius: 12px;
@@ -497,11 +498,11 @@
     padding: 20px;
   }
 
-  .linkList a:last-child {
+  .linkList button:last-child {
     border-bottom: 1px solid #e1e7f0;
   }
 
-  .linkList a:hover {
+  .linkList button:hover {
     background: #edf4fd;
   }
 

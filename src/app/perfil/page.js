@@ -17,6 +17,7 @@ import {
 import ActionButton from "../components/action-button";
 import AppShell, { useAuthUser } from "../components/app-shell";
 import FormField from "../components/form-field";
+import LegalDialog from "../components/legal-dialog";
 import { usePwaInstall } from "../components/pwa-provider";
 import VerificationCodeFields from "../components/verification-code-fields";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
@@ -64,6 +65,8 @@ function ProfileContent() {
   const profileSync = useRef(null);
   const [emailChangeOpen, setEmailChangeOpen] = useState(false);
   const closeEmailChange = useCallback(() => setEmailChangeOpen(false), []);
+  const [legalOpen, setLegalOpen] = useState(null);
+  const closeLegal = useCallback(() => setLegalOpen(null), []);
   const [activeTab, setActiveTab] = useState("settings");
   const [deletionStep, setDeletionStep] = useState("request");
   const [deletionCode, setDeletionCode] = useState(createEmptyCode);
@@ -375,8 +378,8 @@ function ProfileContent() {
               </div>
               <p className={styles.panelDescription}>Consulte os documentos que explicam o uso da plataforma e o tratamento dos seus dados</p>
               <div className={styles.linkList}>
-                <Link href="/?legal=terms&returnTo=%2Fperfil">Termos de Uso</Link>
-                <Link href="/?legal=privacy&returnTo=%2Fperfil">Política de Privacidade</Link>
+                <button aria-haspopup="dialog" onClick={() => setLegalOpen("terms")} type="button">Termos de Uso</button>
+                <button aria-haspopup="dialog" onClick={() => setLegalOpen("privacy")} type="button">Política de Privacidade</button>
               </div>
             </section>
           )}
@@ -488,6 +491,7 @@ function ProfileContent() {
         </div>
       </div>
       {emailChangeOpen && <EmailChangeDialog onClose={closeEmailChange} user={user} />}
+      {legalOpen && <LegalDialog onClose={closeLegal} type={legalOpen} />}
     </>
   );
 }
