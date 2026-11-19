@@ -10,11 +10,22 @@
     "test": "node --experimental-default-type=module --test tests/*.test.js"
   },
   "dependencies": {
+    "@lexical/clipboard": "^0.53.0",
+    "@lexical/history": "^0.53.0",
+    "@lexical/html": "^0.53.0",
+    "@lexical/link": "^0.53.0",
+    "@lexical/list": "^0.53.0",
+    "@lexical/react": "^0.53.0",
+    "@lexical/rich-text": "^0.53.0",
+    "@lexical/selection": "^0.53.0",
+    "@lexical/utils": "^0.53.0",
     "@phosphor-icons/react": "^2.1.10",
     "jspdf": "^4.2.1",
+    "lexical": "^0.53.0",
     "next": "16.4.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sanitize-html": "^2.18.2"
   },
   "devDependencies": {
     "eslint": "^9",

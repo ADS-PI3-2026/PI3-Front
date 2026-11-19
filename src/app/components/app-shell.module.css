@@ -198,6 +198,15 @@
   }
 }
 
+.withoutNavigation {
+  --app-floating-action-bottom: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: 0;
+}
+
+.withoutNavigation .content {
+  min-height: 100svh;
+}
+
 @keyframes page-enter {
   from {
     opacity: 0.4;

@@ -1,0 +1,20 @@
+.prose {
+  color: #46556a;
+  font-size: 0.94rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.prose :is(p, ul, ol, blockquote, pre) { margin: 0 0 1em; }
+.prose :is(h1, h2, h3, h4, h5, h6) { color: #203751; line-height: 1.35; margin: 1.4em 0 0.65em; }
+.prose h1 { font-size: 1.65rem; }
+.prose h2 { font-size: 1.4rem; }
+.prose h3 { font-size: 1.15rem; }
+.prose :first-child { margin-top: 0; }
+.prose :is(ul, ol) { padding-left: 1.6em; }
+.prose li { margin: 0.35em 0; }
+.prose blockquote { border-left: 3px solid #9bb7d9; padding-left: 1em; }
+.prose a { color: #074793; text-decoration: underline; text-underline-offset: 3px; }
+.prose pre { background: #f1f4f8; border-radius: 8px; padding: 12px; white-space: pre-wrap; }
+.updated { color: var(--app-muted); font-size: 0.78rem; margin-top: 24px; }
+.error { display: grid; gap: 16px; padding-block: 24px; }
+.error button { color: #074793; font-weight: 650; justify-self: start; text-decoration: underline; }

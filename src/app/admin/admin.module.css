@@ -11,7 +11,8 @@
   gap: 24px;
   margin-bottom: 4px;
 }
-.pageHeading h1 {
+.pageHeading h1,
+.pageHeading h2 {
   font-size: clamp(1.65rem, 2.4vw, 2.2rem);
   color: #142e50;
   letter-spacing: -0.045em;
@@ -478,15 +479,21 @@
   padding: 24px;
   display: grid;
   gap: 16px;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease;
 }
-.stat header {
+.stat:hover {
+  background: #fbfdff;
+  border-color: #b9cce3;
+}
+.statLabel {
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: #65758a;
   font-size: 0.82rem;
 }
-.stat header svg {
+.statLabel svg {
   color: #074793;
 }
 .stat strong {
@@ -494,6 +501,48 @@
   font-size: 2.2rem;
   font-weight: 650;
   letter-spacing: -0.045em;
+}
+.workspace {
+  min-width: 0;
+}
+.workspaceTabs {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid #dfe5ee;
+  margin-bottom: 26px;
+  padding-inline: 2px;
+}
+.workspaceTabs button {
+  flex-shrink: 0;
+  border-bottom: 3px solid transparent;
+  color: #68778b;
+  font-size: 0.87rem;
+  font-weight: 650;
+  min-height: 54px;
+  padding: 12px 4px;
+}
+.workspaceTabs button:hover {
+  color: var(--app-blue);
+}
+.workspaceTabs [aria-selected="true"] {
+  border-bottom-color: var(--app-blue);
+  color: var(--app-blue);
+}
+.workspaceTabs button:focus-visible {
+  outline-offset: -4px;
+}
+.workspacePanel:focus-visible {
+  outline: 3px solid #92b6e2;
+  outline-offset: 5px;
+  border-radius: 12px;
+}
+.workspacePanel .pageHeading h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+.workspacePanel .pageHeading p {
+  font-size: 0.84rem;
 }
 .overviewLayout {
   display: grid;
@@ -645,7 +694,7 @@
     align-items: center;
     padding: 20px;
   }
-  .stat header {
+  .statLabel {
     gap: 12px;
     flex-direction: row-reverse;
   }
@@ -711,6 +760,10 @@
   .documentTabs button {
     flex: 1;
     padding: 11px;
+  }
+  .workspaceTabs {
+    gap: 20px;
+    margin-bottom: 22px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

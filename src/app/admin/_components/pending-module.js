@@ -11,7 +11,7 @@ export default function PendingModule({
 }) {
   return (
     <div className={styles.page}>
-      <PageHeading description={description} title={title} />
+      <PageHeading as="h2" description={description} title={title} />
       <div className={styles.pendingLayout}>
         <section className={`${styles.panel} ${styles.empty}`}>
           <Icon aria-hidden size={42} weight="duotone" />

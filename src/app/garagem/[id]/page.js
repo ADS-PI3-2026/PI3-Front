@@ -201,7 +201,7 @@ export default function VehicleHistoryPage() {
   if (requestState.loading) {
     return (
       <AppShell>
-        <PageTopBar backHref="/garagem" title="Manutenções" />
+        <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
         <section className={styles.loadingState} role="status">
           <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
           <span>Carregando dados do veículo...</span>
@@ -213,7 +213,7 @@ export default function VehicleHistoryPage() {
   if (!requestState.vehicle) {
     return (
       <AppShell>
-        <PageTopBar backHref="/garagem" title="Manutenções" />
+        <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
         <section className="app-empty-state app-empty-state--narrow" role="alert">
           <h2>{requestState.notFound ? "Veículo não encontrado" : "Não foi possível carregar o veículo"}</h2>
           <p>

@@ -24,6 +24,7 @@ import {
 } from "./lib/form-validation";
 import { getRecoveryStep } from "./lib/recovery-flow";
 import { legalContent } from "./lib/legal-content";
+import LegalDocument from "./components/legal-document";
 import { saveNavigationFeedback } from "./lib/navigation-feedback";
 import { getAuthenticatedHomePath } from "./lib/user-access";
 import styles from "./page.module.css";
@@ -131,14 +132,7 @@ function LegalDialog({ type, onClose }) {
         </div>
       </div>
       <div className={styles.legalCopy}>
-        <p>{content.intro}</p>
-        {content.sections.map((section) => (
-          <section key={section.title}>
-            <h3>{section.title}</h3>
-            {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-          </section>
-        ))}
-        <p className={styles.legalUpdated}>Última atualização: {content.updatedAt}</p>
+        <LegalDocument key={type} type={type} />
       </div>
       <ActionButton onClick={onClose} type="button">Entendi</ActionButton>
     </Dialog>

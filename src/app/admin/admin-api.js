@@ -95,6 +95,19 @@ export async function listInternalUsers({
   return resourcePage(result.data);
 }
 
+export async function getAdminOverview() {
+  const [administrators, services, activeServices] = await Promise.all([
+    listInternalUsers(),
+    listAdminServiceTypes(),
+    listAdminServiceTypes({ status: "1" }),
+  ]);
+  return {
+    administrators: administrators.total,
+    services: services.total,
+    activeServices: activeServices.total,
+  };
+}
+
 export async function saveInternalUser(id, payload) {
   const endpoint =
     id == null

@@ -30,8 +30,9 @@ export default function AppShell({ children, desktopLayout = true }) {
   const [navigationFeedback, setNavigationFeedback] = useState("");
   const [pendingTransition, setPendingTransition] = useNavigationTransition();
   const activeNavigationIndex = navigationItems.findIndex(({ href }) => (
-    pathname === href || pathname.startsWith(`${href}/`)
+    pathname === href
   ));
+  const showBottomNavigation = activeNavigationIndex !== -1;
   const [entryTransition] = useState(() => (
     pendingTransition?.href === pathname ? pendingTransition : null
   ));
@@ -60,7 +61,7 @@ export default function AppShell({ children, desktopLayout = true }) {
   if (!ready || !user || isAdminUser(user)) return <LoadingScreen />;
 
   return (
-    <div className={`${styles.shell} ${desktopLayout ? styles.desktopShell : ""}`}>
+    <div className={`${styles.shell} ${desktopLayout ? styles.desktopShell : ""} ${showBottomNavigation ? "" : styles.withoutNavigation}`}>
       <AuthUserContext.Provider key={session.sessionId} value={user}>
         <div className={`${styles.content} ${entryTransition ? styles.contentEntering : ""}`}>
           {navigationFeedback && (
@@ -83,7 +84,7 @@ export default function AppShell({ children, desktopLayout = true }) {
           {children}
         </div>
       </AuthUserContext.Provider>
-      <nav
+      {showBottomNavigation && <nav
         aria-label="Navegação principal"
         className={`${styles.bottomNavigation} ${entryTransition ? styles.navigationTransition : ""}`}
         style={{
@@ -93,7 +94,7 @@ export default function AppShell({ children, desktopLayout = true }) {
       >
         <span aria-hidden className={styles.navigationIndicator} />
         {navigationItems.map(({ href, label, Icon }, index) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+          const active = index === activeNavigationIndex;
 
           return (
             <Link
@@ -114,7 +115,7 @@ export default function AppShell({ children, desktopLayout = true }) {
             </Link>
           );
         })}
-      </nav>
+      </nav>}
     </div>
   );
 }

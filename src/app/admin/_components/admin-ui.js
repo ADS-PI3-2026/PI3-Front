@@ -10,7 +10,7 @@ import {
 import { getAdminErrorMessage } from "../admin-api";
 import styles from "../admin.module.css";
 
-export function useAdminResource(loader) {
+export function useAdminResource(loader, { enabled = true } = {}) {
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState({
     data: null,
@@ -19,6 +19,7 @@ export function useAdminResource(loader) {
   });
   const reload = useCallback(() => setRevision((value) => value + 1), []);
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     queueMicrotask(async () => {
       if (!active) return;
@@ -34,15 +35,15 @@ export function useAdminResource(loader) {
     return () => {
       active = false;
     };
-  }, [loader, revision]);
+  }, [enabled, loader, revision]);
   return { ...state, reload };
 }
 
-export function PageHeading({ title, description, children }) {
+export function PageHeading({ title, description, children, as: Heading = "h1" }) {
   return (
     <header className={styles.pageHeading}>
       <div>
-        <h1>{title}</h1>
+        <Heading>{title}</Heading>
         {description && <p>{description}</p>}
       </div>
       {children}

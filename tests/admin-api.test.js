@@ -25,6 +25,24 @@ afterEach(() => {
 });
 const api = () => import("../src/app/admin/admin-api.js");
 
+test("resumo administrativo usa totais da API, inclusive fora da primeira página", async () => {
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(url);
+    const total = parsed.pathname.endsWith("internal-users")
+      ? 31
+      : parsed.searchParams.get("filter[is_active]") === "1" ? 9 : 22;
+    return success({ data: [], meta: { current_page: 1, last_page: 3, total } });
+  };
+  assert.deepEqual(await (await api()).getAdminOverview(), {
+    administrators: 31, services: 22, activeServices: 9,
+  });
+});
+
+test("resumo não converte erro da API em total zero", async () => {
+  globalThis.fetch = async () => Response.json({ status: "error" }, { status: 503 });
+  await assert.rejects((await api()).getAdminOverview(), error => error.status === 503);
+});
+
 test("admin interpreta a paginação Laravel e envia filtro e ordenação sem perder a página", async () => {
   globalThis.fetch = async (url, options) => {
     const query = new URL(url).searchParams;
