@@ -44,6 +44,7 @@ function getSelectionLabel(files) {
 
 export default function FileUploadField({
   accept,
+  allowRemoveWhenDisabled = false,
   compact = false,
   disabled = false,
   error,
@@ -133,7 +134,7 @@ export default function FileUploadField({
                   <button
                     aria-label={`Remover ${file.name} da seleção`}
                     className={styles.removeButton}
-                    disabled={disabled}
+                    disabled={disabled && !allowRemoveWhenDisabled}
                     onClick={() => removeFile(index)}
                     title="Remover da seleção"
                     type="button"

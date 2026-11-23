@@ -160,16 +160,6 @@
   gap: 9px;
 }
 
-.loadingState {
-  align-items: center;
-  color: var(--app-muted);
-  display: flex;
-  font-size: 0.84rem;
-  gap: 9px;
-  justify-content: center;
-  min-height: 180px;
-}
-
 .loadingIcon {
   animation: transfer-spin 800ms linear infinite;
 }

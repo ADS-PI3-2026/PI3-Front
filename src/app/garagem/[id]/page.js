@@ -29,6 +29,7 @@ import SegmentedControl from "../../components/segmented-control";
 import VehicleBrandLogo from "../../components/vehicle-brand-logo";
 import VehiclePlate from "../../components/vehicle-plate";
 import PageTopBar from "../_components/page-top-bar";
+import PageLoadingState from "../_components/page-loading-state";
 import {
   getVehicle,
   getMaintenanceAlertErrorMessage,
@@ -314,10 +315,7 @@ export default function VehicleHistoryPage() {
     return (
       <AppShell>
         <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
-        <section className={styles.loadingState} role="status">
-          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
-          <span>Carregando dados do veículo...</span>
-        </section>
+        <PageLoadingState message="Carregando dados do veículo..." />
       </AppShell>
     );
   }

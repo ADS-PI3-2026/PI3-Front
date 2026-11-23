@@ -26,6 +26,7 @@ import {
   VERIFICATION_CODE_LENGTH,
 } from "../../../../lib/form-validation";
 import PageTopBar from "../../../_components/page-top-bar";
+import PageLoadingState from "../../../_components/page-loading-state";
 import TransferCancelControl from "../../../_components/transfer-cancel-control";
 import {
   cancelVehicleTransfer,
@@ -389,10 +390,7 @@ function VehicleTransferContent() {
     return (
       <>
         <PageTopBar title="Transferir veículo" />
-        <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
-          <p>Carregando veículo...</p>
-        </section>
+        <PageLoadingState message="Carregando veículo..." />
       </>
     );
   }
@@ -439,6 +437,7 @@ function VehicleTransferContent() {
           <VehicleBrandLogo
             brandId={vehicle.brandId}
             className={styles.brandLogo}
+            imageSize={160}
             type={vehicle.type}
           />
           <div>
@@ -460,10 +459,7 @@ function VehicleTransferContent() {
           )}
 
           {!ready ? (
-            <div className={styles.loadingState} role="status">
-              <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={24} weight="bold" />
-              Carregando transferência...
-            </div>
+            <PageLoadingState compact message="Carregando transferência..." />
           ) : !transfer ? (
             <>
               <header className={styles.intro}>

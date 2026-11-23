@@ -24,6 +24,7 @@ import { getAuthErrorMessage } from "../../auth-api";
 import { createEmptyCode, VERIFICATION_CODE_LENGTH } from "../../lib/form-validation";
 import ActiveTransferList from "../_components/active-transfer-list";
 import PageTopBar from "../_components/page-top-bar";
+import PageLoadingState from "../_components/page-loading-state";
 import TransferCancelControl from "../_components/transfer-cancel-control";
 import {
   buildBuyerTransferPayload,
@@ -369,10 +370,7 @@ function BuyerTransferContent() {
     return (
       <>
         <PageTopBar title="Transferências" />
-        <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
-          <p>Carregando transferência...</p>
-        </section>
+        <PageLoadingState message="Carregando transferência..." />
       </>
     );
   }

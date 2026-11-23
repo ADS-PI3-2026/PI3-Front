@@ -59,6 +59,12 @@ export function startSessionMonitor() {
       notify();
       return;
     }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      sessionWarning = null;
+      notify();
+      timer = setTimeout(check, 30000);
+      return;
+    }
     checking = true;
     try {
       await ensureAuthSession();

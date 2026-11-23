@@ -53,6 +53,15 @@
   justify-items: center;
 }
 
+.loadingState {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  grid-template-columns: 1fr;
+  justify-content: center;
+  min-height: 110px;
+}
+
 .requestState strong {
   color: var(--app-ink);
   font-size: 0.82rem;

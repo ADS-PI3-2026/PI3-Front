@@ -41,6 +41,7 @@ import {
   getVehiclePlateType,
 } from "../../../lib/vehicle-plate";
 import PageTopBar from "../../_components/page-top-bar";
+import PageLoadingState from "../../_components/page-loading-state";
 import {
   changeVehiclePlateType,
   deleteVehicle,
@@ -178,10 +179,7 @@ export default function ManageVehiclePage() {
     return (
       <AppShell>
         <PageTopBar title="Gerenciar veículo" />
-        <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={25} weight="bold" />
-          <p>Carregando veículo...</p>
-        </section>
+        <PageLoadingState message="Carregando veículo..." />
       </AppShell>
     );
   }
@@ -500,6 +498,7 @@ export default function ManageVehiclePage() {
           <VehicleBrandLogo
             brandId={vehicle.brandId}
             className={styles.brandLogo}
+            imageSize={160}
             type={vehicle.type}
           />
           <div className={styles.vehicleName}>

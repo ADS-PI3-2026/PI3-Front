@@ -8,6 +8,7 @@ import { recheckSession, useSession } from "./session-provider";
 import { isAdminUser } from "../lib/user-access";
 import { consumeNavigationFeedback } from "../lib/navigation-feedback";
 import LoadingScreen from "./loading-screen";
+import OfflineBanner from "./offline-banner";
 import { useNavigationTransition } from "./navigation-transition-provider";
 import styles from "./app-shell.module.css";
 
@@ -81,6 +82,7 @@ export default function AppShell({ children, desktopLayout = true }) {
             <p>{warning}</p>
             <button onClick={() => void recheckSession()} type="button">Tentar novamente</button>
           </div>}
+          <OfflineBanner />
           {children}
         </div>
       </AuthUserContext.Provider>
