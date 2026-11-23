@@ -120,6 +120,68 @@
   display: contents;
 }
 
+.transferInviteNotice {
+  align-items: center;
+  background: #eef5ff;
+  border: 1px solid #d4e3f7;
+  border-radius: 13px;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-bottom: 20px;
+  padding: 13px;
+}
+
+.transferInviteNotice .dialogIcon {
+  height: 40px;
+  margin: 0;
+  width: 40px;
+}
+
+.transferInviteNotice strong {
+  color: var(--navy);
+  font-size: 0.84rem;
+}
+
+.transferInviteNotice p {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.inviteAcceptanceIcon {
+  align-items: center;
+  background: var(--blue-soft);
+  border-radius: 15px;
+  color: var(--blue);
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  margin: 0 auto 20px;
+  width: 58px;
+}
+
+.inviteAccountButton {
+  color: var(--blue);
+  font-size: 0.82rem;
+  font-weight: 720;
+  text-decoration: underline;
+  text-decoration-color: rgba(7, 71, 147, 0.28);
+  text-underline-offset: 3px;
+}
+
+.inviteAccountButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.inviteAcceptanceActions {
+  display: grid;
+  gap: 10px;
+  margin-top: 26px;
+}
+
 .accountTypeField {
   display: grid;
   gap: 7px;
@@ -589,6 +651,12 @@
     gap: 12px;
     justify-content: center;
     width: 100%;
+  }
+
+  .inviteAcceptanceActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .authScreen {

@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   CircleNotchIcon,
   ClockCountdownIcon,
+  EnvelopeSimpleIcon,
   IdentificationCardIcon,
   ShieldWarningIcon,
 } from "@phosphor-icons/react";
@@ -32,7 +33,9 @@ import {
   getVehicleTransfer,
   getVehicleTransferErrorMessage,
   getVehicleTransferFieldErrors,
+  getVehicleTransferInvite,
   listVehicleTransferPage,
+  sendVehicleTransferInvite,
   startVehicleTransferByOwner,
   validateVehicleTransferCode,
 } from "../../../_lib/garage-api";
@@ -96,6 +99,7 @@ function VehicleTransferContent() {
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
   const [successFeedback, setSuccessFeedback] = useState("");
+  const [inviteState, setInviteState] = useState(null);
   const [receivedCodeOpen, setReceivedCodeOpen] = useState(false);
   const [code, setCode] = useState(createEmptyCode);
 
@@ -172,6 +176,7 @@ function VehicleTransferContent() {
     setErrors({});
     setFeedback("");
     setSuccessFeedback("");
+    setInviteState(null);
     setReceivedCodeOpen(false);
   };
 
@@ -257,12 +262,38 @@ function VehicleTransferContent() {
       setTransfer(startedTransfer);
       setCode(createEmptyCode());
     } catch (error) {
-      setErrors(getVehicleTransferFieldErrors(error));
+      const invite = getVehicleTransferInvite(error);
+      if (invite) {
+        setErrors({});
+        setFeedback("");
+        setInviteState({ ...invite, status: "ready" });
+      } else {
+        setErrors(getVehicleTransferFieldErrors(error));
+        setFeedback(
+          getVehicleTransferErrorMessage(
+            error,
+            "Não foi possível iniciar a transferência. Tente novamente.",
+          ),
+        );
+      }
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const sendInvite = async () => {
+    if (!inviteState || pending || inviteState.status === "sent") return;
+
+    setPending(true);
+    setFeedback("");
+    setSuccessFeedback("");
+    try {
+      await sendVehicleTransferInvite(inviteState.code);
+      setInviteState((current) => ({ ...current, status: "sent" }));
+      setSuccessFeedback(`Convite enviado para ${inviteState.email}.`);
+    } catch (error) {
       setFeedback(
-        getVehicleTransferErrorMessage(
-          error,
-          "Não foi possível iniciar a transferência. Tente novamente.",
-        ),
+        getAuthErrorMessage(error, "Não foi possível enviar o convite. Tente novamente."),
       );
     } finally {
       setPending(false);
@@ -508,6 +539,54 @@ function VehicleTransferContent() {
 
               <div className={styles.optionDivider}><span>ou inicie a transferência</span></div>
 
+              {inviteState ? (
+                <section className={`app-card ${styles.inviteCard}`}>
+                  <div className={styles.inviteHeading}>
+                    <EnvelopeSimpleIcon aria-hidden size={28} weight="duotone" />
+                    <div>
+                      <h2>{inviteState.status === "sent" ? "Convite enviado" : "Pessoa ainda não cadastrada"}</h2>
+                      <p>
+                        {inviteState.status === "sent"
+                          ? `Enviamos para ${inviteState.email} as instruções para criar a conta e aceitar a transferência.`
+                          : `${inviteState.email} ainda não possui uma conta. Você pode enviar um convite para continuar.`}
+                      </p>
+                    </div>
+                  </div>
+                  <p className={styles.inviteExplanation}>
+                    A transferência e os códigos de confirmação serão criados somente depois que a pessoa entrar no LegadoCar e aceitar o convite.
+                  </p>
+                  <div className={styles.inviteActions}>
+                    {inviteState.status !== "sent" && (
+                      <ActionButton disabled={pending} onClick={() => void sendInvite()} type="button">
+                        {pending ? "Enviando..." : "Enviar convite"}
+                      </ActionButton>
+                    )}
+                    {inviteState.status !== "sent" && (
+                      <ActionButton
+                        disabled={pending}
+                        onClick={() => {
+                          setInviteState(null);
+                          setSuccessFeedback("");
+                          setFeedback("");
+                        }}
+                        type="button"
+                        variant="secondary"
+                      >
+                        Usar outro e-mail
+                      </ActionButton>
+                    )}
+                    {inviteState.status === "sent" && (
+                      <ActionButton
+                        onClick={() => router.replace(`/garagem/${vehicleId}`)}
+                        type="button"
+                        variant="secondary"
+                      >
+                        Voltar ao veículo
+                      </ActionButton>
+                    )}
+                  </div>
+                </section>
+              ) : (
               <form className={`app-form-card ${styles.transferForm}`} noValidate onSubmit={startTransfer}>
                 <FormField
                   autoComplete="email"
@@ -517,6 +596,7 @@ function VehicleTransferContent() {
                   name="new-owner"
                   onChange={(event) => {
                     setRecipient(event.target.value.slice(0, 255));
+                    setInviteState(null);
                     setErrors((current) => ({ ...current, recipient: "" }));
                     setFeedback("");
                   }}
@@ -555,6 +635,7 @@ function VehicleTransferContent() {
                   </ActionButton>
                 </div>
               </form>
+              )}
             </>
           ) : terminalStatus ? (
             <section className={`app-card ${styles.expiredState}`}>

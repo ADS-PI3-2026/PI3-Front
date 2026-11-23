@@ -122,7 +122,7 @@
 .maintenanceSection {
   margin: 0 auto;
   max-width: 760px;
-  padding: 18px 0 16px;
+  padding: 18px 0 calc(150px + env(safe-area-inset-bottom));
 }
 
 .viewControl {
@@ -476,6 +476,122 @@
   gap: 7px;
 }
 
+.alertQuickActions {
+  border-top: 1px solid #edf0f6;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 12px;
+}
+
+.cancelAlertButton,
+.completeAlertButton {
+  align-items: center;
+  border-radius: 9px;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 760;
+  gap: 6px;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 0;
+  padding: 8px 9px;
+  text-align: center;
+}
+
+.cancelAlertButton {
+  background: #fff0ef;
+  border: 1px solid #edc4bf;
+  color: #9c2b22;
+}
+
+.cancelAlertButton:hover {
+  background: #fbe2df;
+}
+
+.completeAlertButton {
+  background: #e9f7ef;
+  border: 1px solid #b9dfc8;
+  color: #176b3a;
+}
+
+.completeAlertButton:hover {
+  background: #dcf1e5;
+}
+
+.cancelAlertButton:focus-visible,
+.completeAlertButton:focus-visible {
+  outline: 3px solid rgba(7, 71, 147, 0.2);
+  outline-offset: 2px;
+}
+
+.cancelDialog {
+  background: #fff;
+  border: 1px solid #e2e6ef;
+  border-radius: 18px;
+  box-shadow: 0 28px 80px rgba(15, 33, 61, 0.24);
+  color: var(--app-ink);
+  margin: auto;
+  max-height: calc(100svh - 32px);
+  padding: 26px 22px 22px;
+  text-align: center;
+  width: min(430px, calc(100% - 28px));
+}
+
+.cancelDialog::backdrop {
+  backdrop-filter: blur(3px);
+  background: rgba(15, 33, 61, 0.48);
+}
+
+.cancelDialogClose {
+  align-items: center;
+  background: #f1f3f7;
+  border-radius: 999px;
+  color: #586172;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 36px;
+}
+
+.cancelDialogClose:hover:not(:disabled) {
+  background: #e7eaf0;
+}
+
+.cancelDialogIcon {
+  align-items: center;
+  background: #fff0ef;
+  border-radius: 14px;
+  color: var(--app-danger);
+  display: flex;
+  height: 52px;
+  justify-content: center;
+  margin: 0 auto 14px;
+  width: 52px;
+}
+
+.cancelDialog h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+}
+
+.cancelDialogDescription {
+  color: var(--app-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 9px auto 20px;
+  max-width: 340px;
+}
+
+.cancelDialogActions {
+  display: grid;
+  gap: 10px;
+}
+
 .inlineEmptyState {
   align-items: center;
   background: var(--app-surface);
@@ -544,6 +660,11 @@
     --vehicle-brand-logo-size: 104px;
   }
 
+  .cancelDialogActions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -609,7 +730,7 @@
     margin: 0;
     max-width: none;
     min-width: 0;
-    padding: 0 0 36px;
+    padding: 0 0 110px;
     width: 100%;
   }
 

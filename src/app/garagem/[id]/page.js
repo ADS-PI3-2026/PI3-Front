@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   BellRingingIcon,
   CalendarBlankIcon,
@@ -20,7 +20,10 @@ import {
   WrenchIcon,
   ClockCounterClockwiseIcon,
   CardsIcon,
+  XCircleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
+import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
 import SegmentedControl from "../../components/segmented-control";
 import VehicleBrandLogo from "../../components/vehicle-brand-logo";
@@ -28,9 +31,11 @@ import VehiclePlate from "../../components/vehicle-plate";
 import PageTopBar from "../_components/page-top-bar";
 import {
   getVehicle,
+  getMaintenanceAlertErrorMessage,
   listVehicleMaintenanceDetails,
   listVehicleAlertsPage,
   listVehicleMaintenancesPage,
+  updateMaintenanceAlert,
 } from "../_lib/garage-api";
 import { getAuthErrorMessage } from "../../auth-api";
 import styles from "./page.module.css";
@@ -49,6 +54,69 @@ function formatRegistrationDate(value) {
 
 function getAlertTone(item) {
   return item.status === "Atrasada" ? styles.overdue : styles.pending;
+}
+
+function AlertCancellationDialog({ alert, busy, error, onClose, onConfirm }) {
+  const dialogRef = useRef(null);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+
+  return (
+    <dialog
+      aria-describedby={descriptionId}
+      aria-labelledby={titleId}
+      className={styles.cancelDialog}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!busy) onClose();
+      }}
+      onClick={(event) => {
+        if (busy || event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const outside = event.clientX < bounds.left || event.clientX > bounds.right
+          || event.clientY < bounds.top || event.clientY > bounds.bottom;
+        if (outside) onClose();
+      }}
+      ref={dialogRef}
+    >
+      <button
+        aria-label="Fechar cancelamento"
+        className={styles.cancelDialogClose}
+        disabled={busy}
+        onClick={onClose}
+        type="button"
+      >
+        <XIcon aria-hidden size={20} weight="bold" />
+      </button>
+      <span className={styles.cancelDialogIcon}>
+        <XCircleIcon aria-hidden size={28} weight="duotone" />
+      </span>
+      <h2 id={titleId}>Cancelar alerta?</h2>
+      <p className={styles.cancelDialogDescription} id={descriptionId}>
+        O alerta “{alert.title}” será removido da lista de manutenções pendentes.
+      </p>
+      {error && (
+        <p className="app-feedback app-feedback--error" role="alert">
+          <WarningCircleIcon aria-hidden size={18} weight="fill" />
+          {error}
+        </p>
+      )}
+      <div className={styles.cancelDialogActions}>
+        <ActionButton disabled={busy} onClick={onClose} type="button" variant="secondary">
+          Manter alerta
+        </ActionButton>
+        <ActionButton disabled={busy} onClick={onConfirm} type="button" variant="danger">
+          {busy ? "Cancelando..." : "Confirmar cancelamento"}
+        </ActionButton>
+      </div>
+    </dialog>
+  );
 }
 
 export default function VehicleHistoryPage() {
@@ -70,6 +138,8 @@ export default function VehicleHistoryPage() {
   });
   const [loadMoreState, setLoadMoreState] = useState({ error: "", loading: "" });
   const [pdfState, setPdfState] = useState({ error: "", loading: false });
+  const [alertFeedback, setAlertFeedback] = useState("");
+  const [cancelDialog, setCancelDialog] = useState({ alert: null, error: "", pending: false });
 
   useEffect(() => {
     let active = true;
@@ -195,6 +265,48 @@ export default function VehicleHistoryPage() {
         error: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
         loading: false,
       });
+    }
+  };
+
+  const openAlertCancellation = (alert) => {
+    setAlertFeedback("");
+    setCancelDialog({ alert, error: "", pending: false });
+  };
+
+  const closeAlertCancellation = () => {
+    if (cancelDialog.pending) return;
+    setCancelDialog({ alert: null, error: "", pending: false });
+  };
+
+  const confirmAlertCancellation = async () => {
+    const alert = cancelDialog.alert;
+    if (!alert || cancelDialog.pending) return;
+
+    setCancelDialog((current) => ({ ...current, error: "", pending: true }));
+    try {
+      await updateMaintenanceAlert(vehicleId, alert.id, { status: "cancelled" });
+      setRequestState((current) => ({
+        ...current,
+        alerts: current.alerts.filter((item) => item.id !== alert.id),
+      }));
+      setPagination((current) => ({
+        ...current,
+        alerts: {
+          ...current.alerts,
+          total: Math.max(0, current.alerts.total - 1),
+        },
+      }));
+      setCancelDialog({ alert: null, error: "", pending: false });
+      setAlertFeedback("Alerta de manutenção cancelado com sucesso.");
+    } catch (error) {
+      setCancelDialog((current) => ({
+        ...current,
+        error: getMaintenanceAlertErrorMessage(
+          error,
+          "Não foi possível cancelar o alerta. Tente novamente.",
+        ),
+        pending: false,
+      }));
     }
   };
 
@@ -450,6 +562,13 @@ export default function VehicleHistoryPage() {
                   <BellRingingIcon aria-hidden size={27} weight="duotone" />
                 </header>
 
+                {alertFeedback && (
+                  <p className="app-feedback app-feedback--success" role="status">
+                    <CheckCircleIcon aria-hidden size={18} weight="fill" />
+                    {alertFeedback}
+                  </p>
+                )}
+
                 {alertItems.length > 0 ? (
                   <>
                     <div className={styles.alertList}>
@@ -482,6 +601,24 @@ export default function VehicleHistoryPage() {
                             >
                               <PencilSimpleIcon aria-hidden size={14} weight="bold" />
                               Abrir alerta
+                            </Link>
+                          </div>
+
+                          <div className={styles.alertQuickActions}>
+                            <button
+                              className={styles.cancelAlertButton}
+                              onClick={() => openAlertCancellation(item)}
+                              type="button"
+                            >
+                              <XCircleIcon aria-hidden size={17} weight="bold" />
+                              Cancelar alerta
+                            </button>
+                            <Link
+                              className={styles.completeAlertButton}
+                              href={`/garagem/${vehicle.id}/alerta/${item.id}?acao=concluir`}
+                            >
+                              <CheckCircleIcon aria-hidden size={17} weight="bold" />
+                              Concluir alerta
                             </Link>
                           </div>
                         </article>
@@ -530,6 +667,15 @@ export default function VehicleHistoryPage() {
       >
         <PlusIcon aria-hidden size={28} weight="regular" />
       </Link>
+      {cancelDialog.alert && (
+        <AlertCancellationDialog
+          alert={cancelDialog.alert}
+          busy={cancelDialog.pending}
+          error={cancelDialog.error}
+          onClose={closeAlertCancellation}
+          onConfirm={() => void confirmAlertCancellation()}
+        />
+      )}
     </AppShell>
   );
 }

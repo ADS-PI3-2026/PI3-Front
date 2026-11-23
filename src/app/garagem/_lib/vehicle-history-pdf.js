@@ -65,6 +65,15 @@ export function createVehicleHistoryPdf({ maintenances, vehicle }) {
     document.setFontSize(16);
     document.text("LegadoCar", margin, 11);
     document.setFont("helvetica", "normal");
+    document.setFontSize(8.5);
+    document.textWithLink("legadocar.com.br", pageWidth - margin, 11, {
+      align: "right",
+      url: "https://legadocar.com.br",
+    });
+    const websiteWidth = document.getTextWidth("legadocar.com.br");
+    document.setDrawColor(255, 255, 255);
+    document.setLineWidth(0.2);
+    document.line(pageWidth - margin - websiteWidth, 12, pageWidth - margin, 12);
     document.setFontSize(9);
     document.text(
       continuation ? "Histórico de manutenção — continuação" : "Histórico detalhado de manutenção",
@@ -155,12 +164,18 @@ export function createVehicleHistoryPdf({ maintenances, vehicle }) {
       writeWrappedText(maintenance.description, { indent: 2 });
     }
 
-    const payloadEntries = Object.entries(maintenance.payload ?? {});
-    if (payloadEntries.length > 0) {
+    const payloadDetails = maintenance.formattedPayload?.length > 0
+      ? maintenance.formattedPayload.map(({ key, label, value }) => ({ key, label, value }))
+      : Object.entries(maintenance.payload ?? {}).map(([key, value]) => ({
+        key,
+        label: formatPayloadLabel(key),
+        value: formatPayloadValue(value),
+      }));
+    if (payloadDetails.length > 0) {
       cursorY += 2;
       writeWrappedText("Detalhes do serviço", { color: [35, 38, 48], fontSize: 9, style: "bold" });
-      for (const [field, value] of payloadEntries) {
-        writeWrappedText(`${formatPayloadLabel(field)}: ${formatPayloadValue(value)}`, { indent: 2 });
+      for (const detail of payloadDetails) {
+        writeWrappedText(`${detail.label}: ${detail.value}`, { indent: 2 });
       }
     }
 

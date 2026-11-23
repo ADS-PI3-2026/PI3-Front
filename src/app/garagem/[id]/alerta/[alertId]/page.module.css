@@ -1,63 +1,50 @@
-.cancellationCard {
-  --app-card-radius: 12px;
+.actionPanel {
+  background: #f8faff;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
   display: grid;
   gap: 16px;
   margin: 18px auto 12px;
   max-width: 460px;
+  padding: 18px;
 }
 
-.cancellationHeading {
+.completionHeading {
   align-items: center;
-  color: var(--app-danger);
   display: grid;
   gap: 11px;
   grid-template-columns: auto minmax(0, 1fr);
 }
 
-.cancellationHeading h2 {
+.completionHeading {
+  color: var(--app-primary);
+}
+
+.completionHeading h2 {
   color: var(--app-ink);
   font-size: 1rem;
 }
 
-.cancellationHeading p,
-.cancellationConfirmation > p {
+.completionHeading p {
   color: var(--app-muted);
   font-size: 0.76rem;
   line-height: 1.45;
   margin-top: 3px;
 }
 
-.cancellationConfirmation {
-  border-top: 1px solid var(--app-line);
-  display: grid;
-  gap: 13px;
-  padding-top: 15px;
-}
-
-.cancellationActions {
-  display: grid;
-  gap: 9px;
-  grid-template-columns: 1fr 1fr;
-}
-
-@media (max-width: 440px) {
-  .cancellationActions {
-    grid-template-columns: 1fr;
-  }
+.completionRecoveryActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
 @media (min-width: 1200px) {
-  .cancellationCard {
-    --app-card-padding: 24px 28px;
+  .actionPanel {
     margin: 0 max(0px, calc((100% - 1160px) / 2)) 40px auto;
     max-width: 836px;
+    padding: 22px 28px;
     width: calc(100% - 324px);
   }
 
-  .cancellationActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    justify-content: flex-end;
-  }
 }

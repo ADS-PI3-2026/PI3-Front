@@ -1,11 +1,24 @@
 .topBar {
   align-items: center;
+  background: rgba(247, 246, 252, 0.96);
   border-bottom: 1px solid #e5e6ed;
+  box-shadow: 0 8px 20px rgba(30, 42, 70, 0.055);
   display: grid;
   grid-template-columns: 48px 1fr 48px;
   margin: 0 -14px;
   min-height: 68px;
-  padding: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 10px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .topBar {
+    -webkit-backdrop-filter: blur(14px) saturate(145%);
+    backdrop-filter: blur(14px) saturate(145%);
+    background: rgba(247, 246, 252, 0.84);
+  }
 }
 
 .topBar h1 {
@@ -45,11 +58,17 @@
 
 @media (min-width: 1200px) {
   .topBar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: transparent;
+    box-shadow: none;
     gap: 16px;
     grid-template-columns: 44px minmax(0, 1fr) auto;
     margin: 0 0 28px;
     min-height: 118px;
     padding: 24px 0;
+    position: static;
+    z-index: auto;
   }
 
   .topBar h1 {

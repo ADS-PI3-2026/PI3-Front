@@ -659,6 +659,41 @@ test("carrega e atualiza um alerta pela rota vinculada ao veículo", async () =>
   });
 });
 
+test("conclui o alerta vinculando a manutenção criada", async () => {
+  startSession();
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "http://localhost:8000/api/vehicles/7/maintenance-alerts/32");
+    assert.equal(options.method, "PATCH");
+    assert.deepEqual(JSON.parse(options.body), {
+      maintenance_id: 51,
+      status: "completed",
+    });
+    return success({
+      id: 32,
+      vehicle_id: 7,
+      user_id: 3,
+      service_type_id: 4,
+      maintenance_id: 51,
+      title: "Troca de Óleo e Filtros",
+      description: "Realizar a próxima troca preventiva.",
+      status: "completed",
+      date_due: "2026-12-10",
+      mileage_due: null,
+      vehicle: { id: 7, plate: "ABC1D23", mileage: 75111 },
+      service_type: { id: 4, name: "Troca de Óleo e Filtros" },
+      user: { id: 3, name: "Pessoa" },
+    });
+  };
+
+  const completed = await (await garageApi()).updateMaintenanceAlert(7, 32, {
+    maintenance_id: 51,
+    status: "completed",
+  });
+
+  assert.equal(completed.maintenanceId, 51);
+  assert.equal(completed.status, "completed");
+});
+
 test("resolve ids omitidos na listagem de tipos usando os campos dinâmicos", async () => {
   startSession();
   let calls = 0;
@@ -735,6 +770,59 @@ test("cadastra veículo com os valores selecionados na FIPE no contrato do Larav
     renavam: "12345678900",
   });
   assert.equal(vehicle.id, 9);
+  assert.equal(vehicle.restored, false);
+});
+
+test("identifica a restauração pelo registro antigo preservado pelo backend", async () => {
+  startSession();
+  globalThis.fetch = async () => Response.json({
+    status: "success",
+    message: "Veículo cadastrado com sucesso",
+    data: {
+      id: 9,
+      brand: "Toyota",
+      model: "Corolla XEi 2.0",
+      year: 2024,
+      plate: "ABC1D23",
+      mileage: 12500,
+      created_at: "2026-09-10 10:00:00",
+      updated_at: "2026-11-22 20:00:00",
+    },
+  }, { status: 201 });
+
+  const vehicle = await (await garageApi()).createVehicle({
+    brand: "Toyota",
+    model: "Corolla XEi 2.0",
+    year: 2024,
+    plate: "ABC1D23",
+  });
+
+  assert.equal(vehicle.id, 9);
+  assert.equal(vehicle.restored, true);
+});
+
+test("prioriza o indicador explícito quando o backend informar a restauração", async () => {
+  startSession();
+  globalThis.fetch = async () => Response.json({
+    status: "success",
+    message: "Veículo restaurado com sucesso",
+    data: {
+      id: 10,
+      brand: "Honda",
+      model: "Civic",
+      year: 2020,
+      plate: "BRA1A23",
+      mileage: 50000,
+      restored: true,
+      created_at: "2026-11-22 20:00:00",
+      updated_at: "2026-11-22 20:00:00",
+    },
+  }, { status: 201 });
+
+  const vehicle = await (await garageApi()).createVehicle({ plate: "BRA1A23" });
+
+  assert.equal(vehicle.id, 10);
+  assert.equal(vehicle.restored, true);
 });
 
 test("normaliza RENAVAM antigo para 11 dígitos antes do envio", async () => {
@@ -842,6 +930,57 @@ test("inicia a transferência pelo proprietário com o e-mail do destinatário",
   });
   assert.equal(transfer.id, 42);
   assert.equal(transfer.initiatedBy, "owner");
+});
+
+test("reconhece e envia o convite quando o destinatário ainda não possui cadastro", async () => {
+  const session = startSession();
+  const inviteCode = "A".repeat(64);
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ options, url });
+    return success(null);
+  };
+
+  const api = await garageApi();
+  const invite = api.getVehicleTransferInvite({
+    status: 422,
+    data: {
+      data: {
+        alternative: "send_invite",
+        invite_code: inviteCode,
+        recipient_email: " NOVO@EXEMPLO.COM ",
+      },
+    },
+  });
+  await api.sendVehicleTransferInvite(invite.code);
+
+  assert.deepEqual(invite, {
+    code: inviteCode,
+    email: "novo@exemplo.com",
+  });
+  assert.equal(requests[0].url, "http://localhost:8000/api/invite/send");
+  assert.equal(requests[0].options.method, "POST");
+  assert.equal(requests[0].options.headers.Authorization, `Bearer ${session.accessToken}`);
+  assert.deepEqual(JSON.parse(requests[0].options.body), { invite_code: inviteCode });
+  assert.equal(api.getVehicleTransferInvite({ status: 422, data: { data: {} } }), null);
+});
+
+test("aceita o convite autenticado e recupera a transferência iniciada", async () => {
+  const session = startSession();
+  const inviteCode = "b".repeat(64);
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { options, url };
+    return success({ transfer_id: 52 });
+  };
+
+  const transferId = await (await garageApi()).acceptVehicleTransferInvite(inviteCode);
+
+  assert.equal(transferId, 52);
+  assert.equal(request.url, "http://localhost:8000/api/invite/accept");
+  assert.equal(request.options.method, "POST");
+  assert.equal(request.options.headers.Authorization, `Bearer ${session.accessToken}`);
+  assert.deepEqual(JSON.parse(request.options.body), { invite_code: inviteCode });
 });
 
 test("lista as transferências pendentes com papel, contraparte e paginação", async () => {
@@ -1093,6 +1232,10 @@ test("carrega os detalhes completos da manutenção e seus comprovantes", async 
       is_author: true,
       registered_by: "Você",
       payload: { oil_brand: "Mobil", changed_filter: true },
+      formatted_payload: [
+        { key: "oil_brand", label: "Marca do óleo", value: "Mobil" },
+        { key: "changed_filter", label: "Filtro substituído", value: "Sim" },
+      ],
       attachments: [{
         id: 8,
         original_name: "nota.pdf",
@@ -1117,6 +1260,10 @@ test("carrega os detalhes completos da manutenção e seus comprovantes", async 
     cost: 550,
     date: "24/10/2026",
     description: "Troca preventiva",
+    formattedPayload: [
+      { key: "oil_brand", label: "Marca do óleo", value: "Mobil" },
+      { key: "changed_filter", label: "Filtro substituído", value: "Sim" },
+    ],
     id: 51,
     mileage: 75111,
     payload: { oil_brand: "Mobil", changed_filter: true },
