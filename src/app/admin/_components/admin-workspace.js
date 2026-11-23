@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircleIcon, UsersThreeIcon, WrenchIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, CarIcon, UsersThreeIcon, WrenchIcon } from "@phosphor-icons/react";
 import { useAdminUser } from "../../components/admin-shell";
 import { getAdminOverview } from "../admin-api";
 import { adminTabs, nextAdminTab, resolveAdminTab, updateAdminWorkspaceHref } from "../_lib/admin-workspace";
@@ -10,8 +10,8 @@ import { PageHeading, ResourceState, useAdminResource } from "./admin-ui";
 import InternalUsersPanel from "./internal-users-panel";
 import ServiceTypesPanel from "./service-types-panel";
 import LegalContentPanel from "./legal-content-panel";
-import MediationsPanel from "./mediations-panel";
-import AuditPanel from "./audit-panel";
+import OperationTable from "./operation-tables";
+import AdminRecordDialog from "./admin-record-dialog";
 import styles from "../admin.module.css";
 
 export default function AdminWorkspace() {
@@ -20,8 +20,16 @@ export default function AdminWorkspace() {
   const router = useRouter();
   const selected = resolveAdminTab(params.get("aba"));
   const tabs = useRef({});
+  const [record, setRecord] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [transferPreset, setTransferPreset] = useState(0);
+  useEffect(() => { queueMicrotask(() => setRecord(null)); }, [selected]);
   const overview = useAdminResource(getAdminOverview);
-  const selectTab = (id, status) => {
+  const changed = () => { overview.reload(); setRefreshKey(value => value + 1); };
+  const openRecord = (kind, id) => setRecord({ kind, id, tab: selected });
+  const selectTab = (id, status, openTransfers = false) => {
+    setRecord(null);
+    if (openTransfers) setTransferPreset(value => value + 1);
     router.push(updateAdminWorkspaceHref(params, {
       aba: id,
       novo: "",
@@ -30,10 +38,12 @@ export default function AdminWorkspace() {
   };
   const panels = {
     administradores: <InternalUsersPanel active={selected === "administradores"} onChanged={overview.reload} />,
-    servicos: <ServiceTypesPanel active={selected === "servicos"} />,
+    usuarios: <OperationTable kind="users" active={selected === "usuarios"} onOpen={openRecord} refreshKey={refreshKey} />,
+    veiculos: <OperationTable kind="vehicles" active={selected === "veiculos"} onOpen={openRecord} refreshKey={refreshKey} />,
+    servicos: <ServiceTypesPanel active={selected === "servicos"} onChanged={overview.reload} />,
     textos: <LegalContentPanel active={selected === "textos"} />,
-    mediacoes: <MediationsPanel />,
-    auditoria: <AuditPanel />,
+    mediacoes: <OperationTable key={transferPreset} initialFilters={transferPreset ? { status: "pending,expired" } : {}} kind="transfers" active={selected === "mediacoes"} onOpen={openRecord} refreshKey={refreshKey} />,
+    auditoria: <OperationTable kind="audits" active={selected === "auditoria"} onOpen={openRecord} refreshKey={refreshKey} />,
   };
 
   return (
@@ -47,16 +57,18 @@ export default function AdminWorkspace() {
           {overview.data && (
             <div className={styles.stats}>
               {[
-                { label: "Administradores", value: overview.data.administrators, tab: "administradores", Icon: UsersThreeIcon },
-                { label: "Tipos de serviço", value: overview.data.services, tab: "servicos", status: "", Icon: WrenchIcon },
-                { label: "Tipos de serviço ativos", value: overview.data.activeServices, tab: "servicos", status: "1", Icon: CheckCircleIcon },
-              ].map(({ label, value, tab, status, Icon }) => (
-                <button className={`${styles.panel} ${styles.stat}`} key={label} onClick={() => selectTab(tab, status)} type="button">
+                { label: "Usuários do aplicativo", value: overview.data.users, tab: "usuarios", detail: `${overview.data.administrators} ${overview.data.administrators === 1 ? "administrador" : "administradores"} na equipe`, Icon: UsersThreeIcon },
+                { label: "Veículos", value: overview.data.vehicles, tab: "veiculos", detail: "Veículos ativos na plataforma", Icon: CarIcon },
+                { label: "Transferências em aberto", value: overview.data.openTransfers, tab: "mediacoes", detail: "Pendentes e expiradas", Icon: ArrowsLeftRightIcon },
+                { label: "Tipos de serviço", value: overview.data.services, tab: "servicos", status: "", detail: `${overview.data.activeServices} ${overview.data.activeServices === 1 ? "ativo" : "ativos"} no catálogo`, Icon: WrenchIcon },
+              ].map(({ label, value, tab, status, detail, Icon }) => (
+                <button className={`${styles.panel} ${styles.stat}`} key={label} onClick={() => selectTab(tab, status, tab === "mediacoes")} type="button">
                   <span className={styles.statLabel}>
                     <span>{label}</span>
                     <Icon aria-hidden size={23} />
                   </span>
                   <strong>{value}</strong>
+                  <small>{detail}</small>
                 </button>
               ))}
             </div>
@@ -103,6 +115,14 @@ export default function AdminWorkspace() {
           </section>
         ))}
       </div>
+      {record?.tab === selected && <AdminRecordDialog
+        key={`${record.kind}-${record.id}`}
+        {...record}
+        onBack={record.previous ? () => setRecord(record.previous) : undefined}
+        onChanged={changed}
+        onClose={() => setRecord(null)}
+        onOpen={(kind, id) => setRecord(previous => ({ kind, id, tab: selected, previous }))}
+      />}
     </div>
   );
 }

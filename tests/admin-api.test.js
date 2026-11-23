@@ -28,13 +28,15 @@ const api = () => import("../src/app/admin/admin-api.js");
 test("resumo administrativo usa totais da API, inclusive fora da primeira página", async () => {
   globalThis.fetch = async (url) => {
     const parsed = new URL(url);
-    const total = parsed.pathname.endsWith("internal-users")
-      ? 31
+    const resource = parsed.pathname.split("/").at(-1);
+    const total = resource === "internal-users" ? 31
+      : resource === "users" ? 47 : resource === "vehicles" ? 92
+      : resource === "transfers" ? 8
       : parsed.searchParams.get("filter[is_active]") === "1" ? 9 : 22;
     return success({ data: [], meta: { current_page: 1, last_page: 3, total } });
   };
   assert.deepEqual(await (await api()).getAdminOverview(), {
-    administrators: 31, services: 22, activeServices: 9,
+    administrators: 31, users: 47, vehicles: 92, openTransfers: 8, services: 22, activeServices: 9,
   });
 });
 

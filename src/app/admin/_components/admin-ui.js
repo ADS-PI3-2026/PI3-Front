@@ -10,7 +10,7 @@ import {
 import { getAdminErrorMessage } from "../admin-api";
 import styles from "../admin.module.css";
 
-export function useAdminResource(loader, { enabled = true } = {}) {
+export function useAdminResource(loader, { enabled = true, refreshKey = 0 } = {}) {
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState({
     data: null,
@@ -35,7 +35,7 @@ export function useAdminResource(loader, { enabled = true } = {}) {
     return () => {
       active = false;
     };
-  }, [enabled, loader, revision]);
+  }, [enabled, loader, revision, refreshKey]);
   return { ...state, reload };
 }
 

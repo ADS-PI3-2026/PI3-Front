@@ -24,7 +24,7 @@ import {
 } from "../_components/admin-ui";
 import styles from "../admin.module.css";
 
-export default function ServiceTypesPanel({ active }) {
+export default function ServiceTypesPanel({ active, onChanged }) {
   const params = useSearchParams();
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -201,6 +201,7 @@ export default function ServiceTypesPanel({ active }) {
             onBusyChange={setSaving}
             onCancel={closeEditor}
             onSaved={(service) => {
+              onChanged?.();
               router.replace(
                 `/admin/tipos-servico/${encodeURIComponent(service.identifier)}`,
               );
