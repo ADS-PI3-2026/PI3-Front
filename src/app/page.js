@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAuthErrorMessage, getAuthFieldErrors, loginWithCredentials, submitAuthRequest } from "./auth-api";
-import { getAuthSession, saveAuthSession } from "./auth-session";
+import { clearAuthSession, saveAuthSession } from "./auth-session";
 import ActionButton from "./components/action-button";
 import FormField from "./components/form-field";
 import VerificationCodeFields from "./components/verification-code-fields";
@@ -26,6 +26,8 @@ import { getRecoveryStep } from "./lib/recovery-flow";
 import LegalDialog from "./components/legal-dialog";
 import { saveNavigationFeedback } from "./lib/navigation-feedback";
 import { getAuthenticatedHomePath } from "./lib/user-access";
+import { acceptVehicleTransferInvite } from "./garagem/_lib/garage-api";
+import { useSession } from "./components/session-provider";
 import styles from "./page.module.css";
 
 function Icon({ name, size = 20 }) {
@@ -506,7 +508,100 @@ function EmailConfirmationDialog({ email, name, sentAt, onCodeSent, onClose, onC
   );
 }
 
-function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed, accountDeleted }) {
+function TransferInviteNotice() {
+  return (
+    <div className={styles.transferInviteNotice} role="status">
+      <span className={styles.dialogIcon}><Icon name="envelope" size={22} /></span>
+      <div>
+        <strong>Você recebeu um convite</strong>
+        <p>Entre ou crie sua conta com o e-mail que recebeu o convite para continuar a transferência.</p>
+      </div>
+    </div>
+  );
+}
+
+function TransferInviteAcceptance({ inviteCode, onUseAnotherAccount }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  const acceptInvite = async () => {
+    if (pending) return;
+    setPending(true);
+    setError("");
+    try {
+      await acceptVehicleTransferInvite(inviteCode);
+      saveNavigationFeedback(
+        "Convite aceito. A transferência foi iniciada e os códigos foram enviados por e-mail.",
+      );
+      router.replace("/garagem/transferencia");
+    } catch (requestError) {
+      setError(getAuthErrorMessage(
+        requestError,
+        "Não foi possível aceitar o convite. Confira se você entrou com o e-mail convidado.",
+      ));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <main className={styles.authScreen}>
+      <div className={styles.loginContent}>
+        <Brand />
+        <section className={styles.authCard}>
+          <div className={styles.inviteAcceptanceIcon}>
+            <Icon name="envelope" size={30} />
+          </div>
+          <div className={styles.cardHeading}>
+            <p className={styles.eyebrow}>Transferência de veículo</p>
+            <h1>Aceitar convite</h1>
+            <p>
+              Ao aceitar, o processo de transferência será iniciado. Você e o proprietário atual
+              receberão códigos diferentes para confirmar a operação.
+            </p>
+          </div>
+          <div className="app-notice app-notice--info">
+            <Icon name="shield" size={22} />
+            <p>O convite transfere somente o veículo e seu histórico digital no LegadoCar.</p>
+          </div>
+          {error && <p className="app-feedback app-feedback--error" role="alert">{error}</p>}
+          <div className={styles.inviteAcceptanceActions}>
+            <ActionButton disabled={pending} onClick={() => void acceptInvite()} type="button">
+              {pending ? "Aceitando..." : "Aceitar convite"}
+            </ActionButton>
+            <ActionButton
+              disabled={pending}
+              onClick={() => router.replace("/garagem")}
+              type="button"
+              variant="secondary"
+            >
+              Agora não
+            </ActionButton>
+            <button
+              className={styles.inviteAccountButton}
+              disabled={pending}
+              onClick={onUseAnotherAccount}
+              type="button"
+            >
+              Entrar com outra conta
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function LoginScreen({
+  accountDeleted,
+  invited,
+  logoutUnconfirmed,
+  onAuthenticated,
+  onRecovery,
+  onRegister,
+  sessionExpired,
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -542,7 +637,9 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
       const session = saveAuthSession({ authResult });
       setEmail(normalizedEmail);
       setPassword("");
-      router.replace(getAuthenticatedHomePath(session.user));
+      if (!onAuthenticated?.(session)) {
+        router.replace(getAuthenticatedHomePath(session.user));
+      }
     } catch (error) {
       setErrors(getAuthFieldErrors(error));
       setMessage(getAuthErrorMessage(error, "Não foi possível entrar. Confira os dados e tente novamente."));
@@ -561,6 +658,7 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
             <h1>Acesse sua conta</h1>
             <p>Entre para cuidar dos registros e histórias dos seus veículos</p>
           </div>
+          {invited && <TransferInviteNotice />}
           {logoutUnconfirmed && <p className="app-feedback" role="status">Você saiu deste navegador. Não foi possível confirmar o encerramento no servidor. Entre novamente quando a conexão voltar</p>}
           {accountDeleted && <p className="app-feedback" role="status">Sua conta foi excluída</p>}
           {sessionExpired && <p className="app-feedback" role="status">Sua sessão expirou. Faça login novamente para continuar</p>}
@@ -614,7 +712,7 @@ function LoginScreen({ onRegister, onRecovery, sessionExpired, logoutUnconfirmed
   );
 }
 
-function RegisterScreen({ onLogin, onLegal }) {
+function RegisterScreen({ invited, onAuthenticated, onLogin, onLegal }) {
   const router = useRouter();
   const [step, setStep] = useState("identity");
   const [accountType, setAccountType] = useState("person");
@@ -758,8 +856,10 @@ function RegisterScreen({ onLogin, onLegal }) {
       }
       const session = saveAuthSession({ authResult: result });
       setForm((current) => ({ ...current, password: "", confirm: "" }));
-      saveNavigationFeedback("Conta criada com sucesso. Sua garagem está pronta para começar.");
-      router.replace(getAuthenticatedHomePath(session.user));
+      if (!onAuthenticated?.(session)) {
+        saveNavigationFeedback("Conta criada com sucesso. Sua garagem está pronta para começar.");
+        router.replace(getAuthenticatedHomePath(session.user));
+      }
     } catch (error) {
       const fieldErrors = getAuthFieldErrors(error);
       setErrors(fieldErrors);
@@ -792,6 +892,7 @@ function RegisterScreen({ onLogin, onLegal }) {
           </div>
         </div>
         <div className={styles.registerPanel}>
+          {invited && <TransferInviteNotice />}
           {step === "identity" ? (
             <form className={`${styles.authForm} ${styles.registerForm}`} noValidate onSubmit={submitIdentity}>
               <FormField
@@ -952,28 +1053,64 @@ function RegisterScreen({ onLogin, onLegal }) {
 function AuthHome() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { ready: authReady, session: authenticatedSession } = useSession();
   const [screen, setScreen] = useState("login");
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryRequest, setRecoveryRequest] = useState({ email: "", sentAt: 0 });
   const [legalOpen, setLegalOpen] = useState(null);
   const requestedLegalType = searchParams.get("legal");
+  const rawInviteCode = searchParams.get("invite") ?? "";
+  const inviteCode = /^[A-Za-z0-9]{64}$/.test(rawInviteCode) ? rawInviteCode : "";
   const legalReturnPath = searchParams.get("returnTo") === "/perfil" ? "/perfil" : "/";
   const legalType = legalOpen
     ?? (["terms", "privacy"].includes(requestedLegalType) ? requestedLegalType : null);
 
   useEffect(() => {
-    const session = getAuthSession();
-    if (!requestedLegalType && session?.mode === "api" && session.accessToken) {
-      router.replace(getAuthenticatedHomePath(session.user));
+    if (!requestedLegalType && !inviteCode && authenticatedSession?.mode === "api"
+      && authenticatedSession.accessToken) {
+      router.replace(getAuthenticatedHomePath(authenticatedSession.user));
     }
-  }, [requestedLegalType, router]);
+  }, [authenticatedSession, inviteCode, requestedLegalType, router]);
+
+  const handleAuthenticated = () => Boolean(inviteCode);
+
+  if (inviteCode && !authReady) {
+    return <div className={styles.page} />;
+  }
+
+  if (inviteCode && authenticatedSession) {
+    return (
+      <div className={styles.page}>
+        <TransferInviteAcceptance
+          inviteCode={inviteCode}
+          onUseAnotherAccount={() => {
+            clearAuthSession();
+            setScreen("login");
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
       {screen === "login" ? (
-        <LoginScreen onRecovery={() => setRecoveryOpen(true)} onRegister={() => setScreen("register")} sessionExpired={searchParams.get("session") === "expired"} logoutUnconfirmed={searchParams.get("session") === "logout-unconfirmed"} accountDeleted={searchParams.get("account") === "deleted"} />
+        <LoginScreen
+          accountDeleted={searchParams.get("account") === "deleted"}
+          invited={Boolean(inviteCode)}
+          logoutUnconfirmed={searchParams.get("session") === "logout-unconfirmed"}
+          onAuthenticated={handleAuthenticated}
+          onRecovery={() => setRecoveryOpen(true)}
+          onRegister={() => setScreen("register")}
+          sessionExpired={searchParams.get("session") === "expired"}
+        />
       ) : (
-        <RegisterScreen onLegal={setLegalOpen} onLogin={() => setScreen("login")} />
+        <RegisterScreen
+          invited={Boolean(inviteCode)}
+          onAuthenticated={handleAuthenticated}
+          onLegal={setLegalOpen}
+          onLogin={() => setScreen("login")}
+        />
       )}
       {recoveryOpen && <RecoveryDialog lastRequest={recoveryRequest} onCodeSent={setRecoveryRequest} onClose={() => setRecoveryOpen(false)} />}
       {legalType && (

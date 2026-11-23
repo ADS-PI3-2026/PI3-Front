@@ -689,28 +689,30 @@ export default function MaintenanceForm({
         )}
 
         {!readOnly && (
-          <ActionButton
-            disabled={submitting || submissionCompleted || queuedForSync || fieldsLoading
-              || restoringDraftFields || Boolean(fieldsError) || !form.category}
-            type="submit"
-          >
-            {submitting
-              ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} weight="bold" />
-              : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
-            {submissionCompleted
-              ? "Manutenção registrada"
-              : queuedForSync
-                ? "Aguardando conexão..."
-              : submitting
-              ? "Salvando..."
-              : draftKey && !isOnline
-                ? "Salvar para enviar depois"
-              : form.status === "A realizar" && alertSubmitLabel
-                ? alertSubmitLabel
-              : form.status === "Realizada" && completionSubmitLabel
-                ? completionSubmitLabel
-                : submitLabel}
-          </ActionButton>
+          <div className={styles.formActions}>
+            <ActionButton
+              disabled={submitting || submissionCompleted || queuedForSync || fieldsLoading
+                || restoringDraftFields || Boolean(fieldsError) || !form.category}
+              type="submit"
+            >
+              {submitting
+                ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} weight="bold" />
+                : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
+              {submissionCompleted
+                ? "Manutenção registrada"
+                : queuedForSync
+                  ? "Aguardando conexão..."
+                : submitting
+                ? "Salvando..."
+                : draftKey && !isOnline
+                  ? "Salvar para enviar depois"
+                : form.status === "A realizar" && alertSubmitLabel
+                  ? alertSubmitLabel
+                : form.status === "Realizada" && completionSubmitLabel
+                  ? completionSubmitLabel
+                  : submitLabel}
+            </ActionButton>
+          </div>
         )}
       </form>
     </main>

@@ -384,6 +384,18 @@ function normalizeMaintenanceAttachment(attachment) {
   };
 }
 
+function normalizeFormattedMaintenancePayload(entries) {
+  if (!Array.isArray(entries)) return [];
+
+  return entries.flatMap((entry) => {
+    const key = typeof entry?.key === "string" ? entry.key.trim() : "";
+    const label = typeof entry?.label === "string" ? entry.label.trim() : "";
+    const value = typeof entry?.value === "string" ? entry.value.trim() : "";
+
+    return key && label ? [{ key, label, value }] : [];
+  });
+}
+
 export function normalizeMaintenanceDetail(maintenance) {
   const id = Number(maintenance?.id);
   const vehicleId = Number(maintenance?.vehicle_id);
@@ -416,6 +428,7 @@ export function normalizeMaintenanceDetail(maintenance) {
     cost,
     date: formatApiDate(maintenance.service_date),
     description: typeof maintenance?.description === "string" ? maintenance.description.trim() : "",
+    formattedPayload: normalizeFormattedMaintenancePayload(maintenance?.formatted_payload),
     id,
     mileage,
     payload: payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {},
@@ -460,6 +473,9 @@ export function normalizeMaintenanceAlert(alert, currentMileage) {
 
 export function normalizeMaintenanceAlertDetail(alert) {
   const id = Number(alert?.id);
+  const maintenanceId = alert?.maintenance_id == null
+    ? null
+    : Number(alert.maintenance_id);
   const vehicleId = Number(alert?.vehicle_id);
   const userId = Number(alert?.user_id);
   const serviceTypeId = Number(alert?.service_type_id ?? alert?.service_type?.id);
@@ -482,6 +498,9 @@ export function normalizeMaintenanceAlertDetail(alert) {
     dateDue: typeof alert?.date_due === "string" ? alert.date_due : "",
     description,
     id,
+    maintenanceId: Number.isInteger(maintenanceId) && maintenanceId > 0
+      ? maintenanceId
+      : null,
     mileageDue: alert?.mileage_due == null ? null : Number(alert.mileage_due),
     serviceType: {
       id: serviceTypeId,
@@ -564,6 +583,21 @@ export function getVehicleTransferSuggestion(error) {
     plate: typeof details.plate === "string" ? details.plate.trim() : "",
     vehicleId: Number.isInteger(vehicleId) && vehicleId > 0 ? vehicleId : null,
   };
+}
+
+export function getVehicleTransferInvite(error) {
+  const details = error?.data?.data;
+  const code = typeof details?.invite_code === "string" ? details.invite_code.trim() : "";
+  const email = typeof details?.recipient_email === "string"
+    ? details.recipient_email.trim().toLowerCase()
+    : "";
+
+  if (error?.status !== 422 || details?.alternative !== "send_invite"
+    || !/^[A-Za-z0-9]{64}$/.test(code) || !email) {
+    return null;
+  }
+
+  return { code, email };
 }
 
 export function getVehicleTransferFieldErrors(error) {
@@ -944,7 +978,17 @@ export async function getVehicleMaintenanceDateSummary(vehicleId, referenceDate)
 
 export async function createVehicle(payload) {
   const result = await requestAccount("/vehicles", { method: "POST", payload });
-  return normalizeVehicle(result.data);
+  const vehicle = normalizeVehicle(result.data);
+  const createdAt = Date.parse(String(result.data?.created_at ?? "").replace(" ", "T"));
+  const updatedAt = Date.parse(String(result.data?.updated_at ?? "").replace(" ", "T"));
+  const responseSaysRestored = result.data?.restored === true
+    || /restaurad[oa]/i.test(String(result.message ?? ""));
+
+  return {
+    ...vehicle,
+    restored: responseSaysRestored
+      || (Number.isFinite(createdAt) && Number.isFinite(updatedAt) && updatedAt > createdAt),
+  };
 }
 
 export async function startVehicleTransferByBuyer(payload) {
@@ -965,6 +1009,32 @@ export async function startVehicleTransferByOwner(vehicleId, recipientEmail) {
     payload: { recipient_email: email },
   });
   return normalizeVehicleTransfer(result.data);
+}
+
+export async function sendVehicleTransferInvite(inviteCode) {
+  const code = String(inviteCode ?? "").trim();
+  if (!/^[A-Za-z0-9]{64}$/.test(code)) {
+    throw new Error("O convite não está mais disponível. Inicie a transferência novamente.");
+  }
+  await requestAccount("/invite/send", {
+    method: "POST",
+    payload: { invite_code: code },
+  });
+}
+
+export async function acceptVehicleTransferInvite(inviteCode) {
+  const code = String(inviteCode ?? "").trim();
+  if (!/^[A-Za-z0-9]{64}$/.test(code)) {
+    throw new Error("Este convite é inválido. Solicite um novo convite ao proprietário.");
+  }
+  const result = await requestAccount("/invite/accept", {
+    method: "POST",
+    payload: { invite_code: code },
+  });
+  return getPositiveId(
+    result.data?.transfer_id,
+    "O convite foi aceito, mas a transferência retornada é inválida.",
+  );
 }
 
 export async function getVehicleTransfer(transferId) {

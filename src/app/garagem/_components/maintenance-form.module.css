@@ -75,6 +75,11 @@
   resize: vertical;
 }
 
+.formActions {
+  display: grid;
+  gap: 10px;
+}
+
 .loadingFields {
   align-items: center;
   color: var(--app-muted);
@@ -181,10 +186,6 @@
     min-width: 0;
   }
 
-  .maintenanceForm > button {
-    justify-self: center;
-  }
-
   .maintenanceForm > label {
     grid-column: auto;
   }
@@ -196,6 +197,13 @@
 
   .maintenanceForm textarea {
     min-height: 126px;
+  }
+
+  .formActions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .choiceList {

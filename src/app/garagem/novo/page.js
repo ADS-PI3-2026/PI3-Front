@@ -275,7 +275,9 @@ export default function NewVehiclePage() {
         year: selectedYear,
       });
       const vehicle = await createVehicle(payload);
-      saveNavigationFeedback("Veículo cadastrado com sucesso.");
+      saveNavigationFeedback(vehicle.restored
+        ? "Veículo restaurado com sucesso. O histórico anterior foi preservado."
+        : "Veículo cadastrado com sucesso.");
       router.replace(`/garagem/${vehicle.id}`);
     } catch (error) {
       const suggestion = getVehicleTransferSuggestion(error);

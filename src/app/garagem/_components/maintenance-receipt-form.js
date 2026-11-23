@@ -85,7 +85,13 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
     ["Registrado por", maintenance.registeredBy],
     ["Descrição", maintenance.description],
   ];
-  const payloadEntries = Object.entries(maintenance.payload);
+  const payloadDetails = maintenance.formattedPayload?.length > 0
+    ? maintenance.formattedPayload
+    : Object.entries(maintenance.payload).map(([key, value]) => ({
+      key,
+      label: formatPayloadLabel(key, serviceFields),
+      value: formatPayloadValue(value),
+    }));
 
   const selectFiles = (label, selectedFiles) => {
     setFeedback({ message: "", type: "" });
@@ -219,14 +225,14 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
             ))}
           </dl>
 
-          {payloadEntries.length > 0 && (
+          {payloadDetails.length > 0 && (
             <section className={styles.additionalDetails}>
               <h3>Informações do serviço</h3>
               <dl className={styles.details}>
-                {payloadEntries.map(([name, value]) => (
-                  <div className={styles.detailItem} key={name}>
-                    <dt>{formatPayloadLabel(name, serviceFields)}</dt>
-                    <dd>{formatPayloadValue(value)}</dd>
+                {payloadDetails.map((detail) => (
+                  <div className={styles.detailItem} key={detail.key}>
+                    <dt>{detail.label}</dt>
+                    <dd>{detail.value || "Não informado"}</dd>
                   </div>
                 ))}
               </dl>
