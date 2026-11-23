@@ -4,11 +4,15 @@ import { test } from "node:test";
 const workspace = () => import("../src/app/admin/_lib/admin-workspace.js");
 
 test("URL ausente ou inválida abre administradores e URLs válidas reabrem a aba selecionada", async () => {
-  const { resolveAdminTab } = await workspace();
+  const { resolveAdminTab, adminWorkspaceHref } = await workspace();
   for (const value of [null, "", "qualquer", "__proto__"])
     assert.equal(resolveAdminTab(value), "administradores");
   assert.equal(resolveAdminTab("servicos"), "servicos");
   assert.equal(resolveAdminTab("textos"), "textos");
+  assert.equal(resolveAdminTab("usuarios"), "usuarios");
+  assert.equal(resolveAdminTab("veiculos"), "veiculos");
+  assert.equal(adminWorkspaceHref("usuarios"), "/admin?aba=usuarios");
+  assert.equal(adminWorkspaceHref("veiculos"), "/admin?aba=veiculos");
 });
 
 test("navegação das abas pelo teclado circula nos extremos e ignora teclas não relacionadas", async () => {

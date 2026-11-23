@@ -1,5 +1,7 @@
 export const adminTabs = [
   { id: "administradores", label: "Administradores" },
+  { id: "usuarios", label: "Usuários" },
+  { id: "veiculos", label: "Veículos" },
   { id: "servicos", label: "Tipos de serviço" },
   { id: "textos", label: "Textos legais" },
   { id: "mediacoes", label: "Mediações" },
