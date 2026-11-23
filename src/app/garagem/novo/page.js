@@ -16,6 +16,7 @@ import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
 import SearchableSelect from "../../components/searchable-select";
 import PageTopBar from "../_components/page-top-bar";
+import PageLoadingState from "../_components/page-loading-state";
 import VehicleRegistrationLimit from "../_components/vehicle-registration-limit";
 import VehicleTransferSuggestion from "../_components/vehicle-transfer-suggestion";
 import {
@@ -325,12 +326,7 @@ export default function NewVehiclePage() {
       <PageTopBar title="Novo Veículo" />
 
       {garageState.loading ? (
-        <main className={styles.limitScreen}>
-          <section className="app-empty-state app-empty-state--narrow" role="status">
-            <CircleNotchIcon aria-hidden className={styles.submitIcon} size={26} weight="bold" />
-            <p>Verificando disponibilidade da garagem...</p>
-          </section>
-        </main>
+        <PageLoadingState message="Verificando disponibilidade da garagem..." />
       ) : garageState.error ? (
         <main className={styles.limitScreen}>
           <section className="app-empty-state app-empty-state--narrow" role="alert">

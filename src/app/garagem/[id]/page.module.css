@@ -207,20 +207,6 @@
   padding: 10px 12px;
 }
 
-.loadingState {
-  align-items: center;
-  background: var(--app-surface);
-  border: 1px solid var(--app-line);
-  border-radius: 14px;
-  color: #596172;
-  display: flex;
-  font-size: 0.86rem;
-  font-weight: 680;
-  gap: 10px;
-  justify-content: center;
-  min-height: 150px;
-}
-
 .loadingIcon {
   animation: spin 700ms linear infinite;
   color: var(--app-blue);

@@ -34,3 +34,14 @@ test("perfil oferece instalação dispensável e guarda a preferência localment
   assert.match(source, /removeItem\(PWA_INSTALL_PROMOTION_DISMISSED_KEY\)/);
   assert.ok(source.indexOf("Instale o LegadoCar") < source.indexOf('aria-label="Seções do perfil"'));
 });
+
+test("aplicação informa globalmente quando o dispositivo está offline", async () => {
+  const source = await readFile(new URL("../src/app/components/offline-banner.js", import.meta.url), "utf8");
+  const shell = await readFile(new URL("../src/app/components/app-shell.js", import.meta.url), "utf8");
+
+  assert.match(source, /navigator\.onLine/);
+  assert.match(source, /addEventListener\("offline"/);
+  assert.match(source, /Você está offline/);
+  assert.match(source, /Algumas informações podem estar desatualizadas/);
+  assert.match(shell, /<OfflineBanner \/>/);
+});

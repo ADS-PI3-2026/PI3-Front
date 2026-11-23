@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  CircleNotchIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../../../components/action-button";
@@ -13,6 +12,7 @@ import { getAuthSession } from "../../../../auth-session";
 import { getAuthErrorMessage } from "../../../../auth-api";
 import MaintenanceForm from "../../../_components/maintenance-form";
 import PageTopBar from "../../../_components/page-top-bar";
+import PageLoadingState from "../../../_components/page-loading-state";
 import {
   buildMaintenanceAlertPayload,
   buildMaintenancePayload,
@@ -337,10 +337,7 @@ export default function MaintenanceAlertPage() {
       <PageTopBar title="Alerta de manutenção" />
 
       {requestState.loading ? (
-        <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotchIcon aria-hidden size={25} weight="bold" />
-          <p>Carregando alerta...</p>
-        </section>
+        <PageLoadingState message="Carregando alerta..." />
       ) : !requestState.alert ? (
         <section className="app-empty-state app-empty-state--narrow" role="alert">
           <h2>{requestState.notFound ? "Alerta não encontrado" : "Não foi possível carregar o alerta"}</h2>

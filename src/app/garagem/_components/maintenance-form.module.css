@@ -28,10 +28,17 @@
   width: 100%;
 }
 
-.draftStatus[data-offline="true"] {
+.draftStatus[data-state="offline"],
+.draftStatus[data-state="pending"] {
   background: #fff8e9;
   border-color: #f0d89a;
   color: #805500;
+}
+
+.draftStatus[data-state="error"] {
+  background: #fff0f0;
+  border-color: #efb9b9;
+  color: #8f2525;
 }
 
 .draftStatus svg {

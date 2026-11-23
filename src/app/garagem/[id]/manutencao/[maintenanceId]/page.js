@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CircleNotchIcon } from "@phosphor-icons/react";
 import AppShell from "../../../../components/app-shell";
 import MaintenanceReceiptForm from "../../../_components/maintenance-receipt-form";
 import PageTopBar from "../../../_components/page-top-bar";
+import PageLoadingState from "../../../_components/page-loading-state";
 import { getMaintenance, getServiceTypeFields } from "../../../_lib/garage-api";
 import { getAuthErrorMessage } from "../../../../auth-api";
 
@@ -95,10 +95,7 @@ export default function MaintenanceDetailsPage() {
       <PageTopBar title="Manutenção" />
 
       {requestState.loading ? (
-        <section className="app-empty-state app-empty-state--narrow" role="status">
-          <CircleNotchIcon aria-hidden size={25} weight="bold" />
-          <p>Carregando manutenção...</p>
-        </section>
+        <PageLoadingState message="Carregando manutenção..." />
       ) : !requestState.maintenance ? (
         <section className="app-empty-state app-empty-state--narrow" role="alert">
           <h2>{requestState.notFound ? "Manutenção não encontrada" : "Não foi possível carregar a manutenção"}</h2>

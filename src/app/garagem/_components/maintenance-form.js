@@ -260,11 +260,16 @@ export default function MaintenanceForm({
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [syncMessage, setSyncMessage] = useState(
-    initialDraft ? "Rascunho recuperado deste dispositivo." : "",
+    initialDraft?.queued
+      ? "Registro pendente recuperado. Tentaremos enviá-lo quando houver conexão."
+      : initialDraft
+        ? "Rascunho recuperado deste dispositivo."
+        : "",
   );
   const [submissionCompleted, setSubmissionCompleted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [queuedForSync, setQueuedForSync] = useState(initialDraft?.queued === true);
+  const [automaticSyncBlocked, setAutomaticSyncBlocked] = useState(false);
   const [isOnline, setIsOnline] = useState(() => (
     typeof navigator === "undefined" ? true : navigator.onLine
   ));
@@ -293,10 +298,12 @@ export default function MaintenanceForm({
     if (!draftKey) return;
     const handleOffline = () => {
       setIsOnline(false);
+      setAutomaticSyncBlocked(false);
       setSyncMessage("Sem conexão. Seu preenchimento continuará salvo neste dispositivo.");
     };
     const handleOnline = () => {
       setIsOnline(true);
+      setAutomaticSyncBlocked(false);
       setSyncMessage((current) => (
         queuedForSync ? "Conexão recuperada. Enviando o registro salvo..." : current
       ));
@@ -391,16 +398,19 @@ export default function MaintenanceForm({
         return;
       }
       setQueuedForSync(true);
+      setAutomaticSyncBlocked(false);
       setSyncMessage("Registro salvo. Ele será enviado automaticamente quando a conexão voltar.");
       return;
     }
 
     setSubmitting(true);
+    if (!automatic && queuedForSync) setAutomaticSyncBlocked(true);
     setSyncMessage(automatic ? "Enviando o registro salvo..." : "");
     try {
       await onSubmit?.({ fieldValues, files: receiptFiles, form });
       clearMaintenanceDraft(draftKey);
       setQueuedForSync(false);
+      setAutomaticSyncBlocked(false);
       if (draftKey) {
         setForm({ ...cleanFormState });
         setFieldValues({});
@@ -419,8 +429,13 @@ export default function MaintenanceForm({
         clearMaintenanceDraft(draftKey);
         setSubmissionCompleted(true);
         setQueuedForSync(false);
+        setAutomaticSyncBlocked(false);
       } else if (automatic) {
-        setQueuedForSync(false);
+        setAutomaticSyncBlocked(true);
+        setSyncMessage("Não foi possível sincronizar. O registro continua salvo neste dispositivo.");
+      } else if (queuedForSync) {
+        setAutomaticSyncBlocked(true);
+        setSyncMessage("O registro continua salvo. Confira o erro e tente enviar novamente.");
       }
       setSubmitError(isAlert
         ? getMaintenanceAlertErrorMessage(
@@ -448,11 +463,12 @@ export default function MaintenanceForm({
     restoringDraftFields,
     submitting,
     today,
+    queuedForSync,
     vehicleYear,
   ]);
 
   useEffect(() => {
-    if (!queuedForSync || !isOnline || fieldsLoading || fieldsError
+    if (!queuedForSync || !isOnline || automaticSyncBlocked || fieldsLoading || fieldsError
       || restoringDraftFields || submitting) return;
     let active = true;
     queueMicrotask(() => {
@@ -460,6 +476,7 @@ export default function MaintenanceForm({
     });
     return () => { active = false; };
   }, [
+    automaticSyncBlocked,
     fieldsError,
     fieldsLoading,
     isOnline,
@@ -477,6 +494,7 @@ export default function MaintenanceForm({
   const selectedServiceType = serviceTypes.find((serviceType) => (
     serviceType.identifier === form.category
   ));
+  const canRetryQueuedRecord = queuedForSync && isOnline && automaticSyncBlocked;
 
   return (
     <main className={`app-form-screen ${styles.formScreen}`}>
@@ -487,8 +505,18 @@ export default function MaintenanceForm({
         </div>
 
         {syncMessage && !readOnly && (
-          <div className={styles.draftStatus} data-offline={!isOnline || queuedForSync} role="status">
-            {!isOnline || queuedForSync
+          <div
+            className={styles.draftStatus}
+            data-state={!isOnline
+              ? "offline"
+              : automaticSyncBlocked && queuedForSync
+                ? "error"
+                : queuedForSync
+                  ? "pending"
+                  : "saved"}
+            role="status"
+          >
+            {!isOnline
               ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
               : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
             <p>{syncMessage}</p>
@@ -661,10 +689,13 @@ export default function MaintenanceForm({
 
             <FileUploadField
               accept=".png,.jpg,.jpeg,.pdf"
+              allowRemoveWhenDisabled
               compact
-              disabled={submitting || readOnly}
+              disabled={submitting || readOnly || !isOnline}
               error={errors.receipt}
-              hint="Até 5 arquivos JPG, PNG ou PDF (máx. 10 MB cada)"
+              hint={isOnline
+                ? "Até 5 arquivos JPG, PNG ou PDF (máx. 10 MB cada)"
+                : "Conecte-se para adicionar comprovantes. O registro poderá ser enviado sem eles."}
               label="Comprovantes (opcional)"
               maxFiles={MAX_ATTACHMENTS}
               maxFileSize={MAX_ATTACHMENT_SIZE}
@@ -691,19 +722,24 @@ export default function MaintenanceForm({
         {!readOnly && (
           <div className={styles.formActions}>
             <ActionButton
-              disabled={submitting || submissionCompleted || queuedForSync || fieldsLoading
+              disabled={submitting || submissionCompleted
+                || (queuedForSync && !canRetryQueuedRecord) || fieldsLoading
                 || restoringDraftFields || Boolean(fieldsError) || !form.category}
               type="submit"
             >
               {submitting
                 ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={21} weight="bold" />
-                : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
+                : canRetryQueuedRecord
+                  ? <CloudArrowUpIcon aria-hidden size={21} weight="bold" />
+                  : <FloppyDiskIcon aria-hidden size={21} weight="bold" />}
               {submissionCompleted
                 ? "Manutenção registrada"
-                : queuedForSync
-                  ? "Aguardando conexão..."
                 : submitting
                 ? "Salvando..."
+                : canRetryQueuedRecord
+                  ? "Tentar enviar agora"
+                : queuedForSync
+                  ? "Aguardando conexão..."
                 : draftKey && !isOnline
                   ? "Salvar para enviar depois"
                 : form.status === "A realizar" && alertSubmitLabel

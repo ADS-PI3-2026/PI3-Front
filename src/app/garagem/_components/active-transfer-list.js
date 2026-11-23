@@ -84,7 +84,7 @@ export default function ActiveTransferList({
       </header>
 
       {loading ? (
-        <div className={styles.requestState} role="status">
+        <div className={`${styles.requestState} ${styles.loadingState}`} role="status">
           <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={22} weight="bold" />
           Carregando transferências...
         </div>

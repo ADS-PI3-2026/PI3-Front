@@ -1,0 +1,51 @@
+.state {
+  align-items: center;
+  color: var(--app-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  justify-content: center;
+  margin: 0 auto;
+  min-height: calc(100svh - 102px - env(safe-area-inset-top));
+  padding: 24px;
+  text-align: center;
+  width: 100%;
+}
+
+.state p {
+  font-size: 0.88rem;
+  font-weight: 680;
+  line-height: 1.45;
+}
+
+.spinner {
+  animation: page-loading-spin 800ms linear infinite;
+  color: var(--app-blue);
+  flex: 0 0 auto;
+}
+
+.compact {
+  min-height: 180px;
+}
+
+@keyframes page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 1200px) {
+  .state {
+    min-height: calc(100svh - 166px);
+  }
+
+  .compact {
+    min-height: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
