@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import { completeAdminTransfer, getAdminAuditLog, getAdminTransfer, getAdminUser, getAdminVehicle } from "../operations-api";
 import { getAdminErrorMessage, getAdminFieldErrors } from "../admin-api";
@@ -14,8 +15,8 @@ const loaders = { users: getAdminUser, vehicles: getAdminVehicle, transfers: get
 const number = value => value == null ? "—" : Number(value).toLocaleString("pt-BR");
 const vehicleTypes = { car: "Carro", truck: "Caminhão", motorcycle: "Motocicleta" };
 
-function Details({ entries }) {
-  return <dl className={styles.recordGrid}>{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value ?? "—"}</dd></div>)}</dl>;
+function Details({ entries, className = "", ...props }) {
+  return <dl className={`${styles.recordGrid} ${className}`} {...props}>{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value ?? "—"}</dd></div>)}</dl>;
 }
 
 function Relation({ title, record, type, onOpen, unavailable = "Registro indisponível" }) {
@@ -123,17 +124,17 @@ function TransferDetails({ transfer, vehicle, onOpen, busy, onBusy, onCompleted 
 
 function AuditDetails({ log }) {
   const changes = getAuditChanges(log.old_values, log.new_values);
-  return <>
+  return <div className={styles.auditDetails}>
     <div className={styles.recordIntro}><div><h3>{log.summary}</h3><p>{formatAdminDateTime(log.created_at, "UTC")}</p></div></div>
-    <Details entries={[
+    <Details aria-label="Dados do evento" className={styles.auditGrid} tabIndex={0} entries={[
       ["Evento", auditEventLabels[log.event] ?? log.event], ["Registro", `${log.entity} #${log.entity_id}`],
       ["Autor", log.user?.name ?? "Rotina do sistema"], ["E-mail do autor", log.user?.email],
       ["Endereço IP", log.ip_address], ["Navegador / agente", log.user_agent],
     ]} />
-    <section className={styles.recordSection}><h3>Alterações registradas</h3>
-      {changes.length ? <div className={styles.tableScroll}><table className={`${styles.table} ${styles.diffTable}`}><thead><tr><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead><tbody>{changes.map(change => <tr key={change.key}><th scope="row"><code>{change.key}</code></th><td><pre>{formatAuditValue(change.before)}</pre></td><td><pre>{formatAuditValue(change.after)}</pre></td></tr>)}</tbody></table></div> : <p className={styles.description}>Nenhuma alteração de valor disponível para exibição.</p>}
+    <section className={`${styles.recordSection} ${styles.auditChanges}`}><h3 id={`audit-changes-${log.id}`}>Alterações registradas</h3>
+      {changes.length ? <div aria-labelledby={`audit-changes-${log.id}`} className={`${styles.tableScroll} ${styles.auditTableScroll}`} role="region" tabIndex={0}><table className={`${styles.table} ${styles.diffTable}`}><thead><tr><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Depois</th></tr></thead><tbody>{changes.map(change => <tr key={change.key}><th scope="row"><code>{change.key}</code></th><td><pre>{formatAuditValue(change.before)}</pre></td><td><pre>{formatAuditValue(change.after)}</pre></td></tr>)}</tbody></table></div> : <p className={styles.description}>Nenhuma alteração de valor disponível para exibição.</p>}
     </section>
-  </>;
+  </div>;
 }
 
 export default function AdminRecordDialog({ kind, id, onClose, onOpen, onBack, onChanged }) {
@@ -146,8 +147,9 @@ export default function AdminRecordDialog({ kind, id, onClose, onOpen, onBack, o
   }, [kind, id]);
   const resource = useAdminResource(load);
   const record = resource.data?.record;
-  return <Modal title={`${titles[kind]} #${id}`} wide busy={busy} onClose={onClose}>
-    <div className={styles.recordBody}>
+  const isAudit = kind === "audits";
+  return <Modal title={`${titles[kind]} #${id}`} wide busy={busy} onClose={onClose} className={isAudit ? styles.auditModal : ""} headerActions={isAudit && <button aria-label="Atualizar dados" className={`${styles.secondaryButton} ${styles.auditRefresh}`} disabled={resource.loading} onClick={resource.reload} type="button"><ArrowClockwiseIcon aria-hidden size={17} /><span>Atualizar dados</span></button>}>
+    <div className={`${styles.recordBody} ${isAudit ? styles.auditBody : ""}`}>
       {onBack && <button className={styles.textLink} disabled={busy} onClick={onBack} type="button">← Voltar ao registro anterior</button>}
       <Feedback message={feedback} />
       <ResourceState {...resource} retry={resource.reload}>
@@ -158,7 +160,7 @@ export default function AdminRecordDialog({ kind, id, onClose, onOpen, onBack, o
           {kind === "audits" && <AuditDetails log={record} />}
         </>}
       </ResourceState>
-      <div className={styles.actions}><button className={styles.secondaryButton} disabled={busy || resource.loading} onClick={resource.reload} type="button">Atualizar dados</button><button className={styles.secondaryButton} disabled={busy} onClick={onClose} type="button">Fechar</button></div>
+      {!isAudit && <div className={styles.actions}><button className={styles.secondaryButton} disabled={busy || resource.loading} onClick={resource.reload} type="button">Atualizar dados</button><button className={styles.secondaryButton} disabled={busy} onClick={onClose} type="button">Fechar</button></div>}
     </div>
   </Modal>;
 }

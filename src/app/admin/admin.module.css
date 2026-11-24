@@ -377,6 +377,12 @@
   letter-spacing: -0.035em;
   color: #183454;
 }
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
 .form {
   display: grid;
   gap: 20px;
@@ -672,6 +678,137 @@
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.auditModal[open] {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, calc(100% - 32px));
+  overflow: hidden;
+  gap: 18px;
+}
+.auditModal .modalHeading {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  gap: 12px;
+}
+.auditModal .modalHeading h2 {
+  min-width: 0;
+  font-size: 1.1rem;
+}
+.auditBody,
+.auditDetails,
+.auditChanges {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.auditBody,
+.auditDetails {
+  gap: 16px;
+}
+.auditDetails .recordIntro {
+  flex-shrink: 0;
+}
+.auditDetails .recordIntro h3 {
+  font-size: 1rem;
+}
+.auditDetails .auditGrid {
+  flex: 0 1 auto;
+  min-height: 72px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 20px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.auditGrid dt {
+  margin-bottom: 3px;
+  font-size: 0.72rem;
+}
+.auditGrid dd {
+  font-size: 0.81rem;
+  line-height: 1.45;
+}
+.auditChanges {
+  flex: 1 1 clamp(128px, 50svh, 480px);
+  min-height: 128px;
+}
+.auditChanges > h3 {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+.auditTableScroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+}
+.auditGrid:focus-visible,
+.auditTableScroll:focus-visible {
+  outline: 3px solid #92b6e2;
+  outline-offset: 3px;
+}
+.auditTableScroll .diffTable {
+  min-width: 520px;
+  margin-top: 0;
+}
+.auditTableScroll .diffTable th,
+.auditTableScroll .diffTable td {
+  padding: 10px 12px;
+}
+.auditTableScroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+@media (max-width: 600px) {
+  .auditModal[open] {
+    gap: 12px;
+  }
+  .auditBody,
+  .auditDetails {
+    gap: 12px;
+  }
+  .auditChanges {
+    flex-basis: min(32svh, 240px);
+  }
+  .auditDetails .auditGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+  .auditGrid > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .auditRefresh {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 7px;
+  }
+  .auditRefresh > span {
+    display: none;
+  }
+}
+@media (max-height: 540px) and (min-width: 601px) {
+  .auditModal[open] {
+    max-height: calc(100svh - 24px);
+    padding: 16px;
+    gap: 10px;
+  }
+  .auditBody,
+  .auditDetails {
+    gap: 10px;
+  }
+  .auditDetails .auditGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px 16px;
+  }
+  .auditGrid > div:last-child {
+    grid-column: 2 / -1;
+  }
 }
 @media (max-width: 1100px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

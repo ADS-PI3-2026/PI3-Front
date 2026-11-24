@@ -187,6 +187,8 @@ export function Modal({
   onClose,
   busy = false,
   wide = false,
+  headerActions,
+  className = "",
 }) {
   const ref = useRef(null);
   const titleId = useId();
@@ -198,7 +200,7 @@ export function Modal({
   return (
     <dialog
       aria-labelledby={titleId}
-      className={`${styles.modal} ${wide ? styles.wideModal : ""}`}
+      className={`${styles.modal} ${wide ? styles.wideModal : ""} ${className}`}
       onCancel={(event) => {
         event.preventDefault();
         if (!busy) onClose();
@@ -207,15 +209,18 @@ export function Modal({
     >
       <header className={styles.modalHeading}>
         <h2 id={titleId}>{title}</h2>
-        <button
-          aria-label="Fechar diálogo"
-          className={styles.iconButton}
-          disabled={busy}
-          onClick={onClose}
-          type="button"
-        >
-          <XIcon aria-hidden size={22} />
-        </button>
+        <div className={styles.modalHeaderActions}>
+          {headerActions}
+          <button
+            aria-label="Fechar diálogo"
+            className={styles.iconButton}
+            disabled={busy}
+            onClick={onClose}
+            type="button"
+          >
+            <XIcon aria-hidden size={22} />
+          </button>
+        </div>
       </header>
       {children}
     </dialog>
