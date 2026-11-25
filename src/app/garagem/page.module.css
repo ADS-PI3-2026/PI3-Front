@@ -496,9 +496,20 @@
 
   .pageHeaderCompact {
     --app-page-title-size: 1.5rem;
-    box-shadow: 0 8px 22px rgba(30, 42, 70, 0.08);
+    box-shadow: none;
+    isolation: isolate;
     min-height: 74px;
     padding: 10px 0;
+  }
+
+  .pageHeaderCompact::before {
+    background: #f7f6fc;
+    box-shadow: 0 8px 22px rgba(30, 42, 70, 0.08);
+    content: "";
+    inset: 0 calc(50% - 50vw);
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
   }
 
   .pageHeaderCompact .headerIntroduction p {

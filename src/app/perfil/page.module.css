@@ -26,9 +26,15 @@
   gap: 16px;
 }
 
-.profileSummary,
-.card {
+.profileSummary {
   --app-card-padding: 20px;
+}
+
+.accordion {
+  --app-card-padding: 6px;
+  align-self: start;
+  display: grid;
+  overflow: hidden;
 }
 
 .profileSummary {
@@ -63,61 +69,60 @@
   overflow-wrap: anywhere;
 }
 
-.compactInstallButton {
-  align-items: center;
-  background: var(--app-success-soft);
-  border: 1px solid rgba(18, 102, 59, 0.28);
-  border-radius: 10px;
-  color: var(--app-success);
-  display: inline-flex;
-  flex: 0 0 38px;
-  height: 38px;
-  justify-content: center;
+.accordionItem + .accordionItem {
+  position: relative;
 }
 
-.compactInstallButton:hover {
-  background: #dcefe4;
+.accordionItem + .accordionItem::before {
+  background: #e6e8ee;
+  content: "";
+  height: 1px;
+  left: 10px;
+  position: absolute;
+  right: 10px;
+  top: 0;
 }
 
-.compactInstallButton:focus-visible {
-  outline: 3px solid rgba(18, 102, 59, 0.24);
-  outline-offset: 2px;
-}
-
-.tabList {
-  background: #fff;
-  border: 1px solid #e1e4ec;
-  border-radius: 14px;
-  box-shadow: 0 5px 18px rgba(34, 46, 78, 0.045);
-  display: grid;
-  gap: 4px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 5px;
+.accordionItem h2 {
+  font-size: inherit;
 }
 
 .tabButton,
 .activeTab {
   align-items: center;
   border-radius: 10px;
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 700;
-  gap: 8px;
-  justify-content: center;
-  min-height: 44px;
+  display: grid;
+  font-size: 0.96rem;
+  font-weight: 750;
+  gap: 10px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  min-height: 60px;
   min-width: 0;
-  padding: 10px 13px;
-  white-space: normal;
+  padding: 9px 10px;
+  position: relative;
+  text-align: left;
+  width: 100%;
 }
 
-.tabButton > svg,
-.activeTab > svg {
-  flex: 0 0 20px;
+.tabIcon {
+  align-items: center;
+  background: #f1f4f9;
+  border-radius: 9px;
+  color: #657084;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  transition: background 150ms ease, color 150ms ease;
+  width: 36px;
 }
 
 .tabLabel {
   min-width: 0;
-  text-align: left;
+}
+
+.tabCaret {
+  color: #929aab;
+  transition: transform 160ms ease;
 }
 
 .tabButton {
@@ -129,38 +134,76 @@
   color: #074793;
 }
 
+.activeTab .tabIcon {
+  background: #fff;
+  color: #074793;
+}
+
+.activeTab .tabCaret {
+  color: currentColor;
+  transform: rotate(90deg);
+}
+
 .tabButton:hover {
   background: #f2f5fa;
   color: #074793;
 }
 
+.tabButton[data-danger="true"],
+.activeTab[data-danger="true"] {
+  color: var(--app-danger);
+}
+
+.tabButton[data-danger="true"] .tabIcon {
+  background: var(--app-danger-soft);
+  color: var(--app-danger);
+}
+
+.activeTab[data-danger="true"] {
+  background: var(--app-danger-soft);
+}
+
+.activeTab[data-danger="true"] .tabIcon {
+  background: #fff;
+  color: var(--app-danger);
+}
+
 .tabButton:focus-visible,
 .activeTab:focus-visible,
-.tabPanel:focus-visible {
+.accordionPanel:focus-visible {
   outline: 3px solid rgba(7, 71, 147, 0.24);
   outline-offset: 2px;
 }
 
-.tabPanel {
+.accordionPanel {
+  background: #f6f8fc;
+  border: 1px solid #e1e7f0;
+  border-radius: 12px;
+  margin: 8px 6px;
   min-width: 0;
+  padding: 18px 16px 20px;
+}
+
+.accordionItem[data-danger="true"] .accordionPanel {
+  background: #fff7f6;
+  border-color: #f0d0cc;
+}
+
+.panelContent {
+  min-width: 0;
+}
+
+.dangerContent {
+  padding: 0;
 }
 
 .cardHeading {
   align-items: center;
   color: #074793;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
   margin-bottom: 19px;
-}
-
-.cardHeading p,
-.dangerToggle small {
-  color: #737b8c;
-  font-size: 0.68rem;
-  font-weight: 720;
-  letter-spacing: 0.08em;
-  margin-bottom: 3px;
-  text-transform: uppercase;
 }
 
 .cardHeading h2 {
@@ -169,32 +212,88 @@
   letter-spacing: -0.02em;
 }
 
+.editEmailButton {
+  align-items: center;
+  background: var(--app-blue-soft);
+  border: 1px solid #c9d8ec;
+  border-radius: 9px;
+  color: var(--app-blue);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 750;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.editEmailButton:hover {
+  background: #dfeafb;
+}
+
+.editEmailButton:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.editEmailButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .form,
 .deletionForm {
   display: grid;
   gap: 16px;
 }
 
+.form input:disabled {
+  cursor: default;
+  opacity: 1;
+  pointer-events: none;
+  user-select: none;
+  -webkit-text-fill-color: #737b89;
+}
+
 .linkList {
   display: grid;
-  gap: 1px;
+  gap: 10px;
 }
 
 .linkList button {
-  border-bottom: 1px solid #e8eaf0;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dbe2ed;
+  border-radius: 10px;
   color: #074793;
+  display: flex;
   font-size: 0.84rem;
   font-weight: 690;
-  padding: 12px 0;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 11px 13px;
   text-align: left;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
 
 .linkList button:last-child {
-  border-bottom: 0;
+  border-bottom: 1px solid #dbe2ed;
 }
 
-.dangerCard {
-  border-color: #f0cccc;
+.linkList button:hover {
+  background: var(--app-blue-soft);
+  border-color: #b9cce4;
+  transform: translateY(-1px);
+}
+
+.linkList button:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.linkList button svg {
+  flex: 0 0 auto;
 }
 
 .dangerHeading {
@@ -213,63 +312,57 @@
   margin: -5px 0 14px;
 }
 
-.installPromotion {
-  background: linear-gradient(145deg, #f1fbf5, #e4f5eb);
-  border: 1px solid rgba(18, 102, 59, 0.3);
-  border-radius: 14px;
-  display: grid;
-  gap: 14px;
-  grid-column: 1 / -1;
-  padding: 16px;
-  position: relative;
+.sectionSummary {
+  color: var(--app-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin-bottom: 16px;
 }
 
-.installPromotionContent {
+.sectionSummaryRow {
   align-items: flex-start;
-  color: var(--app-success);
   display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.sectionSummaryRow .sectionSummary {
+  margin-bottom: 0;
+}
+
+.sectionSummaryRow .editEmailButton {
+  align-self: flex-end;
+}
+
+.accessActions {
+  display: grid;
   gap: 10px;
-  padding-right: 24px;
 }
 
-.installPromotionContent > svg {
-  flex: 0 0 auto;
-}
-
-.installPromotion strong {
-  color: #263142;
-  display: block;
-  font-size: 0.88rem;
-  margin-bottom: 4px;
-}
-
-.installPromotion p {
-  color: #697181;
-  font-size: 0.76rem;
-  line-height: 1.5;
-}
-
-.dismissInstallButton {
-  align-items: center;
-  border-radius: 50%;
-  color: #596779;
-  display: inline-flex;
-  height: 32px;
+.accessActions .editEmailButton {
   justify-content: center;
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  width: 32px;
+  width: 100%;
 }
 
-.dismissInstallButton:hover {
-  background: rgba(18, 102, 59, 0.1);
+.installedMessage,
+.installUnavailableMessage {
+  border-radius: 10px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  padding: 12px 13px;
+}
+
+.installedMessage {
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.25);
   color: var(--app-success);
 }
 
-.dismissInstallButton:focus-visible {
-  outline: 3px solid rgba(18, 102, 59, 0.24);
-  outline-offset: 1px;
+.installUnavailableMessage {
+  background: var(--app-blue-soft);
+  border: 1px solid #d4e1f2;
+  color: var(--app-muted);
 }
 
 .deletionForm {
@@ -344,32 +437,16 @@
 @media (min-width: 760px) {
   .profileLayout {
     align-items: start;
-    grid-template-areas:
-      "summary tabs"
-      "summary panel";
+    grid-template-areas: "summary accordion";
     grid-template-columns: minmax(230px, 0.7fr) minmax(0, 2fr);
   }
 
   .profileSummary {
-    align-items: center;
     grid-area: summary;
   }
 
-  .tabList {
-    display: grid;
-    grid-area: tabs;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    overflow: visible;
-  }
-
-  .tabButton,
-  .activeTab {
-    min-width: 0;
-    white-space: normal;
-  }
-
-  .tabPanel {
-    grid-area: panel;
+  .accordion {
+    grid-area: accordion;
   }
 }
 
@@ -419,35 +496,34 @@
     row-gap: 20px;
   }
 
-  .profileSummary,
-  .card {
+  .profileSummary {
     --app-card-padding: 28px;
   }
 
-  .profileSummary {
-    align-items: start;
-    gap: 22px;
-    grid-template-columns: minmax(0, 1fr);
+  .accordion {
+    --app-card-padding: 8px;
   }
 
-  .avatar {
-    height: 88px;
-    width: 88px;
+  .accordionPanel {
+    margin: 10px 8px;
+    padding: 24px;
+  }
+
+  .profileSummary {
+    align-items: center;
+    gap: 15px;
+    grid-template-columns: 72px minmax(0, 1fr);
   }
 
   .profileSummary h2 {
     font-size: 1.4rem;
   }
 
-  .tabList {
-    padding: 7px;
-  }
-
   .tabButton,
   .activeTab {
-    font-size: 0.84rem;
-    min-height: 52px;
-    padding: 12px;
+    font-size: 1.02rem;
+    min-height: 62px;
+    padding: 13px 12px;
   }
 
   .cardHeading {
@@ -500,9 +576,19 @@
     background: #edf4fd;
   }
 
-  .card > button {
+  .panelContent > button {
     margin-top: 12px;
     min-width: 220px;
+    width: auto;
+  }
+
+  .accessActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .accessActions .editEmailButton {
     width: auto;
   }
 
