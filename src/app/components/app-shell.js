@@ -3,13 +3,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CarIcon, CheckCircleIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
+import { CarIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { recheckSession, useSession } from "./session-provider";
 import { isAdminUser } from "../lib/user-access";
 import { consumeNavigationFeedback } from "../lib/navigation-feedback";
 import LoadingScreen from "./loading-screen";
 import OfflineBanner from "./offline-banner";
 import { useNavigationTransition } from "./navigation-transition-provider";
+import { useToast } from "./toast-provider";
 import styles from "./app-shell.module.css";
 
 const navigationItems = [
@@ -27,8 +28,8 @@ export default function AppShell({ children, desktopLayout = true }) {
   const pathname = usePathname();
   const router = useRouter();
   const { ready, session, warning } = useSession();
+  const { showToast } = useToast();
   const user = session?.user;
-  const [navigationFeedback, setNavigationFeedback] = useState("");
   const [pendingTransition, setPendingTransition] = useNavigationTransition();
   const activeNavigationIndex = navigationItems.findIndex(({ href }) => (
     pathname === href
@@ -54,10 +55,11 @@ export default function AppShell({ children, desktopLayout = true }) {
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
-      if (active) setNavigationFeedback(consumeNavigationFeedback());
+      const message = consumeNavigationFeedback();
+      if (active && message) showToast({ message, tone: "success" });
     });
     return () => { active = false; };
-  }, [pathname]);
+  }, [pathname, showToast]);
 
   if (!ready || !user || isAdminUser(user)) return <LoadingScreen />;
 
@@ -65,19 +67,6 @@ export default function AppShell({ children, desktopLayout = true }) {
     <div className={`${styles.shell} ${desktopLayout ? styles.desktopShell : ""} ${showBottomNavigation ? "" : styles.withoutNavigation}`}>
       <AuthUserContext.Provider key={session.sessionId} value={user}>
         <div className={`${styles.content} ${entryTransition ? styles.contentEntering : ""}`}>
-          {navigationFeedback && (
-            <div className={styles.navigationFeedback} role="status">
-              <CheckCircleIcon aria-hidden size={21} weight="fill" />
-              <p>{navigationFeedback}</p>
-              <button
-                aria-label="Fechar mensagem"
-                onClick={() => setNavigationFeedback("")}
-                type="button"
-              >
-                <XIcon aria-hidden size={18} weight="bold" />
-              </button>
-            </div>
-          )}
           {warning && <div className="app-feedback app-feedback--error" role="status">
             <p>{warning}</p>
             <button onClick={() => void recheckSession()} type="button">Tentar novamente</button>

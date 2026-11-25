@@ -19,6 +19,7 @@ import AppShell, { useAuthUser } from "../components/app-shell";
 import FormField from "../components/form-field";
 import LegalDialog from "../components/legal-dialog";
 import { usePwaInstall } from "../components/pwa-provider";
+import { useToast } from "../components/toast-provider";
 import VerificationCodeFields from "../components/verification-code-fields";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../auth-api";
 import { deleteAccount, requestAccountDeletionCode, validateAccountDeletionCode } from "../account-api";
@@ -59,6 +60,7 @@ export default function ProfilePage() {
 function ProfileContent() {
   const user = useAuthUser();
   const pwa = usePwaInstall();
+  const { showToast } = useToast();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
@@ -75,7 +77,6 @@ function ProfileContent() {
   const [deletionMessage, setDeletionMessage] = useState("");
   const [deletionTimeLeft, setDeletionTimeLeft] = useState(0);
   const [sentAt, setSentAt] = useState(0);
-  const [installMessage, setInstallMessage] = useState("");
   const [installPromotionDismissed, setInstallPromotionDismissed] = useState(wasInstallPromotionDismissed);
   const tabRefs = useRef([]);
   const formattedDocument = user.document_type === "CNPJ"
@@ -207,18 +208,19 @@ function ProfileContent() {
   };
 
   const installApp = async () => {
-    setInstallMessage("");
     const outcome = await pwa.install();
     if (outcome === "accepted") {
-      setInstallMessage("A instalação do LegadoCar foi iniciada.");
+      showToast({ message: "A instalação do LegadoCar foi iniciada.", tone: "success" });
     } else if (outcome === "dismissed") {
-      setInstallMessage("A instalação foi cancelada. Você poderá tentar novamente pelo menu do navegador.");
+      showToast({
+        message: "A instalação foi cancelada. Você poderá tentar novamente pelo menu do navegador.",
+        tone: "info",
+      });
     }
   };
 
   const dismissInstallPromotion = () => {
     setInstallPromotionDismissed(true);
-    setInstallMessage("");
     try {
       window.localStorage.setItem(PWA_INSTALL_PROMOTION_DISMISSED_KEY, "true");
     } catch {
@@ -228,7 +230,6 @@ function ProfileContent() {
 
   const restoreInstallPromotion = () => {
     setInstallPromotionDismissed(false);
-    setInstallMessage("");
     try {
       window.localStorage.removeItem(PWA_INSTALL_PROMOTION_DISMISSED_KEY);
     } catch {
@@ -308,7 +309,6 @@ function ProfileContent() {
               </ActionButton>
             </section>
           )}
-          {installMessage && <p className={styles.installMessage} role="status">{installMessage}</p>}
         </section>
 
         <div aria-label="Seções do perfil" className={styles.tabList} role="tablist">

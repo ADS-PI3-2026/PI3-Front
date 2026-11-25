@@ -5,10 +5,12 @@ import { installStorage, startSession, success } from "./helpers/session-fixture
 const originalFetch = globalThis.fetch;
 const originalWindow = globalThis.window;
 const originalUrl = process.env.NEXT_PUBLIC_API_URL;
-beforeEach(() => {
+const api = () => import("../src/app/legal-api.js");
+beforeEach(async () => {
   installStorage();
   startSession();
   process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api";
+  (await api()).invalidatePublicLegalDocumentCache();
 });
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -17,9 +19,7 @@ afterEach(() => {
   if (originalUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL;
   else process.env.NEXT_PUBLIC_API_URL = originalUrl;
 });
-const api = () => import("../src/app/legal-api.js");
-
-test("documento público usa a chave correta, sem enviar sessão e sem cache", async () => {
+test("documento público usa a chave correta, sem enviar sessão e sem cache HTTP", async () => {
   globalThis.fetch = async (url, options) => {
     assert.equal(url, "http://localhost:8000/api/settings/privacy_policy");
     assert.equal(options.method, "GET");
@@ -28,6 +28,28 @@ test("documento público usa a chave correta, sem enviar sessão e sem cache", a
     return success({ key: "privacy_policy", value: "<p>Texto atual.</p>", updated_at: "2026-11-19T00:00:00Z" });
   };
   assert.equal((await (await api()).getPublicLegalDocument("privacy")).html, "<p>Texto atual.</p>");
+});
+
+test("pré-carrega os documentos públicos e reutiliza o resultado em memória", async () => {
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    const privacy = url.endsWith("/privacy_policy");
+    return success({
+      key: privacy ? "privacy_policy" : "terms_of_use",
+      value: privacy ? "<p>Política.</p>" : "<p>Termos.</p>",
+    });
+  };
+  const client = await api();
+
+  await client.preloadPublicLegalDocuments();
+  await client.getPublicLegalDocument("terms");
+  await client.getPublicLegalDocument("privacy");
+
+  assert.deepEqual(calls.sort(), [
+    "http://localhost:8000/api/settings/privacy_policy",
+    "http://localhost:8000/api/settings/terms_of_use",
+  ]);
 });
 
 test("documento público ausente, vazio ou com resposta trocada não usa texto estático", async () => {

@@ -12,9 +12,10 @@ import {
   ShieldWarningIcon,
 } from "@phosphor-icons/react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ActionButton from "../../../../components/action-button";
 import AppShell, { useAuthUser } from "../../../../components/app-shell";
+import { useToast } from "../../../../components/toast-provider";
 import FormField from "../../../../components/form-field";
 import VehicleBrandLogo from "../../../../components/vehicle-brand-logo";
 import VehiclePlate from "../../../../components/vehicle-plate";
@@ -84,6 +85,7 @@ function VehicleTransferContent() {
   const params = useParams();
   const router = useRouter();
   const user = useAuthUser();
+  const { dismissToast, showToast } = useToast();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [retryRevision, setRetryRevision] = useState(0);
   const [vehicleState, setVehicleState] = useState({
@@ -95,14 +97,26 @@ function VehicleTransferContent() {
   const [recipient, setRecipient] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [errors, setErrors] = useState({});
-  const [feedback, setFeedback] = useState("");
   const [transfer, setTransfer] = useState(null);
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
-  const [successFeedback, setSuccessFeedback] = useState("");
   const [inviteState, setInviteState] = useState(null);
   const [receivedCodeOpen, setReceivedCodeOpen] = useState(false);
   const [code, setCode] = useState(createEmptyCode);
+  const setFeedback = useCallback((message) => {
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: "error" });
+  }, [dismissToast, showToast]);
+  const setSuccessFeedback = useCallback((message) => {
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: "success" });
+  }, [dismissToast, showToast]);
 
   useEffect(() => {
     let active = true;
@@ -167,7 +181,7 @@ function VehicleTransferContent() {
 
     void restoreTransfer();
     return () => { active = false; };
-  }, [vehicleId]);
+  }, [setFeedback, vehicleId]);
 
   const clearTransfer = () => {
     setTransfer(null);
@@ -448,16 +462,6 @@ function VehicleTransferContent() {
         </section>
 
         <div className={styles.transferContent}>
-          {feedback && (
-            <p className="app-feedback app-feedback--error" role="alert">{feedback}</p>
-          )}
-          {successFeedback && (
-            <p className="app-feedback app-feedback--success" role="status">
-              <CheckCircleIcon aria-hidden size={18} weight="fill" />
-              {successFeedback}
-            </p>
-          )}
-
           {!ready ? (
             <PageLoadingState compact message="Carregando transferência..." />
           ) : !transfer ? (

@@ -112,6 +112,7 @@ function normalizeServiceType(serviceType) {
     : formatIdentifier(identifier);
 
   return {
+    code: identifier,
     description: typeof serviceType?.description === "string" ? serviceType.description.trim() : "",
     id: Number.isInteger(id) && id > 0 ? id : null,
     identifier,
@@ -1092,8 +1093,21 @@ export async function validateVehicleTransferCode(code) {
 }
 
 export async function listServiceTypes() {
-  const result = await requestAccount("/service-types?per_page=15", { method: "GET" });
-  return getResourceList(result.data, "os tipos de serviço").map(normalizeServiceType);
+  const serviceTypes = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await requestAccount(`/service-types?per_page=15&page=${page}`, {
+      method: "GET",
+    });
+    const resourcePage = getResourcePage(result.data, "os tipos de serviço");
+    serviceTypes.push(...resourcePage.items.map(normalizeServiceType));
+    hasMore = resourcePage.hasMore;
+    page = resourcePage.page + 1;
+  }
+
+  return serviceTypes;
 }
 
 export async function getServiceTypeFields(identifier) {

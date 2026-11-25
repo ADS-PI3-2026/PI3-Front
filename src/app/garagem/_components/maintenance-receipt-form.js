@@ -12,6 +12,7 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
+import { useToast } from "../../components/toast-provider";
 import { getAuthErrorMessage } from "../../auth-api";
 import {
   deleteMaintenanceAttachment,
@@ -64,14 +65,21 @@ function AttachmentIcon({ mimeType }) {
 }
 
 export default function MaintenanceReceiptForm({ maintenance, onRefresh, serviceFields = [] }) {
+  const { dismissToast, showToast } = useToast();
   const [files, setFiles] = useState([]);
   const [fileLabel, setFileLabel] = useState("");
   const [fileError, setFileError] = useState("");
-  const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [uploading, setUploading] = useState(false);
   const [actionId, setActionId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [uploadRevision, setUploadRevision] = useState(0);
+  const setFeedback = ({ message, type }) => {
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: type || "info" });
+  };
   const remainingAttachmentSlots = Math.max(
     MAX_FILES - maintenance.attachments.length,
     0,
@@ -361,14 +369,6 @@ export default function MaintenanceReceiptForm({ maintenance, onRefresh, service
 
         </div>
 
-        {feedback.message && (
-          <p
-            className={`app-feedback app-feedback--${feedback.type}`}
-            role={feedback.type === "error" ? "alert" : "status"}
-          >
-            {feedback.message}
-          </p>
-        )}
       </section>
     </main>
   );

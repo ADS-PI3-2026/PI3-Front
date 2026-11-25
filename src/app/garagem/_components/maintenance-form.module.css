@@ -45,6 +45,39 @@
   flex: 0 0 auto;
 }
 
+.draftStatusContent {
+  align-items: baseline;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  min-width: 0;
+}
+
+.clearDraftButton {
+  color: currentColor;
+  flex: 0 0 auto;
+  font-size: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearDraftButton:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+
+.clearDraftButton:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.clearDraftButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .statusField {
   border: 0;
   display: grid;

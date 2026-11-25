@@ -24,10 +24,12 @@ import {
 } from "./lib/form-validation";
 import { getRecoveryStep } from "./lib/recovery-flow";
 import LegalDialog from "./components/legal-dialog";
+import { preloadPublicLegalDocuments } from "./legal-api";
 import { saveNavigationFeedback } from "./lib/navigation-feedback";
 import { getAuthenticatedHomePath } from "./lib/user-access";
 import { acceptVehicleTransferInvite } from "./garagem/_lib/garage-api";
 import { useSession } from "./components/session-provider";
+import { useToast } from "./components/toast-provider";
 import styles from "./page.module.css";
 
 function Icon({ name, size = 20 }) {
@@ -603,12 +605,26 @@ function LoginScreen({
   sessionExpired,
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (accountDeleted) {
+      showToast({ message: "Sua conta foi excluída.", tone: "success" });
+    } else if (sessionExpired) {
+      showToast({ message: "Sua sessão expirou. Faça login novamente para continuar.", tone: "info" });
+    } else if (logoutUnconfirmed) {
+      showToast({
+        message: "Você saiu deste navegador, mas não foi possível confirmar o encerramento no servidor.",
+        tone: "warning",
+      });
+    }
+  }, [accountDeleted, logoutUnconfirmed, sessionExpired, showToast]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -659,9 +675,6 @@ function LoginScreen({
             <p>Entre para cuidar dos registros e histórias dos seus veículos</p>
           </div>
           {invited && <TransferInviteNotice />}
-          {logoutUnconfirmed && <p className="app-feedback" role="status">Você saiu deste navegador. Não foi possível confirmar o encerramento no servidor. Entre novamente quando a conexão voltar</p>}
-          {accountDeleted && <p className="app-feedback" role="status">Sua conta foi excluída</p>}
-          {sessionExpired && <p className="app-feedback" role="status">Sua sessão expirou. Faça login novamente para continuar</p>}
           <form
             className={styles.authForm}
             noValidate
@@ -1071,6 +1084,10 @@ function AuthHome() {
       router.replace(getAuthenticatedHomePath(authenticatedSession.user));
     }
   }, [authenticatedSession, inviteCode, requestedLegalType, router]);
+
+  useEffect(() => {
+    if (screen === "register") void preloadPublicLegalDocuments();
+  }, [screen]);
 
   const handleAuthenticated = () => Boolean(inviteCode);
 

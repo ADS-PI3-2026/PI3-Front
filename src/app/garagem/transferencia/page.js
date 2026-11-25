@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
+import { useToast } from "../../components/toast-provider";
 import FormField from "../../components/form-field";
 import VerificationCodeFields from "../../components/verification-code-fields";
 import { getAuthErrorMessage } from "../../auth-api";
@@ -72,13 +73,13 @@ export default function BuyerTransferPage() {
 }
 
 function BuyerTransferContent() {
+  const { dismissToast, showToast } = useToast();
   const [accepted, setAccepted] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
   const [code, setCode] = useState(createEmptyCode);
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState("");
   const [form, setForm] = useState({ plate: "", renavam: "" });
-  const [listActionFeedback, setListActionFeedback] = useState({ error: "", success: "" });
   const [listRevision, setListRevision] = useState(0);
   const [pending, setPending] = useState(false);
   const [ready, setReady] = useState(false);
@@ -93,6 +94,14 @@ function BuyerTransferContent() {
     page: 1,
     total: 0,
   });
+  const setListActionFeedback = ({ error, success }) => {
+    const message = error || success;
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: error ? "error" : "success" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -385,19 +394,6 @@ function BuyerTransferContent() {
       <main className={styles.transferScreen}>
         {!transfer ? (
           <>
-            {listActionFeedback.success && (
-              <p className="app-feedback app-feedback--success" role="status">
-                <CheckCircleIcon aria-hidden size={18} weight="fill" />
-                {listActionFeedback.success}
-              </p>
-            )}
-            {listActionFeedback.error && (
-              <p className="app-feedback app-feedback--error" role="alert">
-                <WarningCircleIcon aria-hidden size={18} weight="fill" />
-                {listActionFeedback.error}
-              </p>
-            )}
-
             <section aria-labelledby="new-transfer-title" className={styles.newTransferSection}>
               {!selectedAction ? (
                 <>

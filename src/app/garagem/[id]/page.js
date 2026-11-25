@@ -18,13 +18,13 @@ import {
   GearSixIcon,
   WarningCircleIcon,
   WrenchIcon,
-  ClockCounterClockwiseIcon,
   CardsIcon,
   XCircleIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
+import { useToast } from "../../components/toast-provider";
 import SegmentedControl from "../../components/segmented-control";
 import VehicleBrandLogo from "../../components/vehicle-brand-logo";
 import VehiclePlate from "../../components/vehicle-plate";
@@ -122,6 +122,7 @@ function AlertCancellationDialog({ alert, busy, error, onClose, onConfirm }) {
 
 export default function VehicleHistoryPage() {
   const params = useParams();
+  const { showToast } = useToast();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [selectedView, setSelectedView] = useState("history");
   const [retryRevision, setRetryRevision] = useState(0);
@@ -138,8 +139,7 @@ export default function VehicleHistoryPage() {
     maintenances: { hasMore: false, page: 1, total: 0 },
   });
   const [loadMoreState, setLoadMoreState] = useState({ error: "", loading: "" });
-  const [pdfState, setPdfState] = useState({ error: "", loading: false });
-  const [alertFeedback, setAlertFeedback] = useState("");
+  const [pdfState, setPdfState] = useState({ loading: false });
   const [cancelDialog, setCancelDialog] = useState({ alert: null, error: "", pending: false });
 
   useEffect(() => {
@@ -250,27 +250,29 @@ export default function VehicleHistoryPage() {
 
   const downloadHistory = async () => {
     if (pdfState.loading || !requestState.vehicle) return;
-    setPdfState({ error: "", loading: true });
+    setPdfState({ loading: true });
 
     try {
       const maintenances = await listVehicleMaintenanceDetails(vehicleId);
       if (maintenances.length === 0) {
-        setPdfState({ error: "Ainda não há manutenções para incluir no PDF.", loading: false });
+        setPdfState({ loading: false });
+        showToast({ message: "Ainda não há manutenções para incluir no PDF.", tone: "info" });
         return;
       }
       const { downloadVehicleHistoryPdf } = await import("../_lib/vehicle-history-pdf");
       downloadVehicleHistoryPdf({ maintenances, vehicle: requestState.vehicle });
-      setPdfState({ error: "", loading: false });
+      setPdfState({ loading: false });
+      showToast({ message: "Histórico em PDF gerado com sucesso.", tone: "success" });
     } catch {
-      setPdfState({
-        error: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
-        loading: false,
+      setPdfState({ loading: false });
+      showToast({
+        message: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
+        tone: "error",
       });
     }
   };
 
   const openAlertCancellation = (alert) => {
-    setAlertFeedback("");
     setCancelDialog({ alert, error: "", pending: false });
   };
 
@@ -298,7 +300,7 @@ export default function VehicleHistoryPage() {
         },
       }));
       setCancelDialog({ alert: null, error: "", pending: false });
-      setAlertFeedback("Alerta de manutenção cancelado com sucesso.");
+      showToast({ message: "Alerta de manutenção cancelado com sucesso.", tone: "success" });
     } catch (error) {
       setCancelDialog((current) => ({
         ...current,
@@ -431,29 +433,21 @@ export default function VehicleHistoryPage() {
                     <h2>Histórico de manutenção</h2>
                   </div>
                   <div className={styles.sectionHeadingActions}>
-                    <ClockCounterClockwiseIcon aria-hidden size={27} weight="duotone" />
+                    {pagination.maintenances.total > 0 && (
+                      <button
+                        className={styles.pdfButton}
+                        disabled={pdfState.loading}
+                        onClick={() => void downloadHistory()}
+                        type="button"
+                      >
+                        {pdfState.loading
+                          ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
+                          : <FilePdfIcon aria-hidden size={18} weight="bold" />}
+                        {pdfState.loading ? "Preparando..." : "Baixar PDF"}
+                      </button>
+                    )}
                   </div>
                 </header>
-
-                {pagination.maintenances.total > 0 && (
-                  <div className={styles.pdfActionRow}>
-                    <button
-                      className={styles.pdfButton}
-                      disabled={pdfState.loading}
-                      onClick={() => void downloadHistory()}
-                      type="button"
-                    >
-                      {pdfState.loading
-                        ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={18} weight="bold" />
-                        : <FilePdfIcon aria-hidden size={18} weight="bold" />}
-                      {pdfState.loading ? "Preparando seu histórico..." : "Baixar histórico em PDF"}
-                    </button>
-                  </div>
-                )}
-
-                {pdfState.error && (
-                  <p className={styles.pdfError} role="alert">{pdfState.error}</p>
-                )}
 
                 {maintenanceItems.length > 0 ? (
                   <>
@@ -559,13 +553,6 @@ export default function VehicleHistoryPage() {
                   </div>
                   <BellRingingIcon aria-hidden size={27} weight="duotone" />
                 </header>
-
-                {alertFeedback && (
-                  <p className="app-feedback app-feedback--success" role="status">
-                    <CheckCircleIcon aria-hidden size={18} weight="fill" />
-                    {alertFeedback}
-                  </p>
-                )}
 
                 {alertItems.length > 0 ? (
                   <>

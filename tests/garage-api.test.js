@@ -1106,13 +1106,14 @@ test("reconhece a sugestão segura de transferência retornada no conflito do ve
   assert.equal(getVehicleTransferSuggestion({ status: 422, data: { errors: {} } }), null);
 });
 
-test("carrega tipos de serviço e usa um nome legível quando a API omite id e nome", async () => {
+test("carrega tipos de serviço usando o atributo name como rótulo", async () => {
   startSession();
   globalThis.fetch = async (url) => {
-    assert.equal(url, "http://localhost:8000/api/service-types?per_page=15");
+    assert.equal(url, "http://localhost:8000/api/service-types?per_page=15&page=1");
     return success({
       data: [{
         identifier: "troca-oleo-filtros",
+        name: "Troca de Óleo e Filtros",
         description: "Substituição periódica de lubrificante.",
       }],
       meta: { total: 1 },
@@ -1122,11 +1123,41 @@ test("carrega tipos de serviço e usa um nome legível quando a API omite id e n
   const serviceTypes = await (await garageApi()).listServiceTypes();
 
   assert.deepEqual(serviceTypes, [{
+    code: "troca-oleo-filtros",
     description: "Substituição periódica de lubrificante.",
     id: null,
     identifier: "troca-oleo-filtros",
-    name: "Troca oleo filtros",
+    name: "Troca de Óleo e Filtros",
   }]);
+});
+
+test("carrega todas as páginas dos tipos de serviço", async () => {
+  startSession();
+  const requestedUrls = [];
+  globalThis.fetch = async (url) => {
+    requestedUrls.push(url);
+    const page = requestedUrls.length;
+    return success({
+      data: [{
+        identifier: page === 1 ? "troca-oleo-filtros" : "recall-fabrica",
+        name: page === 1 ? "Troca de Óleo e Filtros" : "Recall de Fábrica",
+        description: page === 1 ? "Substituição periódica." : "Campanha do fabricante.",
+      }],
+      links: { next: page === 1 ? "http://localhost:8000/api/service-types?page=2" : null },
+      meta: { current_page: page, last_page: 2, total: 2 },
+    });
+  };
+
+  const serviceTypes = await (await garageApi()).listServiceTypes();
+
+  assert.deepEqual(requestedUrls, [
+    "http://localhost:8000/api/service-types?per_page=15&page=1",
+    "http://localhost:8000/api/service-types?per_page=15&page=2",
+  ]);
+  assert.deepEqual(serviceTypes.map(({ code, name }) => ({ code, name })), [
+    { code: "troca-oleo-filtros", name: "Troca de Óleo e Filtros" },
+    { code: "recall-fabrica", name: "Recall de Fábrica" },
+  ]);
 });
 
 test("carrega campos dinâmicos e registra manutenção no contrato em lote", async () => {

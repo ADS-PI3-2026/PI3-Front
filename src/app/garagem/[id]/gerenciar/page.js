@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   CircleNotchIcon,
   EnvelopeSimpleIcon,
+  FilePdfIcon,
   FloppyDiskIcon,
   GaugeIcon,
   IdentificationCardIcon,
@@ -15,7 +16,6 @@ import {
   ShieldCheckIcon,
   ShieldWarningIcon,
   TrashIcon,
-  WarningCircleIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../../../components/action-button";
 import AppShell from "../../../components/app-shell";
+import { useToast } from "../../../components/toast-provider";
 import { getAuthErrorMessage } from "../../../auth-api";
 import VerificationCodeFields from "../../../components/verification-code-fields";
 import VehicleBrandLogo from "../../../components/vehicle-brand-logo";
@@ -48,6 +49,7 @@ import {
   getVehicle,
   getVehicleErrorMessage,
   getVehicleFieldErrors,
+  listVehicleMaintenanceDetails,
   requestVehiclePlateChangeCode,
   requestVehicleDeletionCode,
   updateVehicle,
@@ -64,6 +66,7 @@ const VEHICLE_DELETION_OTP_PURPOSE = "vehicle_deletion";
 export default function ManageVehiclePage() {
   const params = useParams();
   const router = useRouter();
+  const { dismissToast, showToast } = useToast();
   const actionPanelRef = useRef(null);
   const restoredOtpVehicleRef = useRef("");
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -76,13 +79,13 @@ export default function ManageVehiclePage() {
   });
   const [activeAction, setActiveAction] = useState("");
   const [panelScrollRevision, setPanelScrollRevision] = useState(0);
-  const [actionFeedback, setActionFeedback] = useState({ message: "", type: "" });
   const [mileageError, setMileageError] = useState("");
   const [mileageValue, setMileageValue] = useState("");
   const [updatingMileage, setUpdatingMileage] = useState(false);
   const [colorError, setColorError] = useState("");
   const [colorValue, setColorValue] = useState("");
   const [updatingColor, setUpdatingColor] = useState(false);
+  const [downloadingHistory, setDownloadingHistory] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteConfirmationError, setDeleteConfirmationError] = useState("");
   const [deleteCode, setDeleteCode] = useState(createEmptyCode);
@@ -93,6 +96,13 @@ export default function ManageVehiclePage() {
   const [plateCodeError, setPlateCodeError] = useState("");
   const [platePending, setPlatePending] = useState(false);
   const [plateStep, setPlateStep] = useState("review");
+  const setActionFeedback = ({ message, type }) => {
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: type || "success" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -254,6 +264,35 @@ export default function ManageVehiclePage() {
     setDeleteCode(createEmptyCode());
     setDeleteCodeError("");
     setDeleteStep(pendingRequest ? "code" : "confirmation");
+  };
+
+  const downloadHistory = async () => {
+    if (downloadingHistory) return;
+
+    setActiveAction("");
+    setDownloadingHistory(true);
+    setActionFeedback({ message: "", type: "" });
+    try {
+      const maintenances = await listVehicleMaintenanceDetails(vehicle.id);
+      if (maintenances.length === 0) {
+        setActionFeedback({
+          message: "Este veículo ainda não possui manutenções para incluir no PDF.",
+          type: "error",
+        });
+        return;
+      }
+
+      const { downloadVehicleHistoryPdf } = await import("../../_lib/vehicle-history-pdf");
+      downloadVehicleHistoryPdf({ maintenances, vehicle });
+      setActionFeedback({ message: "Histórico em PDF gerado com sucesso.", type: "success" });
+    } catch {
+      setActionFeedback({
+        message: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
+        type: "error",
+      });
+    } finally {
+      setDownloadingHistory(false);
+    }
   };
 
   const submitMileage = async (event) => {
@@ -595,6 +634,28 @@ export default function ManageVehiclePage() {
             </button>
 
             <button
+              className="app-action-item"
+              disabled={downloadingHistory}
+              onClick={() => void downloadHistory()}
+              type="button"
+            >
+              <span className="app-action-icon">
+                {downloadingHistory
+                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={23} weight="bold" />
+                  : <FilePdfIcon aria-hidden size={23} weight="duotone" />}
+              </span>
+              <span className="app-action-copy">
+                <strong>Baixar histórico em PDF</strong>
+                <span>
+                  {downloadingHistory
+                    ? "Preparando o relatório completo..."
+                    : "Gerar um relatório com as manutenções do veículo"}
+                </span>
+              </span>
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
+            </button>
+
+            <button
               aria-expanded={activeAction === "delete"}
               className={`app-action-item ${styles.dangerAction} ${activeAction === "delete" ? "app-action-item--active" : ""}`}
               onClick={openDeleteAction}
@@ -897,17 +958,6 @@ export default function ManageVehiclePage() {
           </section>
         )}
 
-        {actionFeedback.message && (
-          <p
-            className={`app-feedback app-feedback--${actionFeedback.type || "success"}`}
-            role={actionFeedback.type === "error" ? "alert" : "status"}
-          >
-            {actionFeedback.type === "error"
-              ? <WarningCircleIcon aria-hidden size={18} weight="fill" />
-              : <CheckCircleIcon aria-hidden size={18} weight="fill" />}
-            {actionFeedback.message}
-          </p>
-        )}
       </main>
     </AppShell>
   );
