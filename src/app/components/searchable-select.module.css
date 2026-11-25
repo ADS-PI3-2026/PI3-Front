@@ -1,6 +1,9 @@
 .field {
+  max-width: 100%;
+  min-width: 0;
   position: relative;
   scroll-margin-top: 12px;
+  width: 100%;
 }
 
 .trigger {
@@ -11,7 +14,9 @@
   color: #292d39;
   display: flex;
   justify-content: space-between;
+  max-width: 100%;
   min-height: var(--app-control-height, 48px);
+  min-width: 0;
   padding: 0 13px;
   text-align: left;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
@@ -71,6 +76,8 @@
   gap: 8px;
   left: 0;
   margin-top: 4px;
+  max-width: 100%;
+  min-width: 0;
   padding: 10px;
   position: absolute;
   right: 0;
@@ -163,15 +170,23 @@
 .triggerContent {
   align-items: center;
   display: flex;
+  flex: 1;
   gap: 10px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .optionContent {
   align-items: center;
   display: flex;
   gap: 10px;
+  min-width: 0;
   width: 100%;
+}
+
+.optionContent > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .optionImage {

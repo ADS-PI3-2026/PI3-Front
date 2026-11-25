@@ -58,6 +58,34 @@ export function readMaintenanceDraft(key, storage) {
   }
 }
 
+export function listMaintenanceDrafts(userId, storage) {
+  const owner = Number(userId);
+  const browserStorage = getBrowserStorage(storage);
+  if (!Number.isInteger(owner) || owner <= 0 || !browserStorage) return [];
+
+  const ownerPrefix = `${DRAFT_PREFIX}:v${DRAFT_VERSION}:user-${owner}:vehicle-`;
+  const drafts = [];
+
+  try {
+    for (let index = 0; index < browserStorage.length; index += 1) {
+      const key = browserStorage.key(index);
+      if (!key?.startsWith(ownerPrefix)) continue;
+
+      const vehicleId = Number(key.slice(ownerPrefix.length));
+      const draft = readMaintenanceDraft(key, browserStorage);
+      if (Number.isInteger(vehicleId) && vehicleId > 0 && draft) {
+        drafts.push({ ...draft, key, vehicleId });
+      }
+    }
+  } catch {
+    return [];
+  }
+
+  return drafts.sort((first, second) => (
+    String(second.updatedAt).localeCompare(String(first.updatedAt))
+  ));
+}
+
 export function saveMaintenanceDraft(key, { fieldValues = {}, form = {}, queued = false }, storage) {
   if (!key || !hasMaintenanceDraftContent(form, fieldValues)) return false;
   try {

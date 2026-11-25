@@ -4,6 +4,13 @@ export function onlyDigits(value) {
   return String(value ?? "").replace(/\D/g, "");
 }
 
+export function formatIntegerInput(value) {
+  const digits = onlyDigits(value);
+  if (!digits) return "";
+
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export function formatPlateInput(value) {
   const characters = String(value ?? "")
     .toUpperCase()

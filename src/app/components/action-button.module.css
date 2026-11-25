@@ -33,6 +33,18 @@
   background: #e5eaf2;
 }
 
+.success {
+  background: var(--app-success);
+  box-shadow: 0 9px 18px rgba(18, 102, 59, 0.2);
+  color: #fff;
+}
+
+.success:hover:not(:disabled) {
+  background: #0e5531;
+  box-shadow: 0 11px 23px rgba(18, 102, 59, 0.25);
+  transform: translateY(-1px);
+}
+
 .danger {
   background: var(--app-danger);
   color: #fff;
@@ -60,6 +72,10 @@
 
 .danger:focus-visible {
   outline-color: rgba(180, 35, 24, 0.24);
+}
+
+.success:focus-visible {
+  outline-color: rgba(18, 102, 59, 0.24);
 }
 
 @media (min-width: 1200px) {

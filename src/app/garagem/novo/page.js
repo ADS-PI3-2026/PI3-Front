@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CarIcon,
   CircleNotchIcon,
+  CloudArrowUpIcon,
   GaugeIcon,
   IdentificationCardIcon,
   MotorcycleIcon,
@@ -14,7 +15,9 @@ import {
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
+import { useSession } from "../../components/session-provider";
 import SearchableSelect from "../../components/searchable-select";
+import { useToast } from "../../components/toast-provider";
 import PageTopBar from "../_components/page-top-bar";
 import PageLoadingState from "../_components/page-loading-state";
 import VehicleRegistrationLimit from "../_components/vehicle-registration-limit";
@@ -36,8 +39,16 @@ import {
 } from "../_lib/garage-api";
 import { hasReachedVehicleRegistrationLimit } from "../_lib/vehicle-registration-limit";
 import { saveVehicleTransferPrefill } from "../_lib/vehicle-transfer-prefill";
+import {
+  clearVehicleDraft,
+  createVehicleDraftKey,
+  hasVehicleDraftContent,
+  readVehicleDraft,
+  saveVehicleDraft,
+} from "../_lib/vehicle-draft";
 import { saveNavigationFeedback } from "../../lib/navigation-feedback";
 import {
+  formatIntegerInput,
   formatPlateInput,
   onlyDigits,
   validateVehicleForm,
@@ -69,6 +80,11 @@ const vehicleTypeShortLabels = {
 
 export default function NewVehiclePage() {
   const router = useRouter();
+  const { session } = useSession();
+  const { showToast } = useToast();
+  const vehicleDraftKey = createVehicleDraftKey(session?.user?.id);
+  const restoredDraftKey = useRef("");
+  const draftInitializationRequest = useRef({ key: "", promise: null });
   const [garageState, setGarageState] = useState(() => {
     const cached = getCachedVehiclePage();
     return {
@@ -91,11 +107,16 @@ export default function NewVehiclePage() {
   const [fipeError, setFipeError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [draftInitialized, setDraftInitialized] = useState(false);
+  const [draftMessage, setDraftMessage] = useState("");
+  const [restoringDraft, setRestoringDraft] = useState(false);
   const [transferSuggestion, setTransferSuggestion] = useState(null);
   const [failedBrandLogoSrc, setFailedBrandLogoSrc] = useState("");
   const registrationLimitReached = !garageState.loading
     && !garageState.error
     && hasReachedVehicleRegistrationLimit(garageState.total);
+  const formBusy = submitting;
+  const draftActionBusy = submitting || restoringDraft;
 
   const selectedBrand = useMemo(
     () => brands.find((brand) => brand.code === form.brand),
@@ -124,9 +145,12 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, brands: true }));
 
     try {
-      setBrands(await getBrands(vehicleType));
+      const options = await getBrands(vehicleType);
+      setBrands(options);
+      return options;
     } catch {
       setFipeError("Não foi possível carregar as marcas da tabela FIPE.");
+      return null;
     } finally {
       setLoading((current) => ({ ...current, brands: false }));
     }
@@ -139,9 +163,12 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, years: true }));
 
     try {
-      setYears(await getBrandYears(vehicleType, brandId));
+      const options = await getBrandYears(vehicleType, brandId);
+      setYears(options);
+      return options;
     } catch {
       setFipeError("Não foi possível carregar os anos da tabela FIPE.");
+      return null;
     } finally {
       setLoading((current) => ({ ...current, years: false }));
     }
@@ -153,9 +180,12 @@ export default function NewVehiclePage() {
     setLoading((current) => ({ ...current, models: true }));
 
     try {
-      setModels(await getModelsByYear(vehicleType, brandId, yearId));
+      const options = await getModelsByYear(vehicleType, brandId, yearId);
+      setModels(options);
+      return options;
     } catch {
       setFipeError("Não foi possível carregar os modelos da tabela FIPE.");
+      return null;
     } finally {
       setLoading((current) => ({ ...current, models: false }));
     }
@@ -198,13 +228,128 @@ export default function NewVehiclePage() {
     if (garageState.loading || garageState.error || registrationLimitReached) {
       return undefined;
     }
+    if (!vehicleDraftKey || restoredDraftKey.current === vehicleDraftKey) return undefined;
 
-    const timer = window.setTimeout(() => {
-      void loadBrands(initialForm.type);
-    }, 0);
+    let active = true;
 
-    return () => window.clearTimeout(timer);
-  }, [garageState.error, garageState.loading, loadBrands, registrationLimitReached]);
+    async function initializeForm() {
+      const draft = readVehicleDraft(vehicleDraftKey);
+      const restoredForm = draft ? { ...initialForm, ...draft.form } : { ...initialForm };
+      const supportedType = vehicleTypes.some((type) => type.value === restoredForm.type)
+        ? restoredForm.type
+        : initialForm.type;
+      const validatedForm = { ...restoredForm, type: supportedType };
+
+      if (!validatedForm.brand) {
+        validatedForm.year = "";
+        validatedForm.model = "";
+      } else if (!validatedForm.year) {
+        validatedForm.model = "";
+      }
+
+      const hasDraft = Boolean(draft);
+      const shouldLoadYears = hasDraft && Boolean(validatedForm.brand);
+      const shouldLoadModels = shouldLoadYears && Boolean(validatedForm.year);
+
+      setRestoringDraft(hasDraft);
+      setForm(validatedForm);
+      setBrands([]);
+      setYears([]);
+      setModels([]);
+      setFipeError("");
+      setLoading({
+        brands: true,
+        models: shouldLoadModels,
+        years: shouldLoadYears,
+      });
+
+      if (draftInitializationRequest.current.key !== vehicleDraftKey) {
+        draftInitializationRequest.current = {
+          key: vehicleDraftKey,
+          promise: Promise.allSettled([
+            getBrands(validatedForm.type),
+            shouldLoadYears
+              ? getBrandYears(validatedForm.type, validatedForm.brand)
+              : Promise.resolve([]),
+            shouldLoadModels
+              ? getModelsByYear(validatedForm.type, validatedForm.brand, validatedForm.year)
+              : Promise.resolve([]),
+          ]),
+        };
+      }
+
+      const [brandResult, yearResult, modelResult] = await draftInitializationRequest.current.promise;
+      if (!active) return;
+
+      const brandOptions = brandResult.status === "fulfilled" ? brandResult.value : null;
+      const yearOptions = yearResult.status === "fulfilled" ? yearResult.value : null;
+      const modelOptions = modelResult.status === "fulfilled" ? modelResult.value : null;
+      setBrands(brandOptions ?? []);
+      setYears(yearOptions ?? []);
+      setModels(modelOptions ?? []);
+      setLoading({ brands: false, models: false, years: false });
+
+      if ([brandResult, yearResult, modelResult].some((result) => result.status === "rejected")) {
+        setFipeError(hasDraft
+          ? "Não foi possível validar todos os dados na FIPE. O rascunho foi preservado; tente novamente quando sua conexão estiver estável."
+          : "Não foi possível carregar as marcas da tabela FIPE.");
+      }
+
+      if (brandOptions && validatedForm.brand) {
+        const brandExists = brandOptions.some((brand) => brand.code === validatedForm.brand);
+        if (!brandExists) {
+          validatedForm.brand = "";
+          validatedForm.year = "";
+          validatedForm.model = "";
+        } else if (yearOptions && validatedForm.year
+          && !yearOptions.some((year) => year.code === validatedForm.year)) {
+          validatedForm.year = "";
+          validatedForm.model = "";
+        } else if (modelOptions && validatedForm.model
+          && !modelOptions.some((model) => model.code === validatedForm.model)) {
+          validatedForm.model = "";
+        }
+      }
+
+      if (!active) return;
+      setForm((current) => ({
+        ...current,
+        brand: validatedForm.brand,
+        model: validatedForm.model,
+        type: validatedForm.type,
+        year: validatedForm.year,
+      }));
+      setDraftMessage(draft ? "Rascunho recuperado deste dispositivo." : "");
+      setDraftInitialized(true);
+      setRestoringDraft(false);
+      restoredDraftKey.current = vehicleDraftKey;
+    }
+
+    void initializeForm();
+    return () => { active = false; };
+  }, [
+    garageState.error,
+    garageState.loading,
+    registrationLimitReached,
+    vehicleDraftKey,
+  ]);
+
+  useEffect(() => {
+    if (!draftInitialized || restoringDraft || submitting || !vehicleDraftKey) return;
+
+    if (!hasVehicleDraftContent(form)) {
+      clearVehicleDraft(vehicleDraftKey);
+      queueMicrotask(() => setDraftMessage(""));
+      return;
+    }
+
+    const saved = saveVehicleDraft(vehicleDraftKey, form);
+    if (saved) {
+      queueMicrotask(() => {
+        setDraftMessage((current) => current || "Rascunho salvo neste dispositivo.");
+      });
+    }
+  }, [draftInitialized, form, restoringDraft, submitting, vehicleDraftKey]);
 
   const clearError = (field) => {
     setErrors((current) => ({ ...current, [field]: "" }));
@@ -257,9 +402,26 @@ export default function NewVehiclePage() {
     setForm((current) => ({ ...current, model: value }));
   };
 
+  const discardDraft = async () => {
+    clearVehicleDraft(vehicleDraftKey);
+    setRestoringDraft(true);
+    setForm({ ...initialForm });
+    setErrors({});
+    setSubmitError("");
+    setTransferSuggestion(null);
+    setFailedBrandLogoSrc("");
+    setDraftMessage("");
+    await loadBrands(initialForm.type);
+    setRestoringDraft(false);
+    showToast({
+      message: "Rascunho descartado. O formulário está disponível para um novo preenchimento.",
+      tone: "info",
+    });
+  };
+
   const submitVehicle = async (event) => {
     event.preventDefault();
-    if (submitting) return;
+    if (draftActionBusy) return;
 
     const validationErrors = validateVehicleForm(form);
     setErrors(validationErrors);
@@ -276,6 +438,7 @@ export default function NewVehiclePage() {
         year: selectedYear,
       });
       const vehicle = await createVehicle(payload);
+      clearVehicleDraft(vehicleDraftKey);
       saveNavigationFeedback(vehicle.restored
         ? "Veículo restaurado com sucesso. O histórico anterior foi preservado."
         : "Veículo cadastrado com sucesso.");
@@ -304,6 +467,7 @@ export default function NewVehiclePage() {
       setSubmitError("Não foi possível preparar a solicitação. Tente novamente.");
       return;
     }
+    clearVehicleDraft(vehicleDraftKey);
     router.push("/garagem/transferencia");
   };
 
@@ -347,6 +511,23 @@ export default function NewVehiclePage() {
         </main>
       ) : (
         <main className={`app-form-screen ${styles.formScreen}`}>
+          {draftMessage && (
+            <div className={styles.draftStatus} role="status">
+              <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />
+              <div className={styles.draftStatusContent}>
+                <p>{draftMessage}</p>
+                <button
+                  className={styles.discardDraftButton}
+                  disabled={draftActionBusy}
+                  onClick={() => void discardDraft()}
+                  type="button"
+                >
+                  Descartar rascunho
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className={styles.formContext}>
             <div className={styles.iconCircle}>
               {selectedBrand && failedBrandLogoSrc !== brandLogoSrc ? (
@@ -387,7 +568,7 @@ export default function NewVehiclePage() {
                       aria-pressed={selected}
                       className={styles.vehicleTypeButton}
                       data-selected={selected}
-                      disabled={submitting || loading.brands}
+                      disabled={formBusy || loading.brands}
                       key={type.value}
                       onClick={() => updateVehicleType(type.value)}
                       title={type.label}
@@ -405,7 +586,7 @@ export default function NewVehiclePage() {
             </fieldset>
 
             <SearchableSelect
-              disabled={loading.brands || submitting}
+              disabled={loading.brands || formBusy}
               emptyMessage="Nenhuma marca encontrada."
               error={errors.brand}
               getOptionImage={(brand) =>
@@ -421,7 +602,7 @@ export default function NewVehiclePage() {
             />
 
             <SearchableSelect
-              disabled={!selectedBrand || loading.years || submitting}
+              disabled={!selectedBrand || loading.years || formBusy}
               emptyMessage="Nenhum ano encontrado para a marca selecionada."
               error={errors.year}
               hint="A FIPE pode retornar o mesmo ano com combustíveis diferentes."
@@ -435,7 +616,7 @@ export default function NewVehiclePage() {
             />
 
             <SearchableSelect
-              disabled={!selectedYear || loading.models || submitting}
+              disabled={!selectedYear || loading.models || formBusy}
               emptyMessage="Nenhum modelo encontrado para o ano selecionado."
               error={errors.model}
               label="Modelo"
@@ -456,7 +637,7 @@ export default function NewVehiclePage() {
                 <PaletteIcon aria-hidden size={20} weight="regular" />
                 <input
                   autoComplete="off"
-                  disabled={submitting}
+                  disabled={formBusy}
                   maxLength={255}
                   name="color"
                   onChange={(event) => updateField("color", event.target.value)}
@@ -479,7 +660,7 @@ export default function NewVehiclePage() {
                 <input
                   autoComplete="off"
                   autoCapitalize="characters"
-                  disabled={submitting}
+                  disabled={formBusy}
                   maxLength={8}
                   name="plate"
                   onChange={(event) =>
@@ -506,7 +687,7 @@ export default function NewVehiclePage() {
                 <IdentificationCardIcon aria-hidden size={20} weight="regular" />
                 <input
                   autoComplete="off"
-                  disabled={submitting}
+                  disabled={formBusy}
                   inputMode="numeric"
                   maxLength={11}
                   name="renavam"
@@ -533,14 +714,14 @@ export default function NewVehiclePage() {
               >
                 <GaugeIcon aria-hidden size={20} weight="regular" />
                 <input
-                  disabled={submitting}
+                  disabled={formBusy}
                   inputMode="numeric"
                   name="mileage"
                   onChange={(event) =>
                     updateField("mileage", onlyDigits(event.target.value))
                   }
-                  placeholder="Ex: 50000"
-                  value={form.mileage}
+                  placeholder="Ex: 50.000"
+                  value={formatIntegerInput(form.mileage)}
                 />
                 <em>km</em>
               </span>
@@ -557,16 +738,20 @@ export default function NewVehiclePage() {
             )}
             {transferSuggestion ? (
               <VehicleTransferSuggestion
-                disabled={submitting}
+                disabled={formBusy}
                 onRequest={requestTransfer}
                 ownerHint={transferSuggestion.ownerHint}
               />
             ) : (
-              <ActionButton disabled={submitting} form="new-vehicle-form" type="submit">
-                {submitting
+              <ActionButton disabled={draftActionBusy} form="new-vehicle-form" type="submit">
+                {submitting || restoringDraft
                   ? <CircleNotchIcon aria-hidden className={styles.submitIcon} size={21} weight="bold" />
                   : <CarIcon aria-hidden size={21} weight="bold" />}
-                {submitting ? "Adicionando veículo..." : "Adicionar veículo à garagem"}
+                {restoringDraft
+                  ? "Restaurando rascunho..."
+                  : submitting
+                    ? "Adicionando veículo..."
+                    : "Adicionar veículo à garagem"}
               </ActionButton>
             )}
           </form>

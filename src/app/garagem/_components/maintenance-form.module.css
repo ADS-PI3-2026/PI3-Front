@@ -1,7 +1,12 @@
 .formScreen {
   --app-form-desktop-width: 500px;
-  --app-form-heading-width: 280px;
+  --app-form-heading-size: clamp(1.35rem, 6vw, 1.55rem);
+  --app-form-heading-width: none;
   --app-form-width: 430px;
+}
+
+.formContext :global(.app-form-heading h2) {
+  white-space: nowrap;
 }
 
 .maintenanceForm {
@@ -14,18 +19,21 @@
 
 .draftStatus {
   align-items: center;
-  background: #eef6ff;
-  border: 1px solid #cfdef1;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.28);
   border-radius: 12px;
-  color: #074793;
+  color: var(--app-success);
   display: flex;
   font-size: 0.78rem;
   gap: 9px;
   line-height: 1.45;
-  margin: 0 auto 14px;
+  margin: -16px auto 16px;
   max-width: var(--app-form-width);
   padding: 11px 13px;
+  position: sticky;
+  top: calc(73px + env(safe-area-inset-top));
   width: 100%;
+  z-index: 14;
 }
 
 .draftStatus[data-state="offline"],
@@ -43,6 +51,45 @@
 
 .draftStatus svg {
   flex: 0 0 auto;
+}
+
+.draftStatusContent {
+  align-items: baseline;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.draftStatusContent p {
+  flex: 1 1 210px;
+  min-width: 0;
+}
+
+.clearDraftButton {
+  color: currentColor;
+  flex: 0 0 auto;
+  font-size: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearDraftButton:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+
+.clearDraftButton:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.clearDraftButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .statusField {
@@ -154,6 +201,12 @@
   }
 }
 
+@media (min-width: 760px) and (max-width: 1199px) {
+  .draftStatus {
+    margin-top: -22px;
+  }
+}
+
 @media (min-width: 1200px) {
   .formScreen {
     --app-form-desktop-width: 1160px;
@@ -176,8 +229,12 @@
   }
 
   .draftStatus {
-    margin-top: 24px;
+    align-self: start;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    margin: 0 0 16px;
     max-width: none;
+    top: 16px;
   }
 
   .maintenanceForm {
@@ -186,6 +243,20 @@
     gap: 22px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
+  }
+
+  .formScreen:has(> .draftStatus) .formContext {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .formScreen:has(> .draftStatus) .maintenanceForm {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .formScreen:has(> .draftStatus) {
+    row-gap: 20px;
   }
 
   .maintenanceForm > * {

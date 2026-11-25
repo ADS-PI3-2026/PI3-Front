@@ -37,6 +37,69 @@
   text-align: center;
 }
 
+.draftStatus {
+  align-items: center;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.28);
+  border-radius: 12px;
+  color: var(--app-success);
+  display: flex;
+  font-size: 0.78rem;
+  gap: 9px;
+  line-height: 1.45;
+  margin: -14px auto 16px;
+  max-width: var(--app-form-width);
+  padding: 11px 13px;
+  position: sticky;
+  text-align: left;
+  width: 100%;
+  top: calc(73px + env(safe-area-inset-top));
+  z-index: 14;
+}
+
+.draftStatus > svg {
+  flex: 0 0 auto;
+}
+
+.draftStatusContent {
+  align-items: baseline;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.draftStatusContent p {
+  flex: 1 1 210px;
+  min-width: 0;
+}
+
+.discardDraftButton {
+  color: currentColor;
+  flex: 0 0 auto;
+  font-size: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.discardDraftButton:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+
+.discardDraftButton:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.discardDraftButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .vehicleForm {
   --app-form-card-desktop-padding: 24px;
   --app-form-card-padding: 20px;
@@ -147,6 +210,10 @@
   .vehicleTypeButton {
     min-height: 82px;
   }
+
+  .draftStatus {
+    margin-top: -22px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -170,6 +237,15 @@
     text-align: center;
   }
 
+  .draftStatus {
+    align-self: start;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    margin: 0 0 16px;
+    max-width: none;
+    top: 16px;
+  }
+
   .iconCircle {
     margin: 0 auto 24px;
   }
@@ -191,6 +267,20 @@
     gap: 22px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
+  }
+
+  .formScreen:has(> .draftStatus) .formContext {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .formScreen:has(> .draftStatus) .vehicleForm {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .formScreen:has(> .draftStatus) {
+    row-gap: 20px;
   }
 
   .vehicleForm > * {

@@ -16,7 +16,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 0 2px 18px;
+  padding: 18px 2px 18px;
 }
 
 .brandLogo {

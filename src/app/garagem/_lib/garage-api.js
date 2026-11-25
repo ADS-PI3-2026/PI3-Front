@@ -112,6 +112,7 @@ function normalizeServiceType(serviceType) {
     : formatIdentifier(identifier);
 
   return {
+    code: identifier,
     description: typeof serviceType?.description === "string" ? serviceType.description.trim() : "",
     id: Number.isInteger(id) && id > 0 ? id : null,
     identifier,
@@ -189,23 +190,38 @@ function getLocalDate(date = new Date()) {
   ].join("-");
 }
 
-export function summarizeMaintenanceAlertsByDate(alerts, referenceDate = getLocalDate()) {
+export function summarizeMaintenanceAlertsByDate(
+  alerts,
+  referenceDate = getLocalDate(),
+  currentMileage,
+) {
   const validReferenceDate = /^\d{4}-\d{2}-\d{2}$/.test(referenceDate)
     ? referenceDate
     : getLocalDate();
-  const pendingDates = alerts
-    .filter((alert) => alert?.status === "pending")
+  const vehicleMileage = Number(currentMileage);
+  const pendingAlerts = alerts.filter((alert) => alert?.status === "pending");
+  const overdueAlerts = pendingAlerts.filter((alert) => {
+    const dateOverdue = /^\d{4}-\d{2}-\d{2}$/.test(String(alert?.date_due ?? ""))
+      && alert.date_due < validReferenceDate;
+    const mileageDue = Number(alert?.mileage_due);
+    const mileageOverdue = alert?.mileage_due != null
+      && Number.isFinite(mileageDue)
+      && Number.isFinite(vehicleMileage)
+      && mileageDue <= vehicleMileage;
+    return dateOverdue || mileageOverdue;
+  });
+  const overdueSet = new Set(overdueAlerts);
+  const upcomingDates = pendingAlerts
+    .filter((alert) => !overdueSet.has(alert))
     .map((alert) => alert?.date_due)
-    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(String(date ?? "")));
-  const upcomingDates = pendingDates
-    .filter((date) => date >= validReferenceDate)
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(String(date ?? "")) && date >= validReferenceDate)
     .sort();
   const nextDate = upcomingDates[0] ?? "";
 
   return {
     nextDate,
     nextDateLabel: nextDate ? formatApiDate(nextDate) : "",
-    overdueCount: pendingDates.filter((date) => date < validReferenceDate).length,
+    overdueCount: overdueAlerts.length,
   };
 }
 
@@ -956,7 +972,7 @@ export async function listVehicleAlertsPage(vehicleId, currentMileage, page = 1)
   };
 }
 
-export async function getVehicleMaintenanceDateSummary(vehicleId, referenceDate) {
+export async function getVehicleMaintenanceDateSummary(vehicleId, referenceDate, currentMileage) {
   const id = getVehicleId(vehicleId);
   const alerts = [];
   let page = 1;
@@ -973,7 +989,7 @@ export async function getVehicleMaintenanceDateSummary(vehicleId, referenceDate)
     page = resourcePage.page + 1;
   }
 
-  return summarizeMaintenanceAlertsByDate(alerts, referenceDate);
+  return summarizeMaintenanceAlertsByDate(alerts, referenceDate, currentMileage);
 }
 
 export async function createVehicle(payload) {
@@ -1092,8 +1108,21 @@ export async function validateVehicleTransferCode(code) {
 }
 
 export async function listServiceTypes() {
-  const result = await requestAccount("/service-types?per_page=15", { method: "GET" });
-  return getResourceList(result.data, "os tipos de serviço").map(normalizeServiceType);
+  const serviceTypes = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await requestAccount(`/service-types?per_page=15&page=${page}`, {
+      method: "GET",
+    });
+    const resourcePage = getResourcePage(result.data, "os tipos de serviço");
+    serviceTypes.push(...resourcePage.items.map(normalizeServiceType));
+    hasMore = resourcePage.hasMore;
+    page = resourcePage.page + 1;
+  }
+
+  return serviceTypes;
 }
 
 export async function getServiceTypeFields(identifier) {

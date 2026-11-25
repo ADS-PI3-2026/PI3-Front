@@ -10,7 +10,9 @@ import {
   WifiSlashIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
+import SearchableSelect from "../../components/searchable-select";
 import SegmentedControl from "../../components/segmented-control";
+import { useToast } from "../../components/toast-provider";
 import {
   getMaintenanceAlertErrorMessage,
   getMaintenanceAlertFieldErrors,
@@ -19,6 +21,7 @@ import {
 } from "../_lib/garage-api";
 import {
   formatCurrencyInput,
+  formatIntegerInput,
   getLocalDateInputValue,
   getMaintenanceDateLimits,
   onlyDigits,
@@ -248,6 +251,7 @@ export default function MaintenanceForm({
   title,
   vehicleYear,
 }) {
+  const { showToast } = useToast();
   const [initialDraft] = useState(() => readMaintenanceDraft(draftKey));
   const [cleanFormState] = useState(() => createFormState({ alertOnly, initialValues }));
   const [form, setForm] = useState(() => createFormState({
@@ -495,33 +499,66 @@ export default function MaintenanceForm({
     serviceType.identifier === form.category
   ));
   const canRetryQueuedRecord = queuedForSync && isOnline && automaticSyncBlocked;
+  const canClearDraft = Boolean(
+    draftKey && hasMaintenanceDraftContent(form, fieldValues),
+  );
+
+  const clearRecoveredDraft = () => {
+    clearMaintenanceDraft(draftKey);
+    setForm({ ...cleanFormState });
+    setFieldValues({});
+    setReceiptFiles([]);
+    setErrors({});
+    setSubmitError("");
+    setQueuedForSync(false);
+    setAutomaticSyncBlocked(false);
+    setRestoringDraftFields(false);
+    setSyncMessage("");
+    onCategoryChange?.("");
+    showToast({
+      message: "Rascunho descartado. O formulário está disponível para um novo preenchimento.",
+      tone: "info",
+    });
+  };
 
   return (
     <main className={`app-form-screen ${styles.formScreen}`}>
+      {syncMessage && !readOnly && (
+        <div
+          className={styles.draftStatus}
+          data-state={!isOnline
+            ? "offline"
+            : automaticSyncBlocked && queuedForSync
+              ? "error"
+              : queuedForSync
+                ? "pending"
+                : "saved"}
+          role="status"
+        >
+          {!isOnline
+            ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
+            : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
+          <div className={styles.draftStatusContent}>
+            <p>{syncMessage}</p>
+            {canClearDraft && (
+              <button
+                className={styles.clearDraftButton}
+                disabled={submitting}
+                onClick={clearRecoveredDraft}
+                type="button"
+              >
+                Descartar rascunho
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={styles.formContext}>
         <div className="app-form-heading">
           <h2>{title}</h2>
           <p>{intro}</p>
         </div>
-
-        {syncMessage && !readOnly && (
-          <div
-            className={styles.draftStatus}
-            data-state={!isOnline
-              ? "offline"
-              : automaticSyncBlocked && queuedForSync
-                ? "error"
-                : queuedForSync
-                  ? "pending"
-                  : "saved"}
-            role="status"
-          >
-            {!isOnline
-              ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
-              : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
-            <p>{syncMessage}</p>
-          </div>
-        )}
       </div>
 
       <form className={`app-form-card ${styles.maintenanceForm}`} noValidate onSubmit={submitMaintenance}>
@@ -538,26 +575,20 @@ export default function MaintenanceForm({
           </fieldset>
         )}
 
-        <label className="app-field">
-          <span>Categoria</span>
-          <span className={`app-control-shell ${styles.selectShell}`} data-error={Boolean(errors.category)}>
-            <select
-              disabled={submitting || readOnly || serviceTypes.length === 0}
-              value={form.category}
-              onChange={(event) => updateCategory(event.target.value)}
-            >
-              <option value="">Selecione uma categoria</option>
-              {serviceTypes.map((serviceType) => (
-                <option key={serviceType.identifier} value={serviceType.identifier}>
-                  {serviceType.name}
-                </option>
-              ))}
-            </select>
-            <CaretDownIcon aria-hidden size={18} weight="bold" />
-          </span>
-          {selectedServiceType?.description && <small>{selectedServiceType.description}</small>}
-          {errors.category && <small className="app-error-text">{errors.category}</small>}
-        </label>
+        <SearchableSelect
+          disabled={submitting || readOnly || serviceTypes.length === 0}
+          emptyMessage="Nenhum tipo de serviço encontrado."
+          error={errors.category}
+          hint={selectedServiceType?.description}
+          label="Categoria"
+          onChange={updateCategory}
+          options={serviceTypes}
+          placeholder={serviceTypes.length === 0
+            ? "Nenhum tipo de serviço disponível"
+            : "Selecione uma categoria"}
+          searchPlaceholder="Buscar tipo de serviço..."
+          value={form.category}
+        />
 
         {fieldsLoading && (
           <p className={styles.loadingFields} role="status">
@@ -593,8 +624,8 @@ export default function MaintenanceForm({
                 inputMode="numeric"
                 name="mileage"
                 onChange={(event) => updateField("mileage", onlyDigits(event.target.value))}
-                placeholder="Ex: 45000"
-                value={form.mileage}
+                placeholder="Ex: 45.000"
+                value={formatIntegerInput(form.mileage)}
               />
             </span>
             {errors.mileage && <small className="app-error-text">{errors.mileage}</small>}
@@ -630,8 +661,8 @@ export default function MaintenanceForm({
                 inputMode="numeric"
                 name="mileageDue"
                 onChange={(event) => updateField("mileageDue", onlyDigits(event.target.value))}
-                placeholder="Ex: 50000"
-                value={form.mileageDue}
+                placeholder="Ex: 50.000"
+                value={formatIntegerInput(form.mileageDue)}
               />
             </span>
             <small>Informe a data, a quilometragem ou ambas</small>

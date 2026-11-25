@@ -1,5 +1,23 @@
 .pageHeader {
   --app-page-header-margin: 18px;
+  background: #f7f6fc;
+  box-shadow: 0 7px 18px rgba(30, 42, 70, 0.055);
+  justify-content: space-between;
+  min-height: 82px;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+
+.headerIntroduction {
+  min-width: 0;
+}
+
+.headerIntroduction p {
+  color: var(--app-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin-top: 4px;
 }
 
 .headerActions {
@@ -40,32 +58,47 @@
 
 .transferNotice {
   align-items: center;
-  background: #eef5ff;
-  border: 1px solid #cbdcf4;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.48);
   border-radius: 13px;
-  color: var(--app-blue);
+  box-shadow: 0 6px 18px rgba(18, 102, 59, 0.1);
+  color: var(--app-success);
   display: grid;
   gap: 11px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   margin-bottom: 15px;
   min-height: 70px;
+  overflow: hidden;
   padding: 11px 13px;
+  position: relative;
+}
+
+.transferNotice::before {
+  background: var(--app-success);
+  bottom: 0;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 4px;
 }
 
 .transferNotice:hover {
-  background: #e6f0fe;
-  border-color: #abc5e8;
+  background: #def3e7;
+  border-color: var(--app-success);
+  box-shadow: 0 8px 22px rgba(18, 102, 59, 0.15);
 }
 
 .transferNotice:focus-visible {
-  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline: 3px solid rgba(18, 102, 59, 0.22);
   outline-offset: 2px;
 }
 
 .transferNoticeIcon {
   align-items: center;
-  background: #fff;
+  background: var(--app-success);
   border-radius: 10px;
+  color: #fff;
   display: flex;
   height: 42px;
   justify-content: center;
@@ -357,6 +390,29 @@
   gap: 2px;
 }
 
+.addMenuTitleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+}
+
+.draftBadge {
+  align-items: center;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.25);
+  border-radius: 999px;
+  color: var(--app-success);
+  display: inline-flex;
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 700;
+  gap: 4px;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
 .addVehicleMenu > a strong {
   font-size: 0.84rem;
 }
@@ -425,11 +481,50 @@
   .pageHeader {
     --app-page-title-size: 1.9rem;
     align-items: center;
+    box-shadow: none;
     justify-content: space-between;
     margin: 0 0 30px;
     min-height: 118px;
     padding: 24px 0;
-    position: relative;
+    position: sticky;
+    transition: min-height 180ms ease, padding 180ms ease, box-shadow 180ms ease;
+  }
+
+  .pageHeader :global(.app-page-title) {
+    transition: font-size 180ms ease;
+  }
+
+  .pageHeaderCompact {
+    --app-page-title-size: 1.5rem;
+    box-shadow: none;
+    isolation: isolate;
+    min-height: 74px;
+    padding: 10px 0;
+  }
+
+  .pageHeaderCompact::before {
+    background: #f7f6fc;
+    box-shadow: 0 8px 22px rgba(30, 42, 70, 0.08);
+    content: "";
+    inset: 0 calc(50% - 50vw);
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
+  }
+
+  .pageHeaderCompact .headerIntroduction p {
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  .headerIntroduction p {
+    font-size: 0.82rem;
+    margin-top: 6px;
+    max-height: 2em;
+    opacity: 1;
+    transition: max-height 180ms ease, margin 180ms ease, opacity 140ms ease;
   }
 
   .dashboardGrid {
@@ -482,6 +577,7 @@
   .expenseSection {
     grid-column: 2;
     grid-row: 1;
+    margin-top: 46px;
   }
 
   .expenseCard {
@@ -583,6 +679,10 @@
     z-index: 23;
   }
 
+  .pageHeaderCompact .addVehicleMenu {
+    top: calc(100% + 6px);
+  }
+
   .addMenuBackdrop {
     z-index: 21;
   }
@@ -592,6 +692,14 @@
   .loadMoreError,
   .loadMoreButton {
     grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageHeader,
+  .pageHeader :global(.app-page-title),
+  .headerIntroduction p {
+    transition: none;
   }
 }
 

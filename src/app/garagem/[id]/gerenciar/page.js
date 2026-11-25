@@ -7,15 +7,17 @@ import {
   CheckCircleIcon,
   CircleNotchIcon,
   EnvelopeSimpleIcon,
+  FilePdfIcon,
   FloppyDiskIcon,
   GaugeIcon,
   IdentificationCardIcon,
   InfoIcon,
   PaletteIcon,
+  PencilSimpleIcon,
   ShieldCheckIcon,
   ShieldWarningIcon,
   TrashIcon,
-  WarningCircleIcon,
+  WrenchIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -23,6 +25,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../../../components/action-button";
 import AppShell from "../../../components/app-shell";
+import { useSession } from "../../../components/session-provider";
+import { useToast } from "../../../components/toast-provider";
 import { getAuthErrorMessage } from "../../../auth-api";
 import VerificationCodeFields from "../../../components/verification-code-fields";
 import VehicleBrandLogo from "../../../components/vehicle-brand-logo";
@@ -48,13 +52,18 @@ import {
   getVehicle,
   getVehicleErrorMessage,
   getVehicleFieldErrors,
+  listVehicleMaintenanceDetails,
   requestVehiclePlateChangeCode,
   requestVehicleDeletionCode,
   updateVehicle,
   validateVehicleDeletionCode,
   validateVehiclePlateChangeCode,
 } from "../../_lib/garage-api";
-import { onlyDigits } from "../../_lib/garage-validation";
+import { formatIntegerInput, onlyDigits } from "../../_lib/garage-validation";
+import {
+  createMaintenanceDraftKey,
+  readMaintenanceDraft,
+} from "../../_lib/maintenance-draft";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
@@ -64,9 +73,12 @@ const VEHICLE_DELETION_OTP_PURPOSE = "vehicle_deletion";
 export default function ManageVehiclePage() {
   const params = useParams();
   const router = useRouter();
+  const { session } = useSession();
+  const { dismissToast, showToast } = useToast();
   const actionPanelRef = useRef(null);
   const restoredOtpVehicleRef = useRef("");
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const maintenanceDraftKey = createMaintenanceDraftKey(session?.user?.id, vehicleId);
   const [retryRevision, setRetryRevision] = useState(0);
   const [requestState, setRequestState] = useState({
     error: "",
@@ -76,13 +88,14 @@ export default function ManageVehiclePage() {
   });
   const [activeAction, setActiveAction] = useState("");
   const [panelScrollRevision, setPanelScrollRevision] = useState(0);
-  const [actionFeedback, setActionFeedback] = useState({ message: "", type: "" });
   const [mileageError, setMileageError] = useState("");
+  const [hasMaintenanceDraft, setHasMaintenanceDraft] = useState(false);
   const [mileageValue, setMileageValue] = useState("");
   const [updatingMileage, setUpdatingMileage] = useState(false);
   const [colorError, setColorError] = useState("");
   const [colorValue, setColorValue] = useState("");
   const [updatingColor, setUpdatingColor] = useState(false);
+  const [downloadingHistory, setDownloadingHistory] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteConfirmationError, setDeleteConfirmationError] = useState("");
   const [deleteCode, setDeleteCode] = useState(createEmptyCode);
@@ -93,6 +106,28 @@ export default function ManageVehiclePage() {
   const [plateCodeError, setPlateCodeError] = useState("");
   const [platePending, setPlatePending] = useState(false);
   const [plateStep, setPlateStep] = useState("review");
+
+  useEffect(() => {
+    const refreshDraftState = () => {
+      setHasMaintenanceDraft(Boolean(readMaintenanceDraft(maintenanceDraftKey)));
+    };
+
+    refreshDraftState();
+    window.addEventListener("focus", refreshDraftState);
+    window.addEventListener("storage", refreshDraftState);
+    return () => {
+      window.removeEventListener("focus", refreshDraftState);
+      window.removeEventListener("storage", refreshDraftState);
+    };
+  }, [maintenanceDraftKey]);
+
+  const setActionFeedback = ({ message, type }) => {
+    if (!message) {
+      dismissToast();
+      return;
+    }
+    showToast({ message, tone: type || "success" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -254,6 +289,58 @@ export default function ManageVehiclePage() {
     setDeleteCode(createEmptyCode());
     setDeleteCodeError("");
     setDeleteStep(pendingRequest ? "code" : "confirmation");
+  };
+
+  const scrollToPageTop = () => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ behavior: reduceMotion ? "auto" : "smooth", top: 0 });
+    });
+  };
+
+  const cancelMileageAction = () => {
+    setActiveAction("");
+    setMileageError("");
+    setMileageValue("");
+    setActionFeedback({ message: "", type: "" });
+    scrollToPageTop();
+  };
+
+  const cancelColorAction = () => {
+    setActiveAction("");
+    setColorError("");
+    setColorValue("");
+    setActionFeedback({ message: "", type: "" });
+    scrollToPageTop();
+  };
+
+  const downloadHistory = async () => {
+    if (downloadingHistory) return;
+
+    setActiveAction("");
+    setDownloadingHistory(true);
+    setActionFeedback({ message: "", type: "" });
+    try {
+      const maintenances = await listVehicleMaintenanceDetails(vehicle.id);
+      if (maintenances.length === 0) {
+        setActionFeedback({
+          message: "Este veículo ainda não possui manutenções para incluir no PDF.",
+          type: "error",
+        });
+        return;
+      }
+
+      const { downloadVehicleHistoryPdf } = await import("../../_lib/vehicle-history-pdf");
+      downloadVehicleHistoryPdf({ maintenances, vehicle });
+      setActionFeedback({ message: "Histórico em PDF gerado com sucesso.", type: "success" });
+    } catch {
+      setActionFeedback({
+        message: "Não foi possível gerar o PDF completo. Confira sua conexão e tente novamente.",
+        type: "error",
+      });
+    } finally {
+      setDownloadingHistory(false);
+    }
   };
 
   const submitMileage = async (event) => {
@@ -448,6 +535,8 @@ export default function ManageVehiclePage() {
     setDeleteConfirmationError("");
     setDeleteStep("confirmation");
     setActionFeedback({ message: "", type: "" });
+    setActiveAction("");
+    scrollToPageTop();
   };
 
   const confirmVehicleDeletion = async (event) => {
@@ -518,6 +607,32 @@ export default function ManageVehiclePage() {
           </header>
 
           <div className="app-action-list">
+            <Link
+              className="app-action-item"
+              href={`/garagem/${vehicle.id}/manutencao?tipo=realizada`}
+            >
+              <span className="app-action-icon">
+                <WrenchIcon aria-hidden size={24} weight="duotone" />
+              </span>
+              <span className="app-action-copy">
+                <span className={styles.actionTitleRow}>
+                  <strong>Registrar manutenção</strong>
+                  {hasMaintenanceDraft && (
+                    <em className={styles.draftBadge}>
+                      <PencilSimpleIcon aria-hidden size={12} weight="bold" />
+                      Rascunho salvo
+                    </em>
+                  )}
+                </span>
+                <span>
+                  {hasMaintenanceDraft
+                    ? "Continuar o preenchimento salvo neste dispositivo"
+                    : "Adicionar um serviço realizado ao histórico do veículo"}
+                </span>
+              </span>
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
+            </Link>
+
             <button
               aria-expanded={activeAction === "mileage"}
               className={`app-action-item ${activeAction === "mileage" ? "app-action-item--active" : ""}`}
@@ -595,6 +710,28 @@ export default function ManageVehiclePage() {
             </button>
 
             <button
+              className="app-action-item"
+              disabled={downloadingHistory}
+              onClick={() => void downloadHistory()}
+              type="button"
+            >
+              <span className="app-action-icon">
+                {downloadingHistory
+                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={23} weight="bold" />
+                  : <FilePdfIcon aria-hidden size={23} weight="duotone" />}
+              </span>
+              <span className="app-action-copy">
+                <strong>Baixar histórico em PDF</strong>
+                <span>
+                  {downloadingHistory
+                    ? "Preparando o relatório completo..."
+                    : "Gerar um relatório com as manutenções do veículo"}
+                </span>
+              </span>
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
+            </button>
+
+            <button
               aria-expanded={activeAction === "delete"}
               className={`app-action-item ${styles.dangerAction} ${activeAction === "delete" ? "app-action-item--active" : ""}`}
               onClick={openDeleteAction}
@@ -640,7 +777,7 @@ export default function ManageVehiclePage() {
                       setMileageError("");
                       setActionFeedback({ message: "", type: "" });
                     }}
-                    value={mileageValue}
+                    value={formatIntegerInput(mileageValue)}
                   />
                 </span>
                 <small>
@@ -649,12 +786,23 @@ export default function ManageVehiclePage() {
                 {mileageError && <small className="app-error-text">{mileageError}</small>}
               </label>
 
-              <ActionButton disabled={updatingMileage} type="submit">
-                {updatingMileage
-                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                  : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
-                {updatingMileage ? "Atualizando..." : "Salvar quilometragem"}
-              </ActionButton>
+              <div className={styles.panelActions}>
+                <ActionButton
+                  disabled={updatingMileage}
+                  onClick={cancelMileageAction}
+                  type="button"
+                  variant="secondary"
+                >
+                  <XIcon aria-hidden size={20} weight="bold" />
+                  Cancelar
+                </ActionButton>
+                <ActionButton disabled={updatingMileage} type="submit">
+                  {updatingMileage
+                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
+                  {updatingMileage ? "Atualizando..." : "Salvar km"}
+                </ActionButton>
+              </div>
             </form>
           </section>
         )}
@@ -695,12 +843,23 @@ export default function ManageVehiclePage() {
                 {colorError && <small className="app-error-text">{colorError}</small>}
               </label>
 
-              <ActionButton disabled={updatingColor} type="submit">
-                {updatingColor
-                  ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                  : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
-                {updatingColor ? "Atualizando..." : "Salvar cor"}
-              </ActionButton>
+              <div className={styles.panelActions}>
+                <ActionButton
+                  disabled={updatingColor}
+                  onClick={cancelColorAction}
+                  type="button"
+                  variant="secondary"
+                >
+                  <XIcon aria-hidden size={20} weight="bold" />
+                  Cancelar
+                </ActionButton>
+                <ActionButton disabled={updatingColor} type="submit">
+                  {updatingColor
+                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                    : <FloppyDiskIcon aria-hidden size={20} weight="bold" />}
+                  {updatingColor ? "Atualizando..." : "Salvar cor"}
+                </ActionButton>
+              </div>
             </form>
           </section>
         )}
@@ -843,12 +1002,23 @@ export default function ManageVehiclePage() {
                   </div>
                 </div>
 
-                <ActionButton disabled={deletingVehicle} type="submit">
-                  {deletingVehicle
-                    ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                    : <EnvelopeSimpleIcon aria-hidden size={20} weight="bold" />}
-                  {deletingVehicle ? "Enviando código..." : "Enviar código de confirmação"}
-                </ActionButton>
+                <div className={styles.panelActions}>
+                  <ActionButton
+                    disabled={deletingVehicle}
+                    onClick={cancelDeletionConfirmation}
+                    type="button"
+                    variant="secondary"
+                  >
+                    <XIcon aria-hidden size={20} weight="bold" />
+                    Cancelar
+                  </ActionButton>
+                  <ActionButton disabled={deletingVehicle} type="submit">
+                    {deletingVehicle
+                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                      : <EnvelopeSimpleIcon aria-hidden size={20} weight="bold" />}
+                    {deletingVehicle ? "Enviando..." : "Enviar código"}
+                  </ActionButton>
+                </div>
                 {deleteCodeError && <p className="app-error-text" role="alert">{deleteCodeError}</p>}
               </form>
             ) : (
@@ -876,38 +1046,29 @@ export default function ManageVehiclePage() {
                   >
                     {deletingVehicle ? "Aguarde..." : "Reenviar código"}
                   </button>
-                  <ActionButton disabled={deletingVehicle} type="submit" variant="danger">
-                    {deletingVehicle
-                      ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
-                      : <TrashIcon aria-hidden size={20} weight="bold" />}
-                    {deletingVehicle ? "Confirmando..." : "Confirmar e remover veículo"}
-                  </ActionButton>
-                  <ActionButton
-                    disabled={deletingVehicle}
-                    onClick={cancelDeletionConfirmation}
-                    type="button"
-                    variant="secondary"
-                  >
-                    <XIcon aria-hidden size={20} weight="bold" />
-                    Cancelar remoção
-                  </ActionButton>
+                  <div className={styles.panelActions}>
+                    <ActionButton
+                      disabled={deletingVehicle}
+                      onClick={cancelDeletionConfirmation}
+                      type="button"
+                      variant="secondary"
+                    >
+                      <XIcon aria-hidden size={20} weight="bold" />
+                      Cancelar
+                    </ActionButton>
+                    <ActionButton disabled={deletingVehicle} type="submit" variant="danger">
+                      {deletingVehicle
+                        ? <CircleNotchIcon aria-hidden className={styles.loadingIcon} size={20} weight="bold" />
+                        : <TrashIcon aria-hidden size={20} weight="bold" />}
+                      {deletingVehicle ? "Removendo..." : "Remover veículo"}
+                    </ActionButton>
+                  </div>
                 </div>
               </form>
             )}
           </section>
         )}
 
-        {actionFeedback.message && (
-          <p
-            className={`app-feedback app-feedback--${actionFeedback.type || "success"}`}
-            role={actionFeedback.type === "error" ? "alert" : "status"}
-          >
-            {actionFeedback.type === "error"
-              ? <WarningCircleIcon aria-hidden size={18} weight="fill" />
-              : <CheckCircleIcon aria-hidden size={18} weight="fill" />}
-            {actionFeedback.message}
-          </p>
-        )}
       </main>
     </AppShell>
   );

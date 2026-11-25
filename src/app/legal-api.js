@@ -3,6 +3,9 @@ import { requestAccount } from "./account-api.js";
 import { legalContent } from "./lib/legal-content.js";
 import { hasLegalText, sanitizeLegalHtml } from "./lib/legal-html.js";
 
+const PUBLIC_LEGAL_CACHE_MS = 5 * 60 * 1000;
+const publicLegalDocumentCache = new Map();
+
 function legalType(type) {
   if (!["terms", "privacy"].includes(type)) throw new Error("Documento inválido.");
   return legalContent[type];
@@ -15,12 +18,46 @@ function normalizeDocument(type, value) {
   return { ...metadata, html: sanitizeLegalHtml(value.value), updatedAt: value.updated_at ?? "" };
 }
 
-export async function getPublicLegalDocument(type) {
+export function invalidatePublicLegalDocumentCache(type) {
+  if (type) {
+    publicLegalDocumentCache.delete(type);
+    return;
+  }
+  publicLegalDocumentCache.clear();
+}
+
+export function getPublicLegalDocument(type) {
   const metadata = legalType(type);
-  const result = await submitApiRequest(`/settings/${metadata.key}`, { method: "GET", cache: "no-store" });
-  const document = normalizeDocument(type, result.data);
-  if (!hasLegalText(document.html)) throw new Error("Este documento ainda não está disponível. Tente novamente mais tarde.");
-  return document;
+  const cached = publicLegalDocumentCache.get(type);
+  if (cached && cached.expiresAt > Date.now()) return cached.request;
+
+  const request = submitApiRequest(`/settings/${metadata.key}`, {
+    method: "GET",
+    cache: "no-store",
+  }).then((result) => {
+    const document = normalizeDocument(type, result.data);
+    if (!hasLegalText(document.html)) {
+      throw new Error("Este documento ainda não está disponível. Tente novamente mais tarde.");
+    }
+    return document;
+  });
+
+  publicLegalDocumentCache.set(type, {
+    expiresAt: Date.now() + PUBLIC_LEGAL_CACHE_MS,
+    request,
+  });
+  request.catch(() => {
+    if (publicLegalDocumentCache.get(type)?.request === request) {
+      publicLegalDocumentCache.delete(type);
+    }
+  });
+  return request;
+}
+
+export function preloadPublicLegalDocuments() {
+  return Promise.allSettled(
+    Object.keys(legalContent).map((type) => getPublicLegalDocument(type)),
+  );
 }
 
 export async function listAdminLegalDocuments() {
@@ -42,4 +79,5 @@ export async function saveAdminLegalDocument(type, value, { expectedHtml } = {})
     method: "PUT",
     payload: { settings: [{ key: metadata.key, value: html }] },
   });
+  invalidatePublicLegalDocumentCache(type);
 }

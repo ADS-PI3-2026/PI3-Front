@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   formatCurrencyInput,
+  formatIntegerInput,
   formatPlateInput,
   getLocalDateInputValue,
   getMaintenanceDateLimits,
@@ -38,6 +39,14 @@ test("placa limita a sete caracteres e aplica a máscara conforme o padrão", ()
   assert.equal(formatPlateInput("abc1d23"), "ABC1D23");
   assert.equal(formatPlateInput("abc1d23456"), "ABC1D23");
   assert.equal(formatPlateInput("1a2b3c4d5e6"), "ABC4D56");
+});
+
+test("quilometragem recebe separador de milhar apenas na exibição", () => {
+  assert.equal(formatIntegerInput(""), "");
+  assert.equal(formatIntegerInput("999"), "999");
+  assert.equal(formatIntegerInput("1000"), "1.000");
+  assert.equal(formatIntegerInput("345346"), "345.346");
+  assert.equal(formatIntegerInput("1.234.567"), "1.234.567");
 });
 
 test("solicitação de transferência exige placa e RENAVAM válidos", () => {
