@@ -1,11 +1,11 @@
-export const MAX_DIRECT_VEHICLE_REGISTRATIONS = 5;
+export const MAX_VEHICLES_PER_USER = 5;
 
-export function getRemainingVehicleRegistrations(total) {
+export function getRemainingVehicleSlots(total) {
   const count = Number(total);
-  if (!Number.isInteger(count) || count < 0) return MAX_DIRECT_VEHICLE_REGISTRATIONS;
-  return Math.max(0, MAX_DIRECT_VEHICLE_REGISTRATIONS - count);
+  if (!Number.isInteger(count) || count < 0) return MAX_VEHICLES_PER_USER;
+  return Math.max(0, MAX_VEHICLES_PER_USER - count);
 }
 
-export function hasReachedVehicleRegistrationLimit(total) {
-  return getRemainingVehicleRegistrations(total) === 0;
+export function hasReachedVehicleLimit(total) {
+  return getRemainingVehicleSlots(total) === 0;
 }

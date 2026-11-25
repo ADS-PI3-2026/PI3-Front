@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowsLeftRightIcon, GarageIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, GarageIcon } from "@phosphor-icons/react";
 import styles from "./vehicle-registration-limit.module.css";
 
 export default function VehicleRegistrationLimit({ standalone = false }) {
@@ -11,16 +11,18 @@ export default function VehicleRegistrationLimit({ standalone = false }) {
         <GarageIcon aria-hidden size={26} weight="duotone" />
       </span>
       <div>
-        <strong>Limite de cadastros atingido</strong>
+        <strong>Limite de veículos atingido</strong>
         <p>
-          Você não pode cadastrar outro veículo diretamente, mas ainda pode receber um veículo
-          que já está na plataforma por transferência.
+          Sua garagem atingiu o limite de 5 veículos. Para cadastrar ou receber outro veículo por
+          transferência, remova primeiro um veículo da garagem.
         </p>
       </div>
-      <Link href="/garagem/transferencia">
-        <ArrowsLeftRightIcon aria-hidden size={19} weight="bold" />
-        Solicitar transferência
-      </Link>
+      {standalone && (
+        <Link href="/garagem">
+          <ArrowLeftIcon aria-hidden size={19} weight="bold" />
+          Voltar para a garagem
+        </Link>
+      )}
     </section>
   );
 }

@@ -213,12 +213,15 @@
     --app-form-heading-width: none;
     align-items: start;
     display: grid;
-    gap: 44px;
+    column-gap: 44px;
     grid-template-columns: 280px minmax(0, 1fr);
     padding-bottom: 40px;
+    row-gap: 24px;
   }
 
   .formContext {
+    grid-column: 1;
+    grid-row: 1;
     min-width: 0;
     padding-top: 8px;
   }
@@ -228,11 +231,15 @@
     --app-form-heading-line-height: 1.15;
   }
 
+  .formContext :global(.app-form-heading h2) {
+    white-space: normal;
+  }
+
   .draftStatus {
     align-self: start;
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    margin: 0 0 16px;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin: 0;
     max-width: none;
     top: 16px;
   }
@@ -241,22 +248,15 @@
     --app-form-card-desktop-padding: 28px;
     align-items: start;
     gap: 22px;
+    grid-column: 2;
+    grid-row: 1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-width: 0;
   }
 
-  .formScreen:has(> .draftStatus) .formContext {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
+  .formScreen:has(> .draftStatus) .formContext,
   .formScreen:has(> .draftStatus) .maintenanceForm {
-    grid-column: 2;
     grid-row: 2;
-  }
-
-  .formScreen:has(> .draftStatus) {
-    row-gap: 20px;
   }
 
   .maintenanceForm > * {

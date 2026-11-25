@@ -30,9 +30,9 @@ import {
   listVehiclePage,
 } from "./_lib/garage-api";
 import {
-  getRemainingVehicleRegistrations,
-  hasReachedVehicleRegistrationLimit,
-  MAX_DIRECT_VEHICLE_REGISTRATIONS,
+  getRemainingVehicleSlots,
+  hasReachedVehicleLimit,
+  MAX_VEHICLES_PER_USER,
 } from "./_lib/vehicle-registration-limit";
 import { listMaintenanceDrafts } from "./_lib/maintenance-draft";
 import { createVehicleDraftKey, readVehicleDraft } from "./_lib/vehicle-draft";
@@ -115,14 +115,14 @@ function GarageContent() {
   const [pendingTransfersLoading, setPendingTransfersLoading] = useState(true);
   const requestedSummaryIds = useRef(new Set());
   const mounted = useRef(true);
-  const remainingRegistrations = getRemainingVehicleRegistrations(requestState.total);
+  const remainingVehicleSlots = getRemainingVehicleSlots(requestState.total);
   const registrationLimitReached = !requestState.loading
     && !requestState.error
-    && hasReachedVehicleRegistrationLimit(requestState.total);
+    && hasReachedVehicleLimit(requestState.total);
   const showRemainingRegistrations = !requestState.loading
     && !requestState.error
-    && remainingRegistrations > 0
-    && remainingRegistrations < MAX_DIRECT_VEHICLE_REGISTRATIONS;
+    && remainingVehicleSlots > 0
+    && remainingVehicleSlots < MAX_VEHICLES_PER_USER;
   const showAddVehicleButton = !requestState.loading
     && !requestState.error
     && !registrationLimitReached;
@@ -633,8 +633,8 @@ function GarageContent() {
 
           {showRemainingRegistrations && (
             <p className={styles.registrationAvailability}>
-              Você ainda pode cadastrar {remainingRegistrations}{" "}
-              {remainingRegistrations === 1 ? "veículo" : "veículos"} diretamente.
+              Sua garagem ainda possui espaço para {remainingVehicleSlots}{" "}
+              {remainingVehicleSlots === 1 ? "veículo" : "veículos"}.
             </p>
           )}
 

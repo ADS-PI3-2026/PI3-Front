@@ -37,7 +37,7 @@ import {
   getVehicleTransferSuggestion,
   listVehiclePage,
 } from "../_lib/garage-api";
-import { hasReachedVehicleRegistrationLimit } from "../_lib/vehicle-registration-limit";
+import { hasReachedVehicleLimit } from "../_lib/vehicle-registration-limit";
 import { saveVehicleTransferPrefill } from "../_lib/vehicle-transfer-prefill";
 import {
   clearVehicleDraft,
@@ -114,7 +114,7 @@ export default function NewVehiclePage() {
   const [failedBrandLogoSrc, setFailedBrandLogoSrc] = useState("");
   const registrationLimitReached = !garageState.loading
     && !garageState.error
-    && hasReachedVehicleRegistrationLimit(garageState.total);
+    && hasReachedVehicleLimit(garageState.total);
   const formBusy = submitting;
   const draftActionBusy = submitting || restoringDraft;
 
