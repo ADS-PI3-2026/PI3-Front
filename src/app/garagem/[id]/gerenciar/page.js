@@ -16,6 +16,7 @@ import {
   ShieldCheckIcon,
   ShieldWarningIcon,
   TrashIcon,
+  WrenchIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -557,6 +558,20 @@ export default function ManageVehiclePage() {
           </header>
 
           <div className="app-action-list">
+            <Link
+              className="app-action-item"
+              href={`/garagem/${vehicle.id}/manutencao?tipo=realizada`}
+            >
+              <span className="app-action-icon">
+                <WrenchIcon aria-hidden size={24} weight="duotone" />
+              </span>
+              <span className="app-action-copy">
+                <strong>Registrar manutenção</strong>
+                <span>Adicionar um serviço realizado ao histórico do veículo</span>
+              </span>
+              <CaretRightIcon aria-hidden size={19} weight="bold" />
+            </Link>
+
             <button
               aria-expanded={activeAction === "mileage"}
               className={`app-action-item ${activeAction === "mileage" ? "app-action-item--active" : ""}`}

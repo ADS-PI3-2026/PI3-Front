@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppShell, { useAuthUser } from "../../../components/app-shell";
 import MaintenanceForm from "../../_components/maintenance-form";
@@ -29,7 +29,9 @@ function NewMaintenanceContent() {
   const user = useAuthUser();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const initialStatus = searchParams.get("tipo") === "alerta" ? "A realizar" : "Realizada";
   const draftKey = createMaintenanceDraftKey(user?.id, vehicleId);
   const fieldRequest = useRef(0);
   const [retryRevision, setRetryRevision] = useState(0);
@@ -192,6 +194,7 @@ function NewMaintenanceContent() {
           fields={fieldsState.fields}
           fieldsError={fieldsState.error}
           fieldsLoading={fieldsState.loading}
+          initialValues={{ status: initialStatus }}
           intro={`Registre um serviço realizado ou programe um alerta para o ${requestState.vehicle.model}, placa ${requestState.vehicle.plate}.`}
           onCategoryChange={loadServiceFields}
           onSubmit={submitService}

@@ -24,6 +24,7 @@ import {
 } from "@phosphor-icons/react";
 import ActionButton from "../../components/action-button";
 import AppShell from "../../components/app-shell";
+import { useSession } from "../../components/session-provider";
 import { useToast } from "../../components/toast-provider";
 import SegmentedControl from "../../components/segmented-control";
 import VehicleBrandLogo from "../../components/vehicle-brand-logo";
@@ -39,6 +40,10 @@ import {
   updateMaintenanceAlert,
 } from "../_lib/garage-api";
 import { getAuthErrorMessage } from "../../auth-api";
+import {
+  createMaintenanceDraftKey,
+  readMaintenanceDraft,
+} from "../_lib/maintenance-draft";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
@@ -122,9 +127,12 @@ function AlertCancellationDialog({ alert, busy, error, onClose, onConfirm }) {
 
 export default function VehicleHistoryPage() {
   const params = useParams();
+  const { session } = useSession();
   const { showToast } = useToast();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const maintenanceDraftKey = createMaintenanceDraftKey(session?.user?.id, vehicleId);
   const [selectedView, setSelectedView] = useState("history");
+  const [hasMaintenanceDraft, setHasMaintenanceDraft] = useState(false);
   const [retryRevision, setRetryRevision] = useState(0);
   const [requestState, setRequestState] = useState({
     alerts: [],
@@ -141,6 +149,20 @@ export default function VehicleHistoryPage() {
   const [loadMoreState, setLoadMoreState] = useState({ error: "", loading: "" });
   const [pdfState, setPdfState] = useState({ loading: false });
   const [cancelDialog, setCancelDialog] = useState({ alert: null, error: "", pending: false });
+
+  useEffect(() => {
+    const refreshDraftState = () => {
+      setHasMaintenanceDraft(Boolean(readMaintenanceDraft(maintenanceDraftKey)));
+    };
+
+    refreshDraftState();
+    window.addEventListener("focus", refreshDraftState);
+    window.addEventListener("storage", refreshDraftState);
+    return () => {
+      window.removeEventListener("focus", refreshDraftState);
+      window.removeEventListener("storage", refreshDraftState);
+    };
+  }, [maintenanceDraftKey]);
 
   useEffect(() => {
     let active = true;
@@ -350,14 +372,15 @@ export default function VehicleHistoryPage() {
   }
 
   const { alerts: alertItems, maintenances: maintenanceItems, vehicle } = requestState;
+  const isMotorcycle = ["motorcycle", "motorcycles"].includes(vehicle.type);
 
   const viewOptions = [
     {
-      label: `Histórico (${pagination.maintenances.total})`,
+      label: `Realizadas (${pagination.maintenances.total})`,
       value: "history",
     },
     {
-      label: `Manutenções (${pagination.alerts.total})`,
+      label: `A realizar (${pagination.alerts.total})`,
       value: "alerts",
     },
   ];
@@ -367,7 +390,7 @@ export default function VehicleHistoryPage() {
       <PageTopBar backHref="/garagem" title="Detalhes do veículo" />
 
       <div className={styles.vehicleLayout}>
-        <section className={styles.vehicleHero}>
+        <section className={`${styles.vehicleHero} ${isMotorcycle ? styles.motorcycleVehicle : ""}`}>
           <div className={styles.vehicleIdentity}>
             <VehicleBrandLogo
               brandId={vehicle.brandId}
@@ -375,11 +398,19 @@ export default function VehicleHistoryPage() {
               imageSize={160}
               type={vehicle.type}
             />
-            <span className={styles.vehicleBrand}>{vehicle.brand}</span>
-            <h2>{vehicle.model}</h2>
+            <div className={styles.vehicleIdentityCopy}>
+              <span className={styles.vehicleBrand}>{vehicle.brand}</span>
+              <h2>{vehicle.model}</h2>
+            </div>
           </div>
 
-          <div className={styles.vehicleTopDetails}>
+          <VehiclePlate
+            className={styles.vehiclePlate}
+            plate={vehicle.plate}
+            type={vehicle.type}
+          />
+
+          <div className={styles.vehicleDetails}>
             <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsTop}`}>
               <div>
                 <dt>Ano</dt>
@@ -390,31 +421,35 @@ export default function VehicleHistoryPage() {
                 <dd>{vehicle.color || "Não informada"}</dd>
               </div>
             </dl>
-            <VehiclePlate plate={vehicle.plate} type={vehicle.type} />
-          </div>
 
-          <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
-            <div>
-              <dt>Quilometragem</dt>
-              <dd>{formatMileage(vehicle.mileage)} km</dd>
-            </div>
-            <div>
-              <dt>Cadastro</dt>
-              <dd>{formatRegistrationDate(vehicle.createdAt)}</dd>
-            </div>
-          </dl>
+            <dl className={`${styles.vehicleFacts} ${styles.vehicleFactsBottom}`}>
+              <div>
+                <dt>Quilometragem</dt>
+                <dd>{formatMileage(vehicle.mileage)} km</dd>
+              </div>
+              <div>
+                <dt>Cadastro</dt>
+                <dd>{formatRegistrationDate(vehicle.createdAt)}</dd>
+              </div>
+            </dl>
+          </div>
 
           <Link
             className={styles.manageButton}
             href={`/garagem/${vehicle.id}/gerenciar`}
           >
-            <GearSixIcon aria-hidden className={styles.manageIcon} size={19} weight="bold" />
+            <GearSixIcon aria-hidden size={20} weight="bold" />
             <span>Gerenciar veículo</span>
-            <CaretRightIcon aria-hidden className={styles.manageArrow} size={18} weight="bold" />
           </Link>
+
         </section>
 
         <section className={styles.maintenanceSection}>
+          <header className={styles.maintenanceHeading}>
+            <h2>Manutenções</h2>
+            <p>Consulte os serviços realizados e acompanhe os próximos cuidados do veículo</p>
+          </header>
+
           <div className={styles.viewControl}>
             <SegmentedControl
               ariaLabel="Visualização das manutenções"
@@ -430,7 +465,7 @@ export default function VehicleHistoryPage() {
                 <header className={styles.sectionHeading}>
                   <div>
                     <span>Serviços concluídos</span>
-                    <h2>Histórico de manutenção</h2>
+                    <h2>Realizadas</h2>
                   </div>
                   <div className={styles.sectionHeadingActions}>
                     {pagination.maintenances.total > 0 && (
@@ -549,7 +584,7 @@ export default function VehicleHistoryPage() {
                 <header className={styles.sectionHeading}>
                   <div>
                     <span>Prazos e lembretes</span>
-                    <h2>Alertas de manutenção</h2>
+                    <h2>A realizar</h2>
                   </div>
                   <BellRingingIcon aria-hidden size={27} weight="duotone" />
                 </header>
@@ -646,11 +681,19 @@ export default function VehicleHistoryPage() {
 
       </div>
       <Link
-        aria-label="Adicionar manutenção"
+        aria-label={`${selectedView === "history"
+          ? "Registrar manutenção realizada"
+          : "Programar manutenção a realizar"}${hasMaintenanceDraft ? ". Há um rascunho salvo" : ""}`}
         className={`app-floating-action ${styles.addMaintenanceButton}`}
-        href={`/garagem/${vehicle.id}/manutencao`}
+        href={`/garagem/${vehicle.id}/manutencao?tipo=${selectedView === "history" ? "realizada" : "alerta"}`}
+        title={hasMaintenanceDraft ? "Continuar rascunho de manutenção" : undefined}
       >
         <PlusIcon aria-hidden size={28} weight="regular" />
+        {hasMaintenanceDraft && (
+          <span aria-hidden className={styles.draftBadge}>
+            <PencilSimpleIcon size={12} weight="bold" />
+          </span>
+        )}
       </Link>
       {cancelDialog.alert && (
         <AlertCancellationDialog

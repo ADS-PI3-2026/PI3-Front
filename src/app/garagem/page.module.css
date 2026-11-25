@@ -1,5 +1,17 @@
 .pageHeader {
   --app-page-header-margin: 18px;
+  min-height: 82px;
+}
+
+.headerIntroduction {
+  min-width: 0;
+}
+
+.headerIntroduction p {
+  color: var(--app-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin-top: 4px;
 }
 
 .headerActions {
@@ -40,32 +52,47 @@
 
 .transferNotice {
   align-items: center;
-  background: #eef5ff;
-  border: 1px solid #cbdcf4;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.48);
   border-radius: 13px;
-  color: var(--app-blue);
+  box-shadow: 0 6px 18px rgba(18, 102, 59, 0.1);
+  color: var(--app-success);
   display: grid;
   gap: 11px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   margin-bottom: 15px;
   min-height: 70px;
+  overflow: hidden;
   padding: 11px 13px;
+  position: relative;
+}
+
+.transferNotice::before {
+  background: var(--app-success);
+  bottom: 0;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 4px;
 }
 
 .transferNotice:hover {
-  background: #e6f0fe;
-  border-color: #abc5e8;
+  background: #def3e7;
+  border-color: var(--app-success);
+  box-shadow: 0 8px 22px rgba(18, 102, 59, 0.15);
 }
 
 .transferNotice:focus-visible {
-  outline: 3px solid rgba(7, 71, 147, 0.22);
+  outline: 3px solid rgba(18, 102, 59, 0.22);
   outline-offset: 2px;
 }
 
 .transferNoticeIcon {
   align-items: center;
-  background: #fff;
+  background: var(--app-success);
   border-radius: 10px;
+  color: #fff;
   display: flex;
   height: 42px;
   justify-content: center;
@@ -432,6 +459,11 @@
     position: relative;
   }
 
+  .headerIntroduction p {
+    font-size: 0.82rem;
+    margin-top: 6px;
+  }
+
   .dashboardGrid {
     align-items: start;
     gap: 28px;
@@ -482,6 +514,7 @@
   .expenseSection {
     grid-column: 2;
     grid-row: 1;
+    margin-top: 46px;
   }
 
   .expenseCard {

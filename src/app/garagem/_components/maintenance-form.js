@@ -12,6 +12,7 @@ import {
 import ActionButton from "../../components/action-button";
 import SearchableSelect from "../../components/searchable-select";
 import SegmentedControl from "../../components/segmented-control";
+import { useToast } from "../../components/toast-provider";
 import {
   getMaintenanceAlertErrorMessage,
   getMaintenanceAlertFieldErrors,
@@ -249,6 +250,7 @@ export default function MaintenanceForm({
   title,
   vehicleYear,
 }) {
+  const { showToast } = useToast();
   const [initialDraft] = useState(() => readMaintenanceDraft(draftKey));
   const [cleanFormState] = useState(() => createFormState({ alertOnly, initialValues }));
   const [form, setForm] = useState(() => createFormState({
@@ -512,6 +514,10 @@ export default function MaintenanceForm({
     setRestoringDraftFields(false);
     setSyncMessage("");
     onCategoryChange?.("");
+    showToast({
+      message: "Rascunho descartado. O formulário está disponível para um novo preenchimento.",
+      tone: "info",
+    });
   };
 
   return (
@@ -546,7 +552,7 @@ export default function MaintenanceForm({
                   onClick={clearRecoveredDraft}
                   type="button"
                 >
-                  Limpar rascunho
+                  Descartar rascunho
                 </button>
               )}
             </div>

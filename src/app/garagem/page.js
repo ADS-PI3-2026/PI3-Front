@@ -226,7 +226,10 @@ function GarageContent() {
   return (
     <>
       <header className={`app-page-header ${styles.pageHeader}`}>
-        <h1 className="app-page-title">Olá, {firstName}</h1>
+        <div className={styles.headerIntroduction}>
+          <h1 className="app-page-title">Olá, {firstName}</h1>
+          <p>Acompanhe seus veículos, manutenções e gastos.</p>
+        </div>
         <div className={styles.headerActions}>
           {showAddVehicleButton && (
             <button
@@ -291,32 +294,29 @@ function GarageContent() {
         )}
       </header>
 
+      {pendingTransferCount > 0 && (
+        <Link className={styles.transferNotice} href="/garagem/transferencia">
+          <span className={styles.transferNoticeIcon}>
+            <ArrowsLeftRightIcon aria-hidden size={24} weight="duotone" />
+          </span>
+          <span>
+            <strong>
+              {pendingTransferCount} {pendingTransferCount === 1
+                ? "transferência em andamento"
+                : "transferências em andamento"}
+            </strong>
+            <small>Acompanhe, confirme ou cancele suas solicitações</small>
+          </span>
+          <CaretRightIcon aria-hidden size={19} weight="bold" />
+        </Link>
+      )}
+
       <div className={styles.dashboardGrid}>
-        <section aria-labelledby="expense-title" className={styles.expenseSection}>
-          <div className={styles.sectionHeader}>
-            <h2 id="expense-title">Resumo de gastos</h2>
-          </div>
+        <section aria-label="Resumo de gastos" className={styles.expenseSection}>
           <ExpenseSummary className={styles.expenseCard} />
         </section>
 
         <section aria-labelledby="vehicles-title" className={styles.vehiclesSection}>
-          {pendingTransferCount > 0 && (
-            <Link className={styles.transferNotice} href="/garagem/transferencia">
-              <span className={styles.transferNoticeIcon}>
-                <ArrowsLeftRightIcon aria-hidden size={24} weight="duotone" />
-              </span>
-              <span>
-                <strong>
-                  {pendingTransferCount} {pendingTransferCount === 1
-                    ? "transferência em andamento"
-                    : "transferências em andamento"}
-                </strong>
-                <small>Acompanhe, confirme ou cancele suas solicitações</small>
-              </span>
-              <CaretRightIcon aria-hidden size={19} weight="bold" />
-            </Link>
-          )}
-
           <div className={styles.sectionHeader}>
             <h2 id="vehicles-title">Meus veículos</h2>
           </div>

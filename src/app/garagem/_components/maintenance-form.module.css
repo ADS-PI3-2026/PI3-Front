@@ -1,7 +1,12 @@
 .formScreen {
   --app-form-desktop-width: 500px;
-  --app-form-heading-width: 280px;
+  --app-form-heading-size: clamp(1.35rem, 6vw, 1.55rem);
+  --app-form-heading-width: none;
   --app-form-width: 430px;
+}
+
+.formContext :global(.app-form-heading h2) {
+  white-space: nowrap;
 }
 
 .maintenanceForm {
@@ -51,6 +56,12 @@
   flex: 1;
   flex-wrap: wrap;
   gap: 3px 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.draftStatusContent p {
+  flex: 1 1 210px;
   min-width: 0;
 }
 
