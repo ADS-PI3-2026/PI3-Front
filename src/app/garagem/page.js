@@ -8,16 +8,18 @@ import {
   CircleNotchIcon,
   GaugeIcon,
   MotorcycleIcon,
+  PencilSimpleIcon,
   PlusIcon,
   TruckIcon,
   UserCircleIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthErrorMessage } from "../auth-api";
 import AppShell, { useAuthUser } from "../components/app-shell";
 import ExpenseSummary from "../components/expense-summary";
+import NotificationMenu from "../components/notification-menu";
 import VehicleBrandLogo from "../components/vehicle-brand-logo";
 import VehiclePlate from "../components/vehicle-plate";
 import VehicleRegistrationLimit from "./_components/vehicle-registration-limit";
@@ -32,12 +34,33 @@ import {
   hasReachedVehicleRegistrationLimit,
   MAX_DIRECT_VEHICLE_REGISTRATIONS,
 } from "./_lib/vehicle-registration-limit";
+import { listMaintenanceDrafts } from "./_lib/maintenance-draft";
+import { createVehicleDraftKey, readVehicleDraft } from "./_lib/vehicle-draft";
 import styles from "./page.module.css";
 
 const mileageFormatter = new Intl.NumberFormat("pt-BR");
+const UPCOMING_MAINTENANCE_DAYS = 7;
 
 function formatMileage(value) {
   return mileageFormatter.format(value);
+}
+
+function getDaysUntilDate(value, referenceDate = new Date()) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? ""));
+  if (!match) return null;
+  const target = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const reference = Date.UTC(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate(),
+  );
+  return Math.round((target - reference) / 86400000);
+}
+
+function getUpcomingDateDescription(days, dateLabel) {
+  if (days === 0) return `Prevista para hoje (${dateLabel}).`;
+  if (days === 1) return `Prevista para amanhã (${dateLabel}).`;
+  return `Prevista para daqui a ${days} dias (${dateLabel}).`;
 }
 
 function VehicleTypeIcon({ type }) {
@@ -82,8 +105,14 @@ function GarageContent() {
   });
   const [retryRevision, setRetryRevision] = useState(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [compactHeader, setCompactHeader] = useState(false);
+  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [maintenanceSummaries, setMaintenanceSummaries] = useState({});
+  const [maintenanceDrafts, setMaintenanceDrafts] = useState([]);
+  const [draftsLoaded, setDraftsLoaded] = useState(false);
+  const [vehicleDraft, setVehicleDraft] = useState(null);
   const [pendingTransferCount, setPendingTransferCount] = useState(0);
+  const [pendingTransfersLoading, setPendingTransfersLoading] = useState(true);
   const requestedSummaryIds = useRef(new Set());
   const mounted = useRef(true);
   const remainingRegistrations = getRemainingVehicleRegistrations(requestState.total);
@@ -97,11 +126,158 @@ function GarageContent() {
   const showAddVehicleButton = !requestState.loading
     && !requestState.error
     && !registrationLimitReached;
+  const visibleDrafts = useMemo(() => {
+    const vehicleIds = new Set(requestState.vehicles.map((vehicle) => Number(vehicle.id)));
+    return maintenanceDrafts.filter((draft) => vehicleIds.has(draft.vehicleId));
+  }, [maintenanceDrafts, requestState.vehicles]);
+  const activeNotifications = useMemo(() => {
+    const notifications = [];
+
+    if (pendingTransferCount > 0) {
+      notifications.push({
+        description: "Acompanhe, confirme ou cancele suas solicitações.",
+        href: "/garagem/transferencia",
+        id: "active-transfers",
+        count: pendingTransferCount,
+        title: `${pendingTransferCount} ${pendingTransferCount === 1
+          ? "transferência em andamento"
+          : "transferências em andamento"}`,
+        tone: "success",
+        type: "transfer",
+      });
+    }
+
+    if (vehicleDraft && !registrationLimitReached) {
+      notifications.push({
+        count: 1,
+        description: "Continue preenchendo os dados para adicionar o veículo à garagem.",
+        href: "/garagem/novo",
+        id: "new-vehicle-draft",
+        title: "Cadastro de veículo em andamento",
+        tone: "vehicle-draft",
+        type: "vehicleDraft",
+      });
+    }
+
+    for (const vehicle of requestState.vehicles) {
+      const summary = maintenanceSummaries[vehicle.id];
+      if (!summary) continue;
+
+      if (summary.overdueCount > 0) {
+        notifications.push({
+          count: summary.overdueCount,
+          description: `${vehicle.model} precisa da sua atenção. Abra os alertas para regularizar.`,
+          href: `/garagem/${vehicle.id}?aba=a-realizar`,
+          id: `overdue-maintenance-${vehicle.id}`,
+          title: `${summary.overdueCount} ${summary.overdueCount === 1
+            ? "manutenção atrasada"
+            : "manutenções atrasadas"}`,
+          tone: "danger",
+          type: "overdue",
+        });
+      }
+
+      const daysUntilMaintenance = getDaysUntilDate(summary.nextDate);
+      if (daysUntilMaintenance !== null
+        && daysUntilMaintenance >= 0
+        && daysUntilMaintenance <= UPCOMING_MAINTENANCE_DAYS) {
+        notifications.push({
+          count: 1,
+          description: `${vehicle.model}: ${getUpcomingDateDescription(
+            daysUntilMaintenance,
+            summary.nextDateLabel,
+          )}`,
+          href: `/garagem/${vehicle.id}?aba=a-realizar`,
+          id: `upcoming-maintenance-${vehicle.id}`,
+          title: "Manutenção próxima",
+          tone: "upcoming",
+          type: "upcoming",
+        });
+      }
+    }
+
+    const queuedDrafts = visibleDrafts.filter((draft) => draft.queued);
+    const editableDrafts = visibleDrafts.filter((draft) => !draft.queued);
+
+    for (const draft of [...queuedDrafts, ...editableDrafts]) {
+      const vehicle = requestState.vehicles.find((item) => Number(item.id) === draft.vehicleId);
+      const draftType = draft.form.status === "A realizar" ? "alerta" : "realizada";
+      const queued = draft.queued === true;
+      notifications.push({
+        count: 1,
+        description: queued
+          ? `Abra o registro de ${vehicle?.model || "este veículo"} para concluir o envio.`
+          : `Continue o preenchimento para ${vehicle?.model || "este veículo"}.`,
+        href: `/garagem/${draft.vehicleId}/manutencao?tipo=${draftType}`,
+        id: `maintenance-draft-${draft.vehicleId}`,
+        title: queued ? "Registro aguardando sincronização" : "Rascunho de manutenção",
+        tone: queued ? "sync" : "draft",
+        type: queued ? "sync" : "draft",
+      });
+    }
+
+    return notifications;
+  }, [
+    maintenanceSummaries,
+    pendingTransferCount,
+    registrationLimitReached,
+    requestState.vehicles,
+    vehicleDraft,
+    visibleDrafts,
+  ]);
+  const activeNotificationCount = activeNotifications.reduce(
+    (total, notification) => total + (notification.count ?? 1),
+    0,
+  );
+  const maintenanceSummariesLoading = requestState.loading
+    || requestState.vehicles.some((vehicle) => !Object.prototype.hasOwnProperty.call(
+      maintenanceSummaries,
+      vehicle.id,
+    ));
+  const notificationsLoading = pendingTransfersLoading
+    || !draftsLoaded
+    || maintenanceSummariesLoading;
 
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1200px)");
+    const updateHeader = () => {
+      setCompactHeader(desktopQuery.matches && window.scrollY > 32);
+    };
+
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    desktopQuery.addEventListener("change", updateHeader);
+    return () => {
+      window.removeEventListener("scroll", updateHeader);
+      desktopQuery.removeEventListener("change", updateHeader);
+    };
+  }, []);
+
+  useEffect(() => {
+    const refreshDrafts = () => {
+      setMaintenanceDrafts(listMaintenanceDrafts(user.id));
+      setVehicleDraft(readVehicleDraft(createVehicleDraftKey(user.id)));
+      setDraftsLoaded(true);
+    };
+    const refreshVisibleDrafts = () => {
+      if (!document.hidden) refreshDrafts();
+    };
+
+    refreshDrafts();
+    window.addEventListener("focus", refreshDrafts);
+    window.addEventListener("storage", refreshDrafts);
+    document.addEventListener("visibilitychange", refreshVisibleDrafts);
+    return () => {
+      window.removeEventListener("focus", refreshDrafts);
+      window.removeEventListener("storage", refreshDrafts);
+      document.removeEventListener("visibilitychange", refreshVisibleDrafts);
+    };
+  }, [user.id]);
 
   useEffect(() => {
     let active = true;
@@ -144,11 +320,14 @@ function GarageContent() {
     let active = true;
 
     async function loadPendingTransferCount() {
+      setPendingTransfersLoading(true);
       try {
         const page = await listVehicleTransferPage(1);
         if (active) setPendingTransferCount(page.total);
       } catch {
         if (active) setPendingTransferCount(0);
+      } finally {
+        if (active) setPendingTransfersLoading(false);
       }
     }
 
@@ -165,7 +344,11 @@ function GarageContent() {
     for (const vehicle of vehiclesToLoad) requestedSummaryIds.current.add(vehicle.id);
 
     void Promise.allSettled(
-      vehiclesToLoad.map((vehicle) => getVehicleMaintenanceDateSummary(vehicle.id)),
+      vehiclesToLoad.map((vehicle) => getVehicleMaintenanceDateSummary(
+        vehicle.id,
+        undefined,
+        vehicle.mileage,
+      )),
     ).then((results) => {
       if (!mounted.current) return;
       setMaintenanceSummaries((current) => {
@@ -225,7 +408,7 @@ function GarageContent() {
 
   return (
     <>
-      <header className={`app-page-header ${styles.pageHeader}`}>
+      <header className={`app-page-header ${styles.pageHeader} ${compactHeader ? styles.pageHeaderCompact : ""}`}>
         <div className={styles.headerIntroduction}>
           <h1 className="app-page-title">Olá, {firstName}</h1>
           <p>Acompanhe seus veículos, manutenções e gastos.</p>
@@ -238,7 +421,10 @@ function GarageContent() {
               aria-expanded={addMenuOpen}
               aria-haspopup="dialog"
               className={`app-floating-action ${styles.addVehicleButton} ${addMenuOpen ? styles.addVehicleButtonOpen : ""}`}
-              onClick={() => setAddMenuOpen((open) => !open)}
+              onClick={() => {
+                setNotificationMenuOpen(false);
+                setAddMenuOpen((open) => !open);
+              }}
               type="button"
             >
               <PlusIcon aria-hidden size={28} weight="regular" />
@@ -249,6 +435,16 @@ function GarageContent() {
             <UserCircleIcon aria-hidden size={23} weight="regular" />
             <span>Perfil</span>
           </Link>
+          <NotificationMenu
+            count={activeNotificationCount}
+              loading={notificationsLoading}
+            notifications={activeNotifications}
+            onOpenChange={(open) => {
+              setNotificationMenuOpen(open);
+              if (open) setAddMenuOpen(false);
+            }}
+            open={notificationMenuOpen}
+          />
         </div>
 
         {addMenuOpen && showAddVehicleButton && (
@@ -273,9 +469,21 @@ function GarageContent() {
                 <span className={styles.addMenuIcon}>
                   <CarIcon aria-hidden size={23} weight="duotone" />
                 </span>
-                <span>
-                  <strong>Cadastrar novo</strong>
-                  <small>Adicionar um veículo que ainda não possui histórico</small>
+                <span className={styles.addMenuCopy}>
+                  <span className={styles.addMenuTitleRow}>
+                    <strong>Cadastrar novo</strong>
+                    {vehicleDraft && (
+                      <em className={styles.draftBadge}>
+                        <PencilSimpleIcon aria-hidden size={12} weight="bold" />
+                        Rascunho salvo
+                      </em>
+                    )}
+                  </span>
+                  <small>
+                    {vehicleDraft
+                      ? "Continuar o preenchimento salvo neste dispositivo"
+                      : "Adicionar um veículo que ainda não possui histórico"}
+                  </small>
                 </span>
                 <CaretRightIcon aria-hidden size={18} weight="bold" />
               </Link>

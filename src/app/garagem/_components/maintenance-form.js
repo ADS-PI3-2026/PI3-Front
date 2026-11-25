@@ -21,6 +21,7 @@ import {
 } from "../_lib/garage-api";
 import {
   formatCurrencyInput,
+  formatIntegerInput,
   getLocalDateInputValue,
   getMaintenanceDateLimits,
   onlyDigits,
@@ -522,42 +523,42 @@ export default function MaintenanceForm({
 
   return (
     <main className={`app-form-screen ${styles.formScreen}`}>
+      {syncMessage && !readOnly && (
+        <div
+          className={styles.draftStatus}
+          data-state={!isOnline
+            ? "offline"
+            : automaticSyncBlocked && queuedForSync
+              ? "error"
+              : queuedForSync
+                ? "pending"
+                : "saved"}
+          role="status"
+        >
+          {!isOnline
+            ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
+            : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
+          <div className={styles.draftStatusContent}>
+            <p>{syncMessage}</p>
+            {canClearDraft && (
+              <button
+                className={styles.clearDraftButton}
+                disabled={submitting}
+                onClick={clearRecoveredDraft}
+                type="button"
+              >
+                Descartar rascunho
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={styles.formContext}>
         <div className="app-form-heading">
           <h2>{title}</h2>
           <p>{intro}</p>
         </div>
-
-        {syncMessage && !readOnly && (
-          <div
-            className={styles.draftStatus}
-            data-state={!isOnline
-              ? "offline"
-              : automaticSyncBlocked && queuedForSync
-                ? "error"
-                : queuedForSync
-                  ? "pending"
-                  : "saved"}
-            role="status"
-          >
-            {!isOnline
-              ? <WifiSlashIcon aria-hidden size={20} weight="duotone" />
-              : <CloudArrowUpIcon aria-hidden size={20} weight="duotone" />}
-            <div className={styles.draftStatusContent}>
-              <p>{syncMessage}</p>
-              {canClearDraft && (
-                <button
-                  className={styles.clearDraftButton}
-                  disabled={submitting}
-                  onClick={clearRecoveredDraft}
-                  type="button"
-                >
-                  Descartar rascunho
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <form className={`app-form-card ${styles.maintenanceForm}`} noValidate onSubmit={submitMaintenance}>
@@ -623,8 +624,8 @@ export default function MaintenanceForm({
                 inputMode="numeric"
                 name="mileage"
                 onChange={(event) => updateField("mileage", onlyDigits(event.target.value))}
-                placeholder="Ex: 45000"
-                value={form.mileage}
+                placeholder="Ex: 45.000"
+                value={formatIntegerInput(form.mileage)}
               />
             </span>
             {errors.mileage && <small className="app-error-text">{errors.mileage}</small>}
@@ -660,8 +661,8 @@ export default function MaintenanceForm({
                 inputMode="numeric"
                 name="mileageDue"
                 onChange={(event) => updateField("mileageDue", onlyDigits(event.target.value))}
-                placeholder="Ex: 50000"
-                value={form.mileageDue}
+                placeholder="Ex: 50.000"
+                value={formatIntegerInput(form.mileageDue)}
               />
             </span>
             <small>Informe a data, a quilometragem ou ambas</small>

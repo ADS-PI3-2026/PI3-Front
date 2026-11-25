@@ -632,11 +632,11 @@
 
 .draftBadge {
   align-items: center;
-  background: #f6b73c;
+  background: var(--app-success);
   border: 2px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 3px 9px rgba(97, 61, 0, 0.24);
-  color: #583800;
+  box-shadow: 0 3px 9px rgba(18, 102, 59, 0.24);
+  color: #fff;
   display: flex;
   height: 23px;
   justify-content: center;

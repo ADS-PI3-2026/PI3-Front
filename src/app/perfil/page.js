@@ -303,7 +303,7 @@ function ProfileContent() {
                   <p>Acesse sua garagem como um aplicativo, sem precisar abrir o navegador</p>
                 </div>
               </div>
-              <ActionButton onClick={() => void installApp()} type="button" variant="secondary">
+              <ActionButton onClick={() => void installApp()} type="button" variant="success">
                 <DownloadSimpleIcon aria-hidden size={20} weight="bold" />
                 Instalar aplicativo
               </ActionButton>

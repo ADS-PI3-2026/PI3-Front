@@ -65,10 +65,10 @@
 
 .compactInstallButton {
   align-items: center;
-  background: #edf4fd;
-  border: 1px solid #d4e3f6;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.28);
   border-radius: 10px;
-  color: #074793;
+  color: var(--app-success);
   display: inline-flex;
   flex: 0 0 38px;
   height: 38px;
@@ -76,11 +76,11 @@
 }
 
 .compactInstallButton:hover {
-  background: #dfeafb;
+  background: #dcefe4;
 }
 
 .compactInstallButton:focus-visible {
-  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline: 3px solid rgba(18, 102, 59, 0.24);
   outline-offset: 2px;
 }
 
@@ -214,8 +214,8 @@
 }
 
 .installPromotion {
-  background: linear-gradient(145deg, #f0f6ff, #e6f0fd);
-  border: 1px solid #ccdef5;
+  background: linear-gradient(145deg, #f1fbf5, #e4f5eb);
+  border: 1px solid rgba(18, 102, 59, 0.3);
   border-radius: 14px;
   display: grid;
   gap: 14px;
@@ -226,7 +226,7 @@
 
 .installPromotionContent {
   align-items: flex-start;
-  color: #074793;
+  color: var(--app-success);
   display: flex;
   gap: 10px;
   padding-right: 24px;
@@ -263,12 +263,12 @@
 }
 
 .dismissInstallButton:hover {
-  background: rgba(7, 71, 147, 0.09);
-  color: #074793;
+  background: rgba(18, 102, 59, 0.1);
+  color: var(--app-success);
 }
 
 .dismissInstallButton:focus-visible {
-  outline: 3px solid rgba(7, 71, 147, 0.24);
+  outline: 3px solid rgba(18, 102, 59, 0.24);
   outline-offset: 1px;
 }
 

@@ -1,4 +1,5 @@
 const FIPE_API_BASE_URL = process.env.NEXT_PUBLIC_FIPE_API_URL || "https://fipe.parallelum.com.br/api/v2";
+const FIPE_REQUEST_TIMEOUT_MS = 8000;
 
 export const vehicleTypes = [
   { value: "cars", label: "Carro ou utilitário pequeno" },
@@ -23,7 +24,17 @@ function getYearNumber(option) {
 }
 
 async function fetchFipeOptions(path) {
-  const response = await fetch(FIPE_API_BASE_URL + path);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), FIPE_REQUEST_TIMEOUT_MS);
+  let response;
+
+  try {
+    response = await fetch(FIPE_API_BASE_URL + path, { signal: controller.signal });
+  } catch {
+    throw new Error("Não foi possível carregar os dados da tabela FIPE.");
+  } finally {
+    window.clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar os dados da tabela FIPE.");

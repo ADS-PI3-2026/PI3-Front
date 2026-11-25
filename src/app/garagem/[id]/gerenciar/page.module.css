@@ -56,6 +56,31 @@
   margin-top: 3px;
 }
 
+.actionTitleRow {
+  align-items: center;
+  color: var(--app-ink) !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  margin-top: 0 !important;
+}
+
+.draftBadge {
+  align-items: center;
+  background: var(--app-success-soft);
+  border: 1px solid rgba(18, 102, 59, 0.25);
+  border-radius: 999px;
+  color: var(--app-success);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  gap: 4px;
+  line-height: 1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
 .actionPanel {
   --app-card-padding: 19px;
   --app-card-radius: 12px;
@@ -111,6 +136,22 @@
 .updateForm {
   display: grid;
   gap: 16px;
+}
+
+.panelActions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.panelActions > * {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.panelActions > :first-child {
+  padding-inline: 14px;
+  width: max-content;
 }
 
 .mileageInput input,

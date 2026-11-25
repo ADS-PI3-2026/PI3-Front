@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   BellRingingIcon,
@@ -127,11 +127,14 @@ function AlertCancellationDialog({ alert, busy, error, onClose, onConfirm }) {
 
 export default function VehicleHistoryPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { session } = useSession();
   const { showToast } = useToast();
   const vehicleId = Array.isArray(params.id) ? params.id[0] : params.id;
   const maintenanceDraftKey = createMaintenanceDraftKey(session?.user?.id, vehicleId);
-  const [selectedView, setSelectedView] = useState("history");
+  const [selectedView, setSelectedView] = useState(
+    searchParams.get("aba") === "a-realizar" ? "alerts" : "history",
+  );
   const [hasMaintenanceDraft, setHasMaintenanceDraft] = useState(false);
   const [retryRevision, setRetryRevision] = useState(0);
   const [requestState, setRequestState] = useState({
